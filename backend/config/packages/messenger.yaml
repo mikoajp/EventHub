@@ -1,0 +1,60 @@
+# config/packages/messenger.yaml
+# FIXED VERSION - Remove specific class references that cause errors
+
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            sync: 'sync://'
+            
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    multiplier: 2
+                    delay: 1000
+                    max_delay: 10000
+                
+            high_priority:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    stream: high_priority
+                retry_strategy:
+                    max_retries: 5
+                    
+            notifications:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    stream: notifications
+                retry_strategy:
+                    max_retries: 2
+                    
+            failed: 'doctrine://default?queue_name=failed'
+
+        routing:
+            # Use ONLY pattern matching - no specific class names
+            # This prevents "class not found" errors during config parsing
+            
+            # Payment commands - highest priority
+            'App\Message\Command\Payment\*': high_priority
+            
+            # All other commands - async processing
+            'App\Message\Command\*': async
+            
+            # Queries - always synchronous
+            'App\Message\Query\*': sync
+            
+            # Events - notifications
+            'App\Message\Event\*': notifications
+
+        default_bus: command.bus
+        buses:
+            command.bus:
+                middleware:
+                    - validation
+                    - doctrine_transaction
+            query.bus:
+                middleware:
+                    - validation
+            event.bus: ~

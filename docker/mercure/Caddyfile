@@ -1,0 +1,9 @@
+:3000 {
+    mercure {
+        publisher_jwt X7p9qW3zT2rY6mB8nK4vL0jF5hG2tC1xA9eD8uI
+        subscriber_jwt X7p9qW3zT2rY6mB8nK4vL0jF5hG2tC1xA9eD8uI
+        anonymous
+        cors_origins http://localhost:5173
+    }
+    respond /healthz 200
+}
