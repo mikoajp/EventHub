@@ -10,6 +10,7 @@ use Psr\Log\LoggerInterface;
 class CacheService
 {
     private $cache;
+    private $redis; // Store raw Redis connection
     private $logger;
     private $isEnabled;
 
@@ -23,8 +24,8 @@ class CacheService
 
         if ($this->isEnabled) {
             try {
-                $redis = RedisAdapter::createConnection($redisUrl);
-                $this->cache = new RedisAdapter($redis);
+                $this->redis = RedisAdapter::createConnection($redisUrl);
+                $this->cache = new RedisAdapter($this->redis);
             } catch (\Exception $e) {
                 $this->isEnabled = false;
                 if ($this->logger) {
@@ -93,18 +94,17 @@ class CacheService
      */
     public function deletePattern(string $pattern): bool
     {
-        if (!$this->isEnabled) {
+        if (!$this->isEnabled || !$this->redis) {
             return true;
         }
 
         try {
-            $redis = $this->cache->getRedis();
-            $keys = $redis->keys($pattern);
-            
+            $keys = $this->redis->keys($pattern);
+
             if (!empty($keys)) {
-                $redis->del($keys);
+                $this->redis->del($keys);
             }
-            
+
             return true;
         } catch (\Exception $e) {
             if ($this->logger) {
@@ -132,6 +132,37 @@ class CacheService
                 $this->logger->error('Cache clear error: ' . $e->getMessage());
             }
             return false;
+        }
+    }
+
+    /**
+     * Check if cache is enabled and working
+     *
+     * @return bool
+     */
+    public function isEnabled(): bool
+    {
+        return $this->isEnabled;
+    }
+
+    /**
+     * Get cache statistics (if available)
+     *
+     * @return array
+     */
+    public function getStats(): array
+    {
+        if (!$this->isEnabled || !$this->redis) {
+            return [];
+        }
+
+        try {
+            return $this->redis->info();
+        } catch (\Exception $e) {
+            if ($this->logger) {
+                $this->logger->error('Cache stats error: ' . $e->getMessage());
+            }
+            return [];
         }
     }
 }

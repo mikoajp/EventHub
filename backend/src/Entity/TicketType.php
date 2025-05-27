@@ -22,17 +22,17 @@ class TicketType
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank]
-    #[Groups(['event:read', 'ticket_type:write'])]
+    #[Groups(['event:read','event:write','ticket_type:write'])]
     private string $name;
 
-    #[ORM\Column(type: "decimal", precision: 10, scale: 2)]
+    #[ORM\Column(type: "integer")]
     #[Assert\PositiveOrZero]
-    #[Groups(['event:read', 'ticket_type:write'])]
-    private float $price;
+    #[Groups(['event:read','event:write', 'ticket_type:write'])]
+    private int $price;
 
     #[ORM\Column(type: "integer")]
     #[Assert\Positive]
-    #[Groups(['event:read', 'ticket_type:write'])]
+    #[Groups(['event:read','event:write', 'ticket_type:write'])]
     private int $quantity;
 
     #[ORM\Column(type: "integer")]
@@ -73,12 +73,12 @@ class TicketType
         return $this;
     }
 
-    public function getPrice(): float
+    public function getPrice(): int
     {
         return $this->price;
     }
 
-    public function setPrice(float $price): static
+    public function setPrice(int $price): static
     {
         $this->price = $price;
         return $this;
@@ -92,6 +92,7 @@ class TicketType
     public function setQuantity(int $quantity): static
     {
         $this->quantity = $quantity;
+        $this->setRemainingQuantity($quantity);
         return $this;
     }
 
@@ -142,6 +143,12 @@ class TicketType
     #[Groups(['event:read'])]
     public function getPriceFormatted(): string
     {
-        return number_format($this->price, 2);
+        return number_format($this->price / 100, 2);
+    }
+
+    #[Groups(['event:read'])]
+    public function getPriceInDollars(): float
+    {
+        return $this->price / 100;
     }
 }

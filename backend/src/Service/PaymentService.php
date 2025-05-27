@@ -3,12 +3,13 @@
 namespace App\Service;
 
 use App\DTO\PaymentResult;
+use Psr\Log\LoggerInterface;
 
 final readonly class PaymentService
 {
     public function __construct(
         private string $stripeSecretKey,
-        private \Psr\Log\LoggerInterface $logger
+        private LoggerInterface $logger
     ) {}
 
     public function processPayment(
@@ -18,7 +19,6 @@ final readonly class PaymentService
         array $metadata = []
     ): PaymentResult {
         try {
-            // Simulate Stripe payment processing
             $this->logger->info('Processing payment', [
                 'payment_method_id' => $paymentMethodId,
                 'amount' => $amount,

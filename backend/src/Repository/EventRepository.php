@@ -314,7 +314,6 @@ class EventRepository extends ServiceEntityRepository
      */
     public function getOrderStatistics(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
     {
-        // Since we don't have orders, we'll treat each ticket as a separate "order"
         $qb = $this->getEntityManager()->createQueryBuilder()
             ->select('COUNT(t.id) as totalTickets, AVG(t.price) as avgTicketPrice')
             ->from('App\Entity\Ticket', 't')
@@ -338,7 +337,7 @@ class EventRepository extends ServiceEntityRepository
             ->getSingleResult();
 
         return [
-            'totalOrders' => (int)($result['totalTickets'] ?? 0), // treating each ticket as an order
+            'totalOrders' => (int)($result['totalTickets'] ?? 0),
             'avgOrderValue' => (float)($result['avgTicketPrice'] ?? 0),
             'avgOrderValueFormatted' => number_format(($result['avgTicketPrice'] ?? 0) / 100, 2)
         ];
@@ -386,7 +385,7 @@ class EventRepository extends ServiceEntityRepository
         return array_map(function($result) {
             return [
                 'date' => $result['date'],
-                'orders' => (int)$result['tickets'], // tickets as orders
+                'orders' => (int)$result['tickets'],
                 'revenue' => (float)$result['revenue'],
                 'revenueFormatted' => number_format($result['revenue'] / 100, 2)
             ];
@@ -406,7 +405,6 @@ class EventRepository extends ServiceEntityRepository
         ?DateTimeImmutable $from = null,
         ?DateTimeImmutable $to = null
     ): array {
-        // Get all statistics using the specialized methods
         $ticketSalesData = $this->getTicketSalesStatistics($event, $from, $to);
         $revenueData = $this->getRevenueStatistics($event, $from, $to);
         $orderStats = $this->getOrderStatistics($event, $from, $to);

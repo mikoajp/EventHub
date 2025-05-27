@@ -24,7 +24,8 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(),
         new Get(),
-        new Patch(),
+        new Post(processor: EventStateProcessor::class),  // Add processor here
+        new Patch(processor: EventStateProcessor::class), // Also for updates
         new Delete()
     ],
     normalizationContext: ['groups' => ['event:read']],
@@ -75,7 +76,7 @@ class Event
 
     #[ORM\ManyToOne(inversedBy: 'organizedEvents')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['event:read', 'event:write'])]
+    #[Groups(['event:read'])]  // Remove 'event:write' since it's auto-set
     private User $organizer;
 
     #[ORM\Column]
@@ -87,7 +88,7 @@ class Event
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\OneToMany(targetEntity: TicketType::class, mappedBy: 'event', cascade: ['persist', 'remove'])]
-    #[Groups(['event:read'])]
+    #[Groups(['event:read', 'event:write'])]  // Add 'event:write' here for ticketTypes
     private Collection $ticketTypes;
 
     #[ORM\OneToMany(targetEntity: Ticket::class, mappedBy: 'event')]
@@ -133,8 +134,11 @@ class Event
         return $this->eventDate;
     }
 
-    public function setEventDate(\DateTimeImmutable $eventDate): static
+    public function setEventDate(\DateTimeImmutable|string $eventDate): static
     {
+        if (is_string($eventDate)) {
+            $eventDate = new \DateTimeImmutable($eventDate);
+        }
         $this->eventDate = $eventDate;
         return $this;
     }
@@ -231,7 +235,7 @@ class Event
     #[Groups(['event:read'])]
     public function getTicketsSold(): int
     {
-        return $this->tickets->filter(fn(Ticket $ticket) => 
+        return $this->tickets->filter(fn(Ticket $ticket) =>
             $ticket->getStatus() === Ticket::STATUS_PURCHASED
         )->count();
     }
