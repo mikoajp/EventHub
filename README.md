@@ -1,58 +1,38 @@
-# 🎫 EventHub - Event Management Platform
+# EventHub
 
-Modern event management platform with **Symfony 7** backend and **React 18** frontend. Create events, sell tickets, and manage everything in real-time.
+
+EventHub is a modern event management platform that enables organizers to create and manage events while providing users with a seamless experience to discover and purchase tickets.
 
 ## ✨ Features
 
-- **🎯 Event Management** - Create, publish, and manage events
-- **🎟️ Ticket Sales** - Multiple ticket types with inventory tracking
-- **👥 User Roles** - Admin, Organizer, User with proper permissions
-- **🔐 JWT Authentication** - Secure login and API access
-- **⚡ Real-time Updates** - Live notifications via Mercure
-- **📊 Dashboard** - Analytics and sales tracking
+- **Event Management**: Create, edit, and manage events with rich details
+- **Ticket System**: Configure multiple ticket types with different pricing options
+- **User Roles**: Admin, Organizer, and User access levels
+- **Real-time Updates**: Instant notifications for event changes and ticket purchases
+- **Secure Payments**: Integrated payment processing (placeholder)
+- **Email Notifications**: Automated emails for registrations and ticket purchases
 
-## 🚀 Quick Start
+## 🚀 Technologies
 
-### Prerequisites
-- PHP 8.2+, Node.js 18+, Docker
+### Backend
+- **Symfony 7**: PHP framework for building the API
+- **Doctrine ORM**: Object-relational mapping for database interactions
+- **API Platform**: RESTful API creation
+- **JWT Authentication**: Secure user authentication
+- **CQRS Pattern**: Command Query Responsibility Segregation for business logic
+- **PostgreSQL**: Relational database
+- **RabbitMQ**: Message queue for asynchronous processing
+- **Mercure**: Real-time updates
 
-### 1. Clone & Start Services
-```bash
-git clone https://github.com/your-username/eventhub.git
-cd eventhub
-docker-compose up -d
-```
+### Frontend
+- **React 18**: UI library
+- **TypeScript**: Type-safe JavaScript
+- **React Router**: Client-side routing
+- **React Query**: Data fetching and caching
+- **Context API**: State management
+- **Tailwind CSS**: Utility-first CSS framework
 
-### 2. Backend Setup
-```bash
-cd backend
-composer install
-cp .env .env.local
-
-# Generate JWT keys
-mkdir -p config/jwt
-openssl genpkey -out config/jwt/private.pem -algorithm rsa -pkeyopt rsa_keygen_bits:4096
-openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem -pubout
-
-# Database & data
-php bin/console doctrine:database:create
-php bin/console doctrine:migrations:migrate
-php bin/console doctrine:fixtures:load
-
-# Start server
-symfony server:start
-```
-
-### 3. Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**🌐 Access:** http://localhost:5173
-
-## 👥 Demo Accounts
+## 🔑 Demo Accounts
 
 | Role | Email | Password |
 |------|-------|----------|
@@ -64,110 +44,81 @@ npm run dev
 
 ```
 EventHub/
-├── backend/              # Symfony 7 API
-│   ├── src/Controller/   # API endpoints
-│   ├── src/Entity/       # Database models
-│   ├── src/Message/      # CQRS commands/queries
-│   └── config/           # Configuration
-├── frontend/             # React 18 + TypeScript
-│   ├── src/components/   # UI components
-│   ├── src/pages/        # Page components
-│   ├── src/contexts/     # React contexts
-│   └── src/api/          # API client
-└── docker-compose.yml    # Services (DB, Redis, etc.)
+├── backend/                    # Symfony 7 API
+│   ├── src/Controller/         # API endpoints
+│   ├── src/Entity/             # Database models
+│   ├── src/Message/            # CQRS commands/queries
+│   └── config/                 # Configuration
+├── frontend/                   # React 18 + TypeScript
+│   ├── src/components/         # UI components
+│   ├── src/pages/              # Page components
+│   ├── src/contexts/           # React contexts
+│   └── src/api/                # API client
+└── docker-compose.yml          # Services (DB, Redis, etc.)
 ```
 
-## 🔧 Key Configuration
+## 🔧 Installation
 
-### Backend (.env.local)
+### Prerequisites
+
+- Docker and Docker Compose
+- PHP 8.2+
+- Composer
+- Node.js 18+
+- npm or yarn
+
+### Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/mikoajp/EventHub.git
+   cd EventHub
+   ```
+
+2. **Start Docker services**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Set up backend**
+   ```bash
+   cd backend
+   composer install
+   php bin/console doctrine:migrations:migrate
+   php bin/console doctrine:fixtures:load
+   php bin/console lexik:jwt:generate-keypair
+   symfony serve -d
+   ```
+
+4. **Set up frontend**
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
+
+5. **Access the application**
+    - Frontend: http://localhost:3000
+    - API: http://localhost:8000/api
+
+## 📝 API Documentation
+
+API documentation is available at http://localhost:8000/api/docs when the backend server is running.
+
+## 🧪 Testing
+
+### Backend
 ```bash
-DATABASE_URL="postgresql://eventhub:secret@localhost:5432/eventhub"
-JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem
-JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem
-JWT_PASSPHRASE=eventhub
-MESSENGER_TRANSPORT_DSN=amqp://eventhub:secret@localhost:5672/%2f/messages
-MERCURE_URL=http://localhost:3000/.well-known/mercure
+cd backend
+php bin/phpunit
 ```
 
-### Frontend (.env)
+### Frontend
 ```bash
-VITE_API_BASE_URL=http://localhost:8000
+cd frontend
+npm test
 ```
 
-## 🌐 Main API Endpoints
+## 📜 License
 
-```bash
-# Authentication
-POST /api/auth/login     # Login
-GET  /api/auth/me        # Current user
-
-# Events
-GET  /api/events         # List events
-POST /api/events         # Create event (Organizer)
-POST /api/events/{id}/publish  # Publish event
-
-# Tickets
-POST /api/tickets/purchase     # Buy tickets
-GET  /api/tickets/my          # My tickets
-```
-
-## ⚡ Development Commands
-
-```bash
-# Backend
-php bin/console cache:clear          # Clear cache
-php bin/console doctrine:fixtures:load  # Reset test data
-php bin/console messenger:consume async # Start workers
-tail -f var/log/dev.log             # View logs
-
-# Frontend
-npm run dev          # Development server
-npm run build        # Production build
-npm run type-check   # TypeScript validation
-```
-
-## 🔍 Troubleshooting
-
-**CORS Issues:**
-```bash
-composer require nelmio/cors-bundle
-```
-
-**JWT Problems:**
-```bash
-# Regenerate keys
-openssl genpkey -out config/jwt/private.pem -algorithm rsa -pkeyopt rsa_keygen_bits:4096
-openssl pkey -in config/jwt/private.pem -out config/jwt/public.pem -pubout
-```
-
-**Database Issues:**
-```bash
-docker-compose restart postgres
-php bin/console doctrine:database:drop --force
-php bin/console doctrine:database:create
-php bin/console doctrine:migrations:migrate
-```
-
-**Can't Login:**
-```bash
-# Test manually
-curl -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@example.com","password":"password"}'
-```
-
-## 🎯 Tech Stack
-
-- **Backend:** Symfony 7, Doctrine ORM, JWT Auth, Mercure
-- **Frontend:** React 18, TypeScript, Mantine UI, React Query
-- **Database:** PostgreSQL, Redis
-- **Queue:** RabbitMQ, Symfony Messenger
-- **Real-time:** Mercure Hub (WebSockets)
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file.
-
----
-
-**Ready to manage events like a pro! 🚀**
+This project is licensed under the MIT License - see the **LICENSE** file for details.
