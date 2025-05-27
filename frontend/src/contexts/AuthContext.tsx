@@ -26,11 +26,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const fetchCurrentUser = useCallback(async () => {
-    setIsLoading(true);
     try {
       const token = localStorage.getItem('auth_token');
       if (!token) {
-        setIsLoading(false);
+        setUser(null);
+        setIsAuthenticated(false);
         return;
       }
 
@@ -41,13 +41,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('auth_token');
       setUser(null);
       setIsAuthenticated(false);
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchCurrentUser();
+    const initAuth = async () => {
+      setIsLoading(true);
+      await fetchCurrentUser();
+      setIsLoading(false);
+    };
+    initAuth();
   }, [fetchCurrentUser]);
 
   const login = async (email: string, password: string) => {
@@ -57,10 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password,
       });
-      
+
       localStorage.setItem('auth_token', response.token);
-      setUser(response.user);
-      setIsAuthenticated(true);
+
+      await fetchCurrentUser();
+
     } catch (error) {
       setUser(null);
       setIsAuthenticated(false);
