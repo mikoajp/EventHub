@@ -8,26 +8,39 @@ use App\DTO\EventDTO;
 use App\Repository\EventRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
+use App\Service\CacheService;
 
 class EventService
 {
+    private const CACHE_TTL_PUBLISHED_EVENTS = 1800; // 30 minutes
+    private const CACHE_TTL_SINGLE_EVENT = 3600; // 1 hour
+    private const CACHE_KEY_PUBLISHED_EVENTS = 'events.published';
+    private const CACHE_KEY_EVENT_PREFIX = 'event.';
+
     public function __construct(
         private EventRepository $eventRepository,
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private CacheService $cacheService
     ) {}
 
     public function getPublishedEvents(): array
     {
-        return $this->eventRepository->findBy(['status' => 'published']);
+        return $this->cacheService->get(self::CACHE_KEY_PUBLISHED_EVENTS, function() {
+            return $this->eventRepository->findBy(['status' => 'published']);
+        }, self::CACHE_TTL_PUBLISHED_EVENTS);
     }
 
     public function findEventOrFail(string $id): Event
     {
-        $event = $this->eventRepository->find($id);
-        if (!$event) {
-            throw new \RuntimeException('Event not found', Response::HTTP_NOT_FOUND);
-        }
-        return $event;
+        $cacheKey = self::CACHE_KEY_EVENT_PREFIX . $id;
+        
+        return $this->cacheService->get($cacheKey, function() use ($id) {
+            $event = $this->eventRepository->find($id);
+            if (!$event) {
+                throw new \RuntimeException('Event not found', Response::HTTP_NOT_FOUND);
+            }
+            return $event;
+        }, self::CACHE_TTL_SINGLE_EVENT);
     }
 
     public function createEventFromDTO(EventDTO $eventDTO, User $user): Event
@@ -57,6 +70,8 @@ class EventService
 
         $event->setStatus('published');
         $this->entityManager->flush();
+        
+        $this->invalidateEventCache($event);
     }
 
     public function formatEventsCollectionResponse(array $events): array
@@ -126,5 +141,12 @@ class EventService
         if (!$user) {
             throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
         }
+    }
+    
+    private function invalidateEventCache(Event $event): void
+    {
+        $this->cacheService->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId());
+        
+        $this->cacheService->delete(self::CACHE_KEY_PUBLISHED_EVENTS);
     }
 }

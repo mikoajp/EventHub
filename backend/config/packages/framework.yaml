@@ -3,7 +3,9 @@ framework:
     secret: '%env(APP_SECRET)%'
 
     # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    session:
+        handler_id: '%env(REDIS_URL)%'
+        save_path: '%env(REDIS_URL)%'
 
     #esi: true
     #fragments: true

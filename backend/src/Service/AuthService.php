@@ -4,18 +4,25 @@ namespace App\Service;
 
 use App\Entity\User;
 use App\DTO\UserRegistrationDTO;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use App\Service\CacheService;
 
 class AuthService
 {
+    private const CACHE_TTL_USER_PROFILE = 3600; // 1 hour
+    private const CACHE_KEY_USER_PROFILE_PREFIX = 'user.profile.';
+
     public function __construct(
         private UserPasswordHasherInterface $passwordHasher,
         private EntityManagerInterface $entityManager,
-        private ValidatorInterface $validator
+        private ValidatorInterface $validator,
+        private CacheService $cacheService,
+        private UserRepository $userRepository
     ) {}
 
     public function validateUser(?User $user): void
@@ -70,6 +77,9 @@ class AuthService
 
     public function formatLoginResponse(User $user): array
     {
+        // Invalidate cache on login to ensure fresh data
+        $this->invalidateUserProfileCache($user);
+        
         return [
             'user' => $this->formatUserData($user),
             'message' => 'Login successful'
@@ -78,9 +88,13 @@ class AuthService
 
     public function formatUserProfileResponse(User $user): array
     {
-        $data = $this->formatUserData($user);
-        $data['createdAt'] = $user->getCreatedAt()->format('c');
-        return $data;
+        $cacheKey = self::CACHE_KEY_USER_PROFILE_PREFIX . $user->getId();
+        
+        return $this->cacheService->get($cacheKey, function() use ($user) {
+            $data = $this->formatUserData($user);
+            $data['createdAt'] = $user->getCreatedAt()->format('c');
+            return $data;
+        }, self::CACHE_TTL_USER_PROFILE);
     }
 
     public function formatRegistrationResponse(User $user): array
@@ -105,5 +119,37 @@ class AuthService
             'fullName' => $user->getFullName(),
             'roles' => $user->getRoles(),
         ];
+    }
+    
+    /**
+     * Find user by email with cache
+     */
+    public function findUserByEmail(string $email): ?User
+    {
+        $cacheKey = 'user.email.' . md5($email);
+        
+        return $this->cacheService->get($cacheKey, function() use ($email) {
+            return $this->userRepository->findByEmail($email);
+        }, self::CACHE_TTL_USER_PROFILE);
+    }
+    
+    /**
+     * Update user data and invalidate cache
+     */
+    public function updateUser(User $user): void
+    {
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
+        
+        $this->invalidateUserProfileCache($user);
+    }
+    
+    /**
+     * Invalidate user profile cache
+     */
+    private function invalidateUserProfileCache(User $user): void
+    {
+        $this->cacheService->delete(self::CACHE_KEY_USER_PROFILE_PREFIX . $user->getId());
+        $this->cacheService->delete('user.email.' . md5($user->getEmail()));
     }
 }

@@ -9,7 +9,9 @@ framework:
             sync: 'sync://'
             
             async:
-                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                dsn: '%env(REDIS_URL)%'
+                options:
+                    stream: 'async'
                 retry_strategy:
                     max_retries: 3
                     multiplier: 2
@@ -17,16 +19,16 @@ framework:
                     max_delay: 10000
                 
             high_priority:
-                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                dsn: '%env(REDIS_URL)%'
                 options:
-                    stream: high_priority
+                    stream: 'high_priority'
                 retry_strategy:
                     max_retries: 5
                     
             notifications:
-                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                dsn: '%env(REDIS_URL)%'
                 options:
-                    stream: notifications
+                    stream: 'notifications'
                 retry_strategy:
                     max_retries: 2
                     

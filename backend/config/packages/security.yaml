@@ -12,7 +12,7 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
-            
+
         api_login:
             pattern: ^/api/auth/login
             stateless: true
@@ -22,6 +22,12 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
+        admin:
+            pattern: ^/admin
+            provider: app_user_provider
+            custom_authenticator: App\Security\JwtAuthenticator
+            entry_point: App\Security\JwtAuthenticator
+
         api:
             pattern: ^/api
             stateless: true
@@ -30,15 +36,12 @@ security:
         main:
             lazy: true
             provider: app_user_provider
-            form_login:
-                login_path: login
-                check_path: login
-            logout:
-                path: logout
 
     access_control:
         - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+        - { path: ^/api/events, roles: PUBLIC_ACCESS }
+        - { path: ^/admin, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
     role_hierarchy:
