@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Service\CacheService;
 
 class AuthService
 {
@@ -77,7 +76,6 @@ class AuthService
 
     public function formatLoginResponse(User $user): array
     {
-        // Invalidate cache on login to ensure fresh data
         $this->invalidateUserProfileCache($user);
         
         return [
@@ -120,30 +118,7 @@ class AuthService
             'roles' => $user->getRoles(),
         ];
     }
-    
-    /**
-     * Find user by email with cache
-     */
-    public function findUserByEmail(string $email): ?User
-    {
-        $cacheKey = 'user.email.' . md5($email);
-        
-        return $this->cacheService->get($cacheKey, function() use ($email) {
-            return $this->userRepository->findByEmail($email);
-        }, self::CACHE_TTL_USER_PROFILE);
-    }
-    
-    /**
-     * Update user data and invalidate cache
-     */
-    public function updateUser(User $user): void
-    {
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-        
-        $this->invalidateUserProfileCache($user);
-    }
-    
+
     /**
      * Invalidate user profile cache
      */

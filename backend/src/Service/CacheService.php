@@ -10,7 +10,7 @@ use Psr\Log\LoggerInterface;
 class CacheService
 {
     private $cache;
-    private $redis; // Store raw Redis connection
+    private $redis;
     private $logger;
     private $isEnabled;
 
@@ -145,24 +145,4 @@ class CacheService
         return $this->isEnabled;
     }
 
-    /**
-     * Get cache statistics (if available)
-     *
-     * @return array
-     */
-    public function getStats(): array
-    {
-        if (!$this->isEnabled || !$this->redis) {
-            return [];
-        }
-
-        try {
-            return $this->redis->info();
-        } catch (\Exception $e) {
-            if ($this->logger) {
-                $this->logger->error('Cache stats error: ' . $e->getMessage());
-            }
-            return [];
-        }
-    }
 }

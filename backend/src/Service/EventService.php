@@ -8,7 +8,6 @@ use App\DTO\EventDTO;
 use App\Repository\EventRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Response;
-use App\Service\CacheService;
 
 class EventService
 {
@@ -52,14 +51,11 @@ class EventService
         return $this->cacheService->get($cacheKey, function() use ($eventId, $from, $to) {
             $event = $this->findEventOrFail($eventId);
 
-            // Convert date strings to DateTimeImmutable objects if provided
             $fromDate = $from ? new \DateTimeImmutable($from) : null;
             $toDate = $to ? new \DateTimeImmutable($to) : null;
 
-            // Get comprehensive statistics from repository
             $statistics = $this->eventRepository->getEventStatistics($event, $fromDate, $toDate);
 
-            // Calculate conversion rate (this business logic stays in service)
             $conversionRate = $this->calculateConversionRate($event, $fromDate, $toDate);
 
             return [
@@ -201,42 +197,11 @@ class EventService
         return 0.0;
     }
 
-    /**
-     * Helper method to get quick event revenue
-     */
-    public function getEventRevenue(string $eventId): float
-    {
-        $event = $this->findEventOrFail($eventId);
-        return $this->eventRepository->getTotalRevenue($event);
-    }
-
-    /**
-     * Helper method to get quick ticket sales count
-     */
-    public function getEventTicketsSold(string $eventId): int
-    {
-        $event = $this->findEventOrFail($eventId);
-        return $this->eventRepository->getTotalTicketsSold($event);
-    }
-
-    /**
-     * Get revenue breakdown by ticket type
-     */
-    public function getEventRevenueByType(string $eventId, ?string $from = null, ?string $to = null): array
-    {
-        $event = $this->findEventOrFail($eventId);
-        $fromDate = $from ? new \DateTimeImmutable($from) : null;
-        $toDate = $to ? new \DateTimeImmutable($to) : null;
-
-        return $this->eventRepository->getRevenueByTicketType($event, $fromDate, $toDate);
-    }
-
     private function invalidateEventCache(Event $event): void
     {
         $this->cacheService->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId());
         $this->cacheService->delete(self::CACHE_KEY_PUBLISHED_EVENTS);
 
-        // Invalidate statistics cache as well
         $pattern = self::CACHE_KEY_STATISTICS_PREFIX . $event->getId() . '_*';
         $this->cacheService->deletePattern($pattern);
     }

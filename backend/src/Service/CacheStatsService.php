@@ -41,30 +41,25 @@ class CacheStatsService
         }
 
         try {
-            // Get Redis INFO
             $info = $this->redis->info();
-            
-            // Calculate hit ratio
+
             $hits = (int)($info['keyspace_hits'] ?? 0);
             $misses = (int)($info['keyspace_misses'] ?? 0);
             $hitRatio = ($hits + $misses > 0) ? round($hits / ($hits + $misses) * 100, 2) : 0;
-            
-            // Get memory usage
+
             $usedMemory = (int)($info['used_memory'] ?? 0);
             $usedMemoryHuman = $info['used_memory_human'] ?? '0B';
             $maxMemory = (int)($info['maxmemory'] ?? 0);
             $maxMemoryHuman = $this->formatBytes($maxMemory);
             $memoryUsagePercent = ($maxMemory > 0) ? round(($usedMemory / $maxMemory) * 100, 2) : 0;
-            
-            // Get database stats
+
             $dbStats = [];
             foreach ($info as $key => $value) {
                 if (strpos($key, 'db') === 0) {
                     $dbStats[$key] = $value;
                 }
             }
-            
-            // Get key counts by pattern
+
             $keyPatterns = [
                 'events' => 'events.*',
                 'users' => 'user.*',
@@ -124,10 +119,8 @@ class CacheStatsService
         }
 
         try {
-            // Get key count before flush
             $beforeCount = $this->redis->dbSize();
-            
-            // Flush all
+
             $this->redis->flushAll();
             
             return [
@@ -160,8 +153,7 @@ class CacheStatsService
                 $ttl = $this->redis->ttl($key);
                 $type = $this->redis->type($key);
                 $size = 0;
-                
-                // Get size based on type
+
                 if ($type === 'string') {
                     $size = strlen($this->redis->get($key));
                 } elseif ($type === 'hash') {
@@ -196,9 +188,6 @@ class CacheStatsService
         }
     }
 
-    /**
-     * Format bytes to human readable format
-     */
     private function formatBytes(int $bytes, int $precision = 2): string
     {
         if ($bytes === 0) {
@@ -215,9 +204,6 @@ class CacheStatsService
         return round($bytes, $precision) . $units[$pow];
     }
 
-    /**
-     * Format seconds to human readable time
-     */
     private function formatTimeRemaining(int $seconds): string
     {
         if ($seconds < 60) {

@@ -137,14 +137,12 @@ class TicketService
     {
         $event = $ticket->getEvent();
         $user = $ticket->getUser();
-        
-        // Invalidate event statistics
+
         $this->cacheService->deletePattern(self::CACHE_KEY_EVENT_STATS_PREFIX . $event->getId() . '*');
         $this->cacheService->delete(self::CACHE_KEY_TOTAL_REVENUE_PREFIX . $event->getId());
         $this->cacheService->delete(self::CACHE_KEY_SALES_BY_TYPE_PREFIX . $event->getId());
         $this->cacheService->deletePattern(self::CACHE_KEY_SALES_TIMELINE_PREFIX . $event->getId() . '*');
-        
-        // Invalidate user tickets
+
         if ($user) {
             $this->cacheService->delete(self::CACHE_KEY_USER_TICKETS_PREFIX . $user->getId() . '.event.' . $event->getId());
         }
