@@ -62,7 +62,9 @@ export const EventDetailsPage: React.FC = () => {
                 <Badge size="lg" variant="light">
                   {event.status.toUpperCase()}
                 </Badge>
-                <Text c="dimmed">Organized by {event.organizer.fullName}</Text>
+                <Text c="dimmed">  Organized by {
+                  event.organizer?.fullName || 'Event Organizer'
+                }</Text>
               </Group>
             </div>
             {event.status === 'published' && event.availableTickets > 0 && (
@@ -177,13 +179,13 @@ export const EventDetailsPage: React.FC = () => {
                       <Group justify="space-between">
                         <Text size="sm">Total Revenue</Text>
                         <Text size="sm" fw={500}>
-                          ${(statistics.totalRevenue / 100).toFixed(2)}
+                          ${((statistics?.totalRevenue || 0) / 100).toFixed(2)}
                         </Text>
                       </Group>
                       <Group justify="space-between">
                         <Text size="sm">Conversion Rate</Text>
                         <Text size="sm" fw={500}>
-                          {statistics.conversionRate.toFixed(1)}%
+                          {(statistics?.conversionRate || 0).toFixed(1)}%
                         </Text>
                       </Group>
                     </Stack>

@@ -148,15 +148,15 @@ export const DashboardPage: React.FC = () => {
                     <SimpleGrid cols={3} spacing="md">
                       <div>
                         <Text size="sm" c="dimmed">Tickets Sold</Text>
-                        <Text fw={600} size="lg">{statistics.soldTickets}</Text>
+                        <Text fw={600} size="lg">{statistics?.soldTickets || 0}</Text>
                       </div>
                       <div>
                         <Text size="sm" c="dimmed">Revenue</Text>
-                        <Text fw={600} size="lg">${(statistics.totalRevenue / 100).toFixed(2)}</Text>
+                        <Text fw={600} size="lg">${((statistics?.totalRevenue || 0) / 100).toFixed(2)}</Text>
                       </div>
                       <div>
                         <Text size="sm" c="dimmed">Conversion Rate</Text>
-                        <Text fw={600} size="lg">{statistics.conversionRate.toFixed(1)}%</Text>
+                        <Text fw={600} size="lg">{(statistics?.conversionRate || 0).toFixed(1)}%</Text>
                       </div>
                     </SimpleGrid>
 
