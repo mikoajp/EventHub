@@ -1,13 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsApi } from '../api/events';
-import { type CreateEventData } from '../types';
+import { type CreateEventData, type Event, type EventsResponse } from '../types';
 import { notifications } from '@mantine/notifications';
 
 export const useEvents = () => {
-  return useQuery({
+  return useQuery<EventsResponse, Error, Event[]>({
     queryKey: ['events'],
     queryFn: eventsApi.getAll,
-    select: (data) => data['hydra:member'],
   });
 };
 

@@ -74,7 +74,7 @@ export const DashboardPage: React.FC = () => {
   const chartData = statistics?.salesTimeline?.map(item => ({
     date: format(new Date(item.saleDate), 'MMM dd'),
     sales: item.dailySales,
-    revenue: item.dailyRevenue / 100, // Convert cents to dollars
+    revenue: item.dailyRevenue / 100,
   })) || [];
 
   if (eventsLoading) {

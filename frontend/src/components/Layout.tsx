@@ -40,7 +40,7 @@ export const Layout: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   const isActive = (path: string) => location.pathname === path;
@@ -50,11 +50,13 @@ export const Layout: React.FC = () => {
     navigate('/login', { replace: true });
   };
 
+  const isOrganizer = user?.roles?.includes('ROLE_ORGANIZER') || 
+  user?.roles?.includes('ROLE_ADMIN') ||
+  user?.authorities?.some((a: { authority: string }) => 
+    a.authority === 'ROLE_ORGANIZER' || a.authority === 'ROLE_ADMIN');
+
   return (
-    <AppShell
-      header={{ height: 60 }}
-      padding="md"
-    >
+    <AppShell header={{ height: 60 }} padding="md">
       <AppShell.Header>
         <Group h="100%" px="md" justify="space-between">
           <Group>
@@ -96,7 +98,7 @@ export const Layout: React.FC = () => {
               My Tickets
             </Button>
 
-            {user?.roles.includes('ROLE_ORGANIZER') && (
+            {isOrganizer && (
               <>
                 <Button
                   variant={isActive('/create-event') ? 'filled' : 'light'}
@@ -122,6 +124,9 @@ export const Layout: React.FC = () => {
                   <Group gap="xs">
                     <Avatar size="sm" />
                     <Text size="sm">{user?.fullName || user?.firstName || 'User'}</Text>
+                    {isOrganizer && (
+                      <Text size="xs" c="dimmed">(Organizer)</Text>
+                    )}
                   </Group>
                 </UnstyledButton>
               </Menu.Target>

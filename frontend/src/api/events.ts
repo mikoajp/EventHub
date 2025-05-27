@@ -1,9 +1,9 @@
-import type { Event, CreateEventData, EventStatistics } from '../types';
+import type { Event, CreateEventData, EventStatistics, EventsResponse } from '../types';
 import { apiClient } from './client';
 
 export const eventsApi = {
-  getAll: (): Promise<{ 'hydra:member': Event[] }> =>
-    apiClient.get('/events'),
+  getAll: (): Promise<EventsResponse> =>
+      apiClient.get('/events'),
 
   getById: (id: string): Promise<Event> =>
     apiClient.get(`/events/${id}`),
