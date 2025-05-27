@@ -39,7 +39,6 @@ final readonly class PublishEventHandler
         $event->setStatus(Event::STATUS_PUBLISHED);
         $this->entityManager->flush();
 
-        // Dispatch domain event
         $this->eventBus->dispatch(new EventPublishedEvent(
             $event->getId()->toString(),
             new \DateTimeImmutable()

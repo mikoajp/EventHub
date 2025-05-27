@@ -67,10 +67,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read'])]
     private \DateTimeImmutable $createdAt;
 
-    #[ORM\OneToMany(mappedBy: 'organizer', targetEntity: Event::class)]
+    #[ORM\OneToMany(targetEntity: Event::class, mappedBy: 'organizer')]
     private Collection $organizedEvents;
 
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Ticket::class)]
+    #[ORM\OneToMany(targetEntity: Ticket::class, mappedBy: 'user')]
     private Collection $tickets;
 
     public function __construct()

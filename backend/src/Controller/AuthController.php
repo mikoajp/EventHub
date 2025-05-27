@@ -3,108 +3,56 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Service\AuthService;
+use App\Service\ErrorHandlerService;
+use App\DTO\UserRegistrationDTO;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/auth')]
 class AuthController extends AbstractController
 {
+    public function __construct(
+        private AuthService $authService,
+        private ErrorHandlerService $errorHandler
+    ) {}
+
     #[Route('/login', name: 'api_login', methods: ['POST'])]
     public function login(#[CurrentUser] ?User $user): JsonResponse
     {
-        if (!$user) {
-            return $this->json([
-                'message' => 'Missing credentials',
-            ], JsonResponse::HTTP_UNAUTHORIZED);
+        try {
+            $this->authService->validateUser($user);
+            return $this->json($this->authService->formatLoginResponse($user));
+        } catch (\Exception $e) {
+            return $this->errorHandler->createJsonResponse($e, 'Login failed');
         }
-
-        return $this->json([
-            'user' => [
-                'id' => $user->getId()->toString(),
-                'email' => $user->getEmail(),
-                'firstName' => $user->getFirstName(),
-                'lastName' => $user->getLastName(),
-                'fullName' => $user->getFullName(),
-                'roles' => $user->getRoles(),
-            ],
-            'message' => 'Login successful'
-        ]);
     }
 
     #[Route('/me', name: 'api_me', methods: ['GET'])]
     public function me(#[CurrentUser] ?User $user): JsonResponse
     {
-        if (!$user) {
-            return $this->json([
-                'message' => 'Not authenticated',
-            ], JsonResponse::HTTP_UNAUTHORIZED);
+        try {
+            $this->authService->validateUser($user);
+            return $this->json($this->authService->formatUserProfileResponse($user));
+        } catch (\Exception $e) {
+            return $this->errorHandler->createJsonResponse($e, 'Authentication check failed');
         }
-
-        return $this->json([
-            'id' => $user->getId()->toString(),
-            'email' => $user->getEmail(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
-            'fullName' => $user->getFullName(),
-            'roles' => $user->getRoles(),
-            'createdAt' => $user->getCreatedAt()->format('c'),
-        ]);
     }
 
     #[Route('/register', name: 'api_register', methods: ['POST'])]
-    public function register(
-        Request $request,
-        UserPasswordHasherInterface $passwordHasher,
-        EntityManagerInterface $entityManager,
-        ValidatorInterface $validator
-    ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
-
-        if (!$data) {
-            return $this->json(['message' => 'Invalid JSON'], JsonResponse::HTTP_BAD_REQUEST);
+    public function register(Request $request): JsonResponse
+    {
+        try {
+            $user = $this->authService->registerUserFromRequest($request);
+            return $this->json(
+                $this->authService->formatRegistrationResponse($user),
+                JsonResponse::HTTP_CREATED
+            );
+        } catch (\Exception $e) {
+            return $this->errorHandler->createJsonResponse($e, 'Registration failed');
         }
-
-        $user = new User();
-        $user->setEmail($data['email'] ?? '')
-             ->setFirstName($data['firstName'] ?? '')
-             ->setLastName($data['lastName'] ?? '')
-             ->setPhone($data['phone'] ?? null);
-
-        // Hash password
-        if (isset($data['password'])) {
-            $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
-            $user->setPassword($hashedPassword);
-        }
-
-        // Set default role
-        $user->setRoles(['ROLE_USER']);
-
-        // Validate
-        $errors = $validator->validate($user);
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
-            }
-            return $this->json(['errors' => $errorMessages], JsonResponse::HTTP_BAD_REQUEST);
-        }
-
-        $entityManager->persist($user);
-        $entityManager->flush();
-
-        return $this->json([
-            'message' => 'User registered successfully',
-            'user' => [
-                'id' => $user->getId()->toString(),
-                'email' => $user->getEmail(),
-                'fullName' => $user->getFullName(),
-            ]
-        ], JsonResponse::HTTP_CREATED);
     }
 }

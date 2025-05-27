@@ -54,8 +54,7 @@ final readonly class ProcessPaymentHandler
             if ($paymentResult->isSuccessful()) {
                 $ticket->markAsPurchased();
                 $this->entityManager->flush();
-
-                // Dispatch events
+                
                 $this->eventBus->dispatch(new PaymentProcessedEvent(
                     $paymentResult->getPaymentId(),
                     $command->ticketId,

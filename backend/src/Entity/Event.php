@@ -9,6 +9,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\EventRepository;
+use App\State\EventStateProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -23,9 +24,6 @@ use Symfony\Component\Validator\Constraints as Assert;
     operations: [
         new GetCollection(),
         new Get(),
-        new Post(
-            denormalizationContext: ['groups' => ['event:write'], 'skip_null_values' => true, 'ignored_attributes' => ['organizer']]
-        ),
         new Patch(),
         new Delete()
     ],
@@ -88,11 +86,11 @@ class Event
     #[Groups(['event:read'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: TicketType::class, cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: TicketType::class, mappedBy: 'event', cascade: ['persist', 'remove'])]
     #[Groups(['event:read'])]
     private Collection $ticketTypes;
 
-    #[ORM\OneToMany(mappedBy: 'event', targetEntity: Ticket::class)]
+    #[ORM\OneToMany(targetEntity: Ticket::class, mappedBy: 'event')]
     private Collection $tickets;
 
     public function __construct()

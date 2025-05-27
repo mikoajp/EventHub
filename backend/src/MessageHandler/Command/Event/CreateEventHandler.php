@@ -41,7 +41,6 @@ final readonly class CreateEventHandler
               ->setMaxTickets($command->maxTickets)
               ->setOrganizer($organizer);
 
-        // Create ticket types
         foreach ($command->ticketTypes as $ticketTypeData) {
             $ticketType = new TicketType();
             $ticketType->setName($ticketTypeData['name'])
@@ -55,7 +54,6 @@ final readonly class CreateEventHandler
         $this->entityManager->persist($event);
         $this->entityManager->flush();
 
-        // Dispatch domain event
         $this->eventBus->dispatch(new EventCreatedEvent(
             $event->getId()->toString(),
             $organizer->getId()->toString(),

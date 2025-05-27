@@ -12,6 +12,7 @@ use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TicketTypeRepository::class)]
+#[ORM\Table(name: "ticket_type")]
 class TicketType
 {
     #[ORM\Id]
@@ -24,17 +25,24 @@ class TicketType
     #[Groups(['event:read', 'ticket_type:write'])]
     private string $name;
 
-    #[ORM\Column]
+    #[ORM\Column(type: "decimal", precision: 10, scale: 2)]
     #[Assert\PositiveOrZero]
     #[Groups(['event:read', 'ticket_type:write'])]
-    private int $price;
+    private float $price;
 
-    #[ORM\Column]
+    #[ORM\Column(type: "integer")]
     #[Assert\Positive]
     #[Groups(['event:read', 'ticket_type:write'])]
     private int $quantity;
 
-    #[ORM\ManyToOne(inversedBy: 'ticketTypes')]
+    #[ORM\Column(type: "integer")]
+    #[Assert\PositiveOrZero]
+    private int $remainingQuantity;
+
+    #[ORM\Column(type: "datetime_immutable")]
+    private \DateTimeImmutable $createdAt;
+
+    #[ORM\ManyToOne(targetEntity: Event::class, inversedBy: 'ticketTypes')]
     #[ORM\JoinColumn(nullable: false)]
     private Event $event;
 
@@ -45,6 +53,8 @@ class TicketType
     {
         $this->id = Uuid::v4();
         $this->tickets = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable();
+        $this->remainingQuantity = 0;
     }
 
     public function getId(): Uuid
@@ -63,12 +73,12 @@ class TicketType
         return $this;
     }
 
-    public function getPrice(): int
+    public function getPrice(): float
     {
         return $this->price;
     }
 
-    public function setPrice(int $price): static
+    public function setPrice(float $price): static
     {
         $this->price = $price;
         return $this;
@@ -82,6 +92,28 @@ class TicketType
     public function setQuantity(int $quantity): static
     {
         $this->quantity = $quantity;
+        return $this;
+    }
+
+    public function getRemainingQuantity(): int
+    {
+        return $this->remainingQuantity;
+    }
+
+    public function setRemainingQuantity(int $remainingQuantity): static
+    {
+        $this->remainingQuantity = $remainingQuantity;
+        return $this;
+    }
+
+    public function getCreatedAt(): \DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
         return $this;
     }
 
@@ -102,29 +134,14 @@ class TicketType
     }
 
     #[Groups(['event:read'])]
-    public function getAvailable(): int
+    public function getAvailableQuantity(): int
     {
-        $sold = $this->tickets->filter(fn(Ticket $ticket) => 
-            $ticket->getStatus() === Ticket::STATUS_PURCHASED
-        )->count();
-        
-        return $this->quantity - $sold;
+        return $this->remainingQuantity;
     }
 
     #[Groups(['event:read'])]
     public function getPriceFormatted(): string
     {
-        return number_format($this->price / 100, 2);
-    }
-
-    public function getAvailableQuantity(): int
-    {
-        $sold = 0;
-        foreach ($this->tickets as $ticket) {
-            if ($ticket->getStatus() === 'purchased') {
-            $sold++;
-         }
-    }
-     return $this->quantity - $sold;
+        return number_format($this->price, 2);
     }
 }

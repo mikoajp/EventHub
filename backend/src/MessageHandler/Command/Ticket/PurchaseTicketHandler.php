@@ -45,7 +45,6 @@ final readonly class PurchaseTicketHandler
                 throw new \InvalidArgumentException('Event is not published');
             }
 
-            // Check availability
             if (!$this->availabilityService->isAvailable($ticketType, $command->quantity)) {
                 throw new \InvalidArgumentException('Not enough tickets available');
             }
@@ -53,7 +52,6 @@ final readonly class PurchaseTicketHandler
             $tickets = [];
             $totalAmount = 0;
 
-            // Create tickets
             for ($i = 0; $i < $command->quantity; $i++) {
                 $ticket = new Ticket();
                 $ticket->setEvent($event)
@@ -72,7 +70,6 @@ final readonly class PurchaseTicketHandler
 
             $ticketIds = array_map(fn(Ticket $ticket) => $ticket->getId()->toString(), $tickets);
 
-            // Process payment for each ticket
             foreach ($tickets as $ticket) {
                 $this->commandBus->dispatch(new ProcessPaymentCommand(
                     $ticket->getId()->toString(),
@@ -80,7 +77,6 @@ final readonly class PurchaseTicketHandler
                     $ticket->getPrice()
                 ));
 
-                // Dispatch reservation event
                 $this->eventBus->dispatch(new TicketReservedEvent(
                     $ticket->getId()->toString(),
                     $event->getId()->toString(),
