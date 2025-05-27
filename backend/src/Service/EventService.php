@@ -14,8 +14,10 @@ class EventService
 {
     private const CACHE_TTL_PUBLISHED_EVENTS = 1800; // 30 minutes
     private const CACHE_TTL_SINGLE_EVENT = 3600; // 1 hour
+    private const CACHE_TTL_STATISTICS = 300; // 5 minutes for statistics
     private const CACHE_KEY_PUBLISHED_EVENTS = 'events.published';
     private const CACHE_KEY_EVENT_PREFIX = 'event.';
+    private const CACHE_KEY_STATISTICS_PREFIX = 'event.statistics.';
 
     public function __construct(
         private EventRepository $eventRepository,
@@ -33,14 +35,53 @@ class EventService
     public function findEventOrFail(string $id): Event
     {
         $cacheKey = self::CACHE_KEY_EVENT_PREFIX . $id;
-        
+
         return $this->cacheService->get($cacheKey, function() use ($id) {
-            $event = $this->eventRepository->find($id);
+            $event = $this->eventRepository->findByUuid($id);
             if (!$event) {
                 throw new \RuntimeException('Event not found', Response::HTTP_NOT_FOUND);
             }
             return $event;
         }, self::CACHE_TTL_SINGLE_EVENT);
+    }
+
+    public function getEventStatistics(string $eventId, ?string $from = null, ?string $to = null): array
+    {
+        $cacheKey = self::CACHE_KEY_STATISTICS_PREFIX . $eventId . '_' . ($from ?? '') . '_' . ($to ?? '');
+
+        return $this->cacheService->get($cacheKey, function() use ($eventId, $from, $to) {
+            $event = $this->findEventOrFail($eventId);
+
+            // Convert date strings to DateTimeImmutable objects if provided
+            $fromDate = $from ? new \DateTimeImmutable($from) : null;
+            $toDate = $to ? new \DateTimeImmutable($to) : null;
+
+            // Get comprehensive statistics from repository
+            $statistics = $this->eventRepository->getEventStatistics($event, $fromDate, $toDate);
+
+            // Calculate conversion rate (this business logic stays in service)
+            $conversionRate = $this->calculateConversionRate($event, $fromDate, $toDate);
+
+            return [
+                'eventId' => $eventId,
+                'period' => [
+                    'from' => $from,
+                    'to' => $to
+                ],
+                'summary' => [
+                    'totalTicketsSold' => $statistics['sold_tickets'],
+                    'totalRevenue' => $statistics['total_revenue'],
+                    'totalOrders' => $statistics['total_orders'],
+                    'averageOrderValue' => $statistics['average_order_value'],
+                    'conversionRate' => $conversionRate
+                ],
+                'ticketTypes' => $statistics['sales_by_type'],
+                'revenue' => $statistics['revenue_data'],
+                'orders' => $statistics['order_data'],
+                'dailyBreakdown' => $statistics['daily_breakdown'],
+                'generatedAt' => (new \DateTime())->format('c')
+            ];
+        }, self::CACHE_TTL_STATISTICS);
     }
 
     public function createEventFromDTO(EventDTO $eventDTO, User $user): Event
@@ -70,7 +111,7 @@ class EventService
 
         $event->setStatus('published');
         $this->entityManager->flush();
-        
+
         $this->invalidateEventCache($event);
     }
 
@@ -142,11 +183,61 @@ class EventService
             throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
         }
     }
-    
+
+    /**
+     * Business logic for calculating conversion rate
+     * This stays in service as it's business logic, not data access
+     */
+    private function calculateConversionRate(Event $event, ?\DateTimeImmutable $fromDate, ?\DateTimeImmutable $toDate): float
+    {
+        // This would require tracking page views or event views
+        // For now, return a placeholder or calculate based on available data
+
+        // Example: if we had view tracking, we could calculate:
+        // $views = $this->getEventViews($event, $fromDate, $toDate);
+        // $orders = $this->eventRepository->getOrderStatistics($event, $fromDate, $toDate);
+        // return $views > 0 ? ($orders['totalOrders'] / $views) * 100 : 0.0;
+
+        return 0.0;
+    }
+
+    /**
+     * Helper method to get quick event revenue
+     */
+    public function getEventRevenue(string $eventId): float
+    {
+        $event = $this->findEventOrFail($eventId);
+        return $this->eventRepository->getTotalRevenue($event);
+    }
+
+    /**
+     * Helper method to get quick ticket sales count
+     */
+    public function getEventTicketsSold(string $eventId): int
+    {
+        $event = $this->findEventOrFail($eventId);
+        return $this->eventRepository->getTotalTicketsSold($event);
+    }
+
+    /**
+     * Get revenue breakdown by ticket type
+     */
+    public function getEventRevenueByType(string $eventId, ?string $from = null, ?string $to = null): array
+    {
+        $event = $this->findEventOrFail($eventId);
+        $fromDate = $from ? new \DateTimeImmutable($from) : null;
+        $toDate = $to ? new \DateTimeImmutable($to) : null;
+
+        return $this->eventRepository->getRevenueByTicketType($event, $fromDate, $toDate);
+    }
+
     private function invalidateEventCache(Event $event): void
     {
         $this->cacheService->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId());
-        
         $this->cacheService->delete(self::CACHE_KEY_PUBLISHED_EVENTS);
+
+        // Invalidate statistics cache as well
+        $pattern = self::CACHE_KEY_STATISTICS_PREFIX . $event->getId() . '_*';
+        $this->cacheService->deletePattern($pattern);
     }
 }

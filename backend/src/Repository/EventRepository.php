@@ -214,32 +214,23 @@ class EventRepository extends ServiceEntityRepository
     }
 
     /**
-     * Get event statistics
+     * Get ticket sales statistics for an event
      *
-     * @param DateTimeImmutable|null $from Start date for filtering (optional)
-     * @param DateTimeImmutable|null $to End date for filtering (optional)
-     * @return array<string, mixed>
+     * @param Event $event
+     * @param DateTimeImmutable|null $from
+     * @param DateTimeImmutable|null $to
+     * @return array
      */
-    public function getEventStatistics(
-        Event              $event,
-        ?DateTimeImmutable $from = null,
-        ?DateTimeImmutable $to = null
-    ): array {
-        $qb = $this->createQueryBuilder('e')
-            ->select([
-                'COUNT(t.id) as sold_tickets',
-                'SUM(t.price) as total_revenue',
-                'tt.name as ticket_type_name',
-                'COUNT(t.id) as type_count',
-                'AVG(t.price) as avg_price'
-            ])
-            ->join('e.ticketTypes', 'tt')
-            ->join('tt.tickets', 't')
-            ->where('e.id = :event')
+    public function getTicketSalesStatistics(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('COUNT(t.id) as total, tt.name as ticketTypeName, tt.id as ticketTypeId')
+            ->from('App\Entity\Ticket', 't')
+            ->join('t.ticketType', 'tt')
+            ->where('t.event = :event')
             ->andWhere('t.status = :status')
-            ->setParameter('event', $event->getId())
-            ->setParameter('status', 'purchased')
-            ->groupBy('tt.id');
+            ->setParameter('event', $event)
+            ->setParameter('status', 'purchased');
 
         if ($from) {
             $qb->andWhere('t.purchasedAt >= :from')
@@ -251,29 +242,185 @@ class EventRepository extends ServiceEntityRepository
                 ->setParameter('to', $to);
         }
 
-        $results = $qb->getQuery()
+        $results = $qb->groupBy('tt.id')
+            ->getQuery()
             ->useQueryCache(true)
             ->getResult();
 
-        $salesByType = [];
-        $totalSold = 0;
-        $totalRevenue = 0;
+        $byType = [];
+        $total = 0;
 
         foreach ($results as $result) {
-            $salesByType[] = [
-                'ticket_type' => $result['ticket_type_name'] ?? '',
-                'count' => (int) ($result['type_count'] ?? 0),
-                'revenue' => (float) ($result['total_revenue'] ?? 0),
-                'avg_price' => (float) ($result['avg_price'] ?? 0)
+            $byType[] = [
+                'ticketTypeId' => $result['ticketTypeId'],
+                'name' => $result['ticketTypeName'],
+                'sold' => (int)$result['total']
             ];
-            $totalSold += (int) ($result['type_count'] ?? 0);
-            $totalRevenue += (float) ($result['total_reset'] ?? 0);
+            $total += (int)$result['total'];
         }
 
         return [
-            'sold_tickets' => $totalSold,
-            'total_revenue' => $totalRevenue,
-            'sales_by_type' => $salesByType
+            'total' => $total,
+            'byType' => $byType
+        ];
+    }
+
+    /**
+     * Get revenue statistics for an event
+     *
+     * @param Event $event
+     * @param DateTimeImmutable|null $from
+     * @param DateTimeImmutable|null $to
+     * @return array
+     */
+    public function getRevenueStatistics(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('SUM(t.price) as totalRevenue, COUNT(t.id) as ticketCount')
+            ->from('App\Entity\Ticket', 't')
+            ->where('t.event = :event')
+            ->andWhere('t.status = :status')
+            ->setParameter('event', $event)
+            ->setParameter('status', 'purchased');
+
+        if ($from) {
+            $qb->andWhere('t.purchasedAt >= :from')
+                ->setParameter('from', $from);
+        }
+
+        if ($to) {
+            $qb->andWhere('t.purchasedAt <= :to')
+                ->setParameter('to', $to);
+        }
+
+        $result = $qb->getQuery()
+            ->useQueryCache(true)
+            ->getSingleResult();
+
+        return [
+            'total' => (float)($result['totalRevenue'] ?? 0),
+            'totalFormatted' => number_format(($result['totalRevenue'] ?? 0) / 100, 2),
+            'ticketCount' => (int)($result['ticketCount'] ?? 0)
+        ];
+    }
+
+    /**
+     * Get order statistics for an event (simulated from tickets)
+     *
+     * @param Event $event
+     * @param DateTimeImmutable|null $from
+     * @param DateTimeImmutable|null $to
+     * @return array
+     */
+    public function getOrderStatistics(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
+    {
+        // Since we don't have orders, we'll treat each ticket as a separate "order"
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('COUNT(t.id) as totalTickets, AVG(t.price) as avgTicketPrice')
+            ->from('App\Entity\Ticket', 't')
+            ->where('t.event = :event')
+            ->andWhere('t.status = :status')
+            ->setParameter('event', $event)
+            ->setParameter('status', 'purchased');
+
+        if ($from) {
+            $qb->andWhere('t.purchasedAt >= :from')
+                ->setParameter('from', $from);
+        }
+
+        if ($to) {
+            $qb->andWhere('t.purchasedAt <= :to')
+                ->setParameter('to', $to);
+        }
+
+        $result = $qb->getQuery()
+            ->useQueryCache(true)
+            ->getSingleResult();
+
+        return [
+            'totalOrders' => (int)($result['totalTickets'] ?? 0), // treating each ticket as an order
+            'avgOrderValue' => (float)($result['avgTicketPrice'] ?? 0),
+            'avgOrderValueFormatted' => number_format(($result['avgTicketPrice'] ?? 0) / 100, 2)
+        ];
+    }
+
+    /**
+     * Get daily statistics for an event
+     *
+     * @param Event $event
+     * @param DateTimeImmutable|null $from
+     * @param DateTimeImmutable|null $to
+     * @return array
+     */
+    public function getDailyStatistics(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
+    {
+        $sql = "
+            SELECT DATE(t.purchased_at) as date, COUNT(t.id) as tickets, SUM(t.price) as revenue
+            FROM ticket t
+            WHERE t.event_id = :event_id 
+            AND t.status = :status
+            AND t.purchased_at IS NOT NULL
+        ";
+
+        $params = [
+            'event_id' => $event->getId()->toString(),
+            'status' => 'purchased'
+        ];
+
+        if ($from) {
+            $sql .= " AND t.purchased_at >= :from";
+            $params['from'] = $from->format('Y-m-d H:i:s');
+        }
+
+        if ($to) {
+            $sql .= " AND t.purchased_at <= :to";
+            $params['to'] = $to->format('Y-m-d H:i:s');
+        }
+
+        $sql .= " GROUP BY DATE(t.purchased_at) ORDER BY DATE(t.purchased_at) ASC";
+
+        $connection = $this->getEntityManager()->getConnection();
+        $result = $connection->executeQuery($sql, $params);
+        $results = $result->fetchAllAssociative();
+
+        return array_map(function($result) {
+            return [
+                'date' => $result['date'],
+                'orders' => (int)$result['tickets'], // tickets as orders
+                'revenue' => (float)$result['revenue'],
+                'revenueFormatted' => number_format($result['revenue'] / 100, 2)
+            ];
+        }, $results);
+    }
+
+    /**
+     * Get comprehensive event statistics
+     *
+     * @param Event $event
+     * @param DateTimeImmutable|null $from Start date for filtering (optional)
+     * @param DateTimeImmutable|null $to End date for filtering (optional)
+     * @return array<string, mixed>
+     */
+    public function getEventStatistics(
+        Event              $event,
+        ?DateTimeImmutable $from = null,
+        ?DateTimeImmutable $to = null
+    ): array {
+        // Get all statistics using the specialized methods
+        $ticketSalesData = $this->getTicketSalesStatistics($event, $from, $to);
+        $revenueData = $this->getRevenueStatistics($event, $from, $to);
+        $orderStats = $this->getOrderStatistics($event, $from, $to);
+        $dailyStats = $this->getDailyStatistics($event, $from, $to);
+
+        return [
+            'sold_tickets' => $ticketSalesData['total'],
+            'total_revenue' => $revenueData['total'],
+            'total_orders' => $orderStats['totalOrders'],
+            'average_order_value' => $orderStats['avgOrderValue'],
+            'sales_by_type' => $ticketSalesData['byType'],
+            'daily_breakdown' => $dailyStats,
+            'revenue_data' => $revenueData,
+            'order_data' => $orderStats
         ];
     }
 
@@ -285,18 +432,84 @@ class EventRepository extends ServiceEntityRepository
      */
     public function getTotalRevenue(Event $event): float
     {
-        $result = $this->createQueryBuilder('e')
+        $result = $this->getEntityManager()->createQueryBuilder()
             ->select('SUM(t.price) as total_revenue')
-            ->join('e.ticketTypes', 'tt')
-            ->join('tt.tickets', 't')
-            ->where('e.id = :event')
+            ->from('App\Entity\Ticket', 't')
+            ->where('t.event = :event')
             ->andWhere('t.status = :status')
-            ->setParameter('event', $event->getId())
+            ->setParameter('event', $event)
             ->setParameter('status', 'purchased')
             ->getQuery()
             ->useQueryCache(true)
             ->getSingleScalarResult();
 
         return (float) ($result ?: 0);
+    }
+
+    /**
+     * Get total tickets sold for an event
+     *
+     * @param Event $event
+     * @return int
+     */
+    public function getTotalTicketsSold(Event $event): int
+    {
+        $result = $this->getEntityManager()->createQueryBuilder()
+            ->select('COUNT(t.id) as total_sold')
+            ->from('App\Entity\Ticket', 't')
+            ->where('t.event = :event')
+            ->andWhere('t.status = :status')
+            ->setParameter('event', $event)
+            ->setParameter('status', 'purchased')
+            ->getQuery()
+            ->useQueryCache(true)
+            ->getSingleScalarResult();
+
+        return (int) ($result ?: 0);
+    }
+
+    /**
+     * Get revenue by ticket type for an event
+     *
+     * @param Event $event
+     * @param DateTimeImmutable|null $from
+     * @param DateTimeImmutable|null $to
+     * @return array
+     */
+    public function getRevenueByTicketType(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder()
+            ->select('tt.name as ticketTypeName, AVG(t.price) as avgPrice, COUNT(t.id) as soldCount, SUM(t.price) as totalRevenue')
+            ->from('App\Entity\Ticket', 't')
+            ->join('t.ticketType', 'tt')
+            ->where('t.event = :event')
+            ->andWhere('t.status = :status')
+            ->setParameter('event', $event)
+            ->setParameter('status', 'purchased');
+
+        if ($from) {
+            $qb->andWhere('t.purchasedAt >= :from')
+                ->setParameter('from', $from);
+        }
+
+        if ($to) {
+            $qb->andWhere('t.purchasedAt <= :to')
+                ->setParameter('to', $to);
+        }
+
+        $results = $qb->groupBy('tt.id')
+            ->getQuery()
+            ->useQueryCache(true)
+            ->getResult();
+
+        return array_map(function($result) {
+            return [
+                'ticket_type' => $result['ticketTypeName'],
+                'avg_price' => (float)$result['avgPrice'],
+                'sold_count' => (int)$result['soldCount'],
+                'total_revenue' => (float)$result['totalRevenue'],
+                'revenue_formatted' => number_format($result['totalRevenue'] / 100, 2)
+            ];
+        }, $results);
     }
 }

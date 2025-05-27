@@ -79,4 +79,31 @@ class EventController extends AbstractController
             return $this->errorHandler->createJsonResponse($e, 'Failed to publish event');
         }
     }
+
+    #[Route('/{id}/statistics', name: 'api_events_statistics', methods: ['GET'])]
+    #[IsGranted('ROLE_ORGANIZER')]
+    public function statistics(
+        string $id,
+        Request $request,
+        #[CurrentUser] ?User $user
+    ): JsonResponse {
+        try {
+            $this->eventService->validateUser($user);
+
+            $event = $this->eventService->findEventOrFail($id);
+
+            if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
+                throw new \RuntimeException('Access denied', Response::HTTP_FORBIDDEN);
+            }
+
+            $from = $request->query->get('from');
+            $to = $request->query->get('to');
+
+            $statistics = $this->eventService->getEventStatistics($id, $from, $to);
+
+            return $this->json($statistics);
+        } catch (\Exception $e) {
+            return $this->errorHandler->createJsonResponse($e, 'Failed to fetch event statistics');
+        }
+    }
 }
