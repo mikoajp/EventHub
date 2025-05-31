@@ -15,6 +15,9 @@ import {
   Table,
   Progress,
   Badge,
+  rem,
+  Paper,
+  Box,
 } from '@mantine/core';
 import {
   IconEye,
@@ -23,8 +26,13 @@ import {
   IconCalendar,
   IconTicket,
   IconCurrency,
+  IconPlus,
+  IconDownload,
+  IconReport,
+  IconClock,
+  IconFlame,
 } from '@tabler/icons-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area } from 'recharts';
 import { format } from 'date-fns';
 import { useEvents, usePublishEvent, useEventStatistics } from '../hooks/useEvents';
 
@@ -33,19 +41,37 @@ const StatCard: React.FC<{
   value: string | number;
   icon: React.ReactNode;
   color?: string;
-}> = ({ title, value, icon, color = 'blue' }) => (
-    <Card withBorder padding="lg">
-      <Group justify="space-between">
+  trend?: 'up' | 'down' | 'neutral';
+}> = ({ title, value, icon, color = 'blue', trend }) => (
+    <Card withBorder p="lg" radius="lg" shadow="sm" style={{ height: '100%' }}>
+      <Group justify="space-between" align="flex-start">
         <div>
           <Text c="dimmed" size="sm" fw={500} tt="uppercase">
             {title}
           </Text>
-          <Text fw={700} size="xl">
+          <Text fw={700} size={rem(28)} mt={4}>
             {value}
           </Text>
         </div>
-        <div style={{ color }}>{icon}</div>
+        <Box
+            p={10}
+            style={{
+              backgroundColor: `var(--mantine-color-${color}-light)`,
+              borderRadius: 'var(--mantine-radius-md)',
+              color: `var(--mantine-color-${color}-7)`,
+            }}
+        >
+          {icon}
+        </Box>
       </Group>
+      {trend && (
+          <Text size="sm" mt="sm" c={trend === 'up' ? 'teal' : trend === 'down' ? 'red' : 'dimmed'}>
+            <Group gap={4}>
+              {trend === 'up' ? '↑' : trend === 'down' ? '↓' : '→'}
+              {trend === 'up' ? '12% increase' : trend === 'down' ? '5% decrease' : 'No change'}
+            </Group>
+          </Text>
+      )}
     </Card>
 );
 
@@ -62,7 +88,6 @@ export const DashboardPage: React.FC = () => {
   );
 
   const myEvents = allEvents || [];
-
   const draftEvents = myEvents.filter(e => e.status === 'draft');
   const publishedEvents = myEvents.filter(e => e.status === 'published');
   const totalTicketsSold = myEvents.reduce((sum, event) => sum + event.ticketsSold, 0);
@@ -88,55 +113,82 @@ export const DashboardPage: React.FC = () => {
   if (eventsLoading) {
     return (
         <Center h={400}>
-          <Loader size="lg" />
+          <Loader size="lg" type="dots" />
         </Center>
     );
   }
 
   return (
-      <Container size="xl">
+      <Container size="xl" py="xl">
         <Stack gap="xl">
-          <div>
-            <Title order={1} mb="md">Dashboard</Title>
-            <Text c="dimmed">Manage your events and view analytics</Text>
-          </div>
+          {/* Header */}
+          <Group justify="space-between" align="flex-end">
+            <div>
+              <Title order={1} style={{ fontSize: rem(36) }} mb="xs">
+                Event Dashboard
+              </Title>
+              <Text size="lg" c="dimmed">
+                Manage your events and track performance
+              </Text>
+            </div>
+            <Button
+                size="lg"
+                radius="md"
+                leftSection={<IconPlus size={20} />}
+                onClick={() => window.location.href = '/create-event'}
+            >
+              New Event
+            </Button>
+          </Group>
 
           {/* Overview Stats */}
-          <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="lg">
+          <SimpleGrid cols={{ base: 1, sm: 2, lg: 4 }} spacing="lg">
             <StatCard
                 title="Total Events"
                 value={myEvents.length}
                 icon={<IconCalendar size={24} />}
                 color="blue"
+                trend="up"
             />
             <StatCard
-                title="Published Events"
+                title="Published"
                 value={publishedEvents.length}
                 icon={<IconEye size={24} />}
                 color="green"
+                trend="up"
             />
             <StatCard
                 title="Tickets Sold"
                 value={totalTicketsSold}
                 icon={<IconTicket size={24} />}
                 color="orange"
+                trend="up"
             />
             <StatCard
                 title="Total Revenue"
                 value={`$${(totalRevenue / 100).toFixed(2)}`}
                 icon={<IconCurrency size={24} />}
                 color="teal"
+                trend="up"
             />
           </SimpleGrid>
 
-          <Grid>
+          <Grid gutter="xl">
             <Grid.Col span={{ base: 12, lg: 8 }}>
               <Stack gap="lg">
                 {/* Event Analytics */}
-                <Card withBorder padding="lg">
-                  <Group justify="space-between" mb="md">
-                    <Group>
-                      <IconChartBar size={20} />
+                <Card withBorder p="lg" radius="lg" shadow="sm">
+                  <Group justify="space-between" mb="xl">
+                    <Group gap="sm">
+                      <Box
+                          p={8}
+                          style={{
+                            background: 'var(--mantine-color-blue-light)',
+                            borderRadius: 'var(--mantine-radius-md)',
+                          }}
+                      >
+                        <IconChartBar size={20} color="var(--mantine-color-blue-7)" />
+                      </Box>
                       <Title order={3}>Event Analytics</Title>
                     </Group>
                     <Select
@@ -147,24 +199,26 @@ export const DashboardPage: React.FC = () => {
                         }))}
                         value={selectedEventId}
                         onChange={(value) => setSelectedEventId(value || '')}
-                        style={{ minWidth: 200 }}
+                        style={{ minWidth: 250 }}
+                        radius="md"
+                        size="sm"
                     />
                   </Group>
 
                   {selectedEventId && !statsLoading && statistics ? (
-                      <Stack gap="md">
+                      <Stack gap="xl">
                         <SimpleGrid cols={3} spacing="md">
                           <div>
                             <Text size="sm" c="dimmed">Tickets Sold</Text>
-                            <Text fw={600} size="lg">{statistics?.soldTickets || 0}</Text>
+                            <Text fw={700} size={rem(24)}>{statistics?.soldTickets || 0}</Text>
                           </div>
                           <div>
                             <Text size="sm" c="dimmed">Revenue</Text>
-                            <Text fw={600} size="lg">${((statistics?.totalRevenue || 0) / 100).toFixed(2)}</Text>
+                            <Text fw={700} size={rem(24)}>${((statistics?.totalRevenue || 0) / 100).toFixed(2)}</Text>
                           </div>
                           <div>
-                            <Text size="sm" c="dimmed">Conversion Rate</Text>
-                            <Text fw={600} size="lg">{(statistics?.conversionRate || 0).toFixed(1)}%</Text>
+                            <Text size="sm" c="dimmed">Conversion</Text>
+                            <Text fw={700} size={rem(24)}>{(statistics?.conversionRate || 0).toFixed(1)}%</Text>
                           </div>
                         </SimpleGrid>
 
@@ -172,14 +226,20 @@ export const DashboardPage: React.FC = () => {
                             <div style={{ height: 300 }}>
                               <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={chartData}>
-                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                   <XAxis dataKey="date" />
                                   <YAxis />
-                                  <Tooltip />
-                                  <Line
+                                  <Tooltip
+                                      contentStyle={{
+                                        borderRadius: 'var(--mantine-radius-md)',
+                                        boxShadow: 'var(--mantine-shadow-md)',
+                                      }}
+                                  />
+                                  <Area
                                       type="monotone"
                                       dataKey="sales"
-                                      stroke="#8884d8"
+                                      stroke="#4d6ef7"
+                                      fill="#e6ecfe"
                                       strokeWidth={2}
                                       name="Daily Sales"
                                   />
@@ -193,98 +253,124 @@ export const DashboardPage: React.FC = () => {
                         <Loader />
                       </Center>
                   ) : (
-                      <Center h={200}>
-                        <Text c="dimmed">Select an event to view analytics</Text>
+                      <Center h={200} bg="var(--mantine-color-gray-0)" style={{ borderRadius: 'var(--mantine-radius-md)' }}>
+                        <Stack align="center" gap="xs">
+                          <IconChartBar size={32} color="var(--mantine-color-gray-5)" />
+                          <Text c="dimmed">Select an event to view analytics</Text>
+                        </Stack>
                       </Center>
                   )}
                 </Card>
 
                 {/* My Events List */}
-                <Card withBorder padding="lg">
-                  <Title order={3} mb="md">My Events</Title>
+                <Card withBorder p={0} radius="lg" shadow="sm">
+                  <Group p="lg" justify="space-between">
+                    <Title order={3}>My Events</Title>
+                    <Button variant="subtle" size="sm">
+                      View All
+                    </Button>
+                  </Group>
+
                   {myEvents.length === 0 ? (
                       <Center h={200}>
                         <Stack align="center" gap="md">
                           <Text c="dimmed">No events created yet</Text>
-                          <Button onClick={() => window.location.href = '/create-event'}>
+                          <Button
+                              onClick={() => window.location.href = '/create-event'}
+                              leftSection={<IconPlus size={16} />}
+                          >
                             Create Your First Event
                           </Button>
                         </Stack>
                       </Center>
                   ) : (
-                      <Table>
-                        <Table.Thead>
-                          <Table.Tr>
-                            <Table.Th>Event Name</Table.Th>
-                            <Table.Th>Date</Table.Th>
-                            <Table.Th>Status</Table.Th>
-                            <Table.Th>Sold</Table.Th>
-                            <Table.Th>Actions</Table.Th>
-                          </Table.Tr>
-                        </Table.Thead>
-                        <Table.Tbody>
-                          {myEvents.map((event) => (
-                              <Table.Tr key={event.id}>
-                                <Table.Td>
-                                  <Text fw={500}>{event.name}</Text>
-                                  <Text size="sm" c="dimmed">{event.venue}</Text>
-                                </Table.Td>
-                                <Table.Td>
-                                  {format(new Date(event.eventDate), 'MMM dd, yyyy')}
-                                </Table.Td>
-                                <Table.Td>
-                                  <Badge variant="light" color={
-                                    event.status === 'published' ? 'green' :
-                                        event.status === 'draft' ? 'yellow' : 'red'
-                                  }>
-                                    {event.status}
-                                  </Badge>
-                                </Table.Td>
-                                <Table.Td>
-                                  <Stack gap={4}>
-                                    <Text size="sm">
-                                      {event.ticketsSold} / {event.maxTickets}
-                                    </Text>
-                                    <Progress
-                                        value={(event.ticketsSold / event.maxTickets) * 100}
-                                        size="xs"
-                                    />
-                                  </Stack>
-                                </Table.Td>
-                                <Table.Td>
-                                  <Group gap="xs">
-                                    <Button
-                                        size="xs"
+                      <Table.ScrollContainer minWidth={800}>
+                        <Table verticalSpacing="md" highlightOnHover>
+                          <Table.Thead>
+                            <Table.Tr>
+                              <Table.Th>Event</Table.Th>
+                              <Table.Th>Date</Table.Th>
+                              <Table.Th>Status</Table.Th>
+                              <Table.Th>Sales</Table.Th>
+                              <Table.Th>Actions</Table.Th>
+                            </Table.Tr>
+                          </Table.Thead>
+                          <Table.Tbody>
+                            {myEvents.map((event) => (
+                                <Table.Tr key={event.id}>
+                                  <Table.Td>
+                                    <Text fw={600}>{event.name}</Text>
+                                    <Text size="sm" c="dimmed">{event.venue}</Text>
+                                  </Table.Td>
+                                  <Table.Td>
+                                    <Text size="sm">{format(new Date(event.eventDate), 'MMM dd, yyyy')}</Text>
+                                    <Text size="xs" c="dimmed">{format(new Date(event.eventDate), 'h:mm a')}</Text>
+                                  </Table.Td>
+                                  <Table.Td>
+                                    <Badge
                                         variant="light"
-                                        leftSection={<IconEye size={14} />}
-                                        onClick={() => window.location.href = `/events/${event.id}`}
+                                        color={
+                                          event.status === 'published' ? 'green' :
+                                              event.status === 'draft' ? 'yellow' : 'red'
+                                        }
+                                        radius="sm"
+                                        size="md"
                                     >
-                                      View
-                                    </Button>
-                                    {event.status === 'draft' && (
-                                        <Button
-                                            size="xs"
-                                            variant="light"
-                                            color="green"
-                                            onClick={() => handlePublishEvent(event.id)}
-                                            loading={publishingEventId === event.id}
-                                        >
-                                          Publish
-                                        </Button>
-                                    )}
-                                    <Button
-                                        size="xs"
-                                        variant="light"
-                                        leftSection={<IconEdit size={14} />}
-                                    >
-                                      Edit
-                                    </Button>
-                                  </Group>
-                                </Table.Td>
-                              </Table.Tr>
-                          ))}
-                        </Table.Tbody>
-                      </Table>
+                                      {event.status}
+                                    </Badge>
+                                  </Table.Td>
+                                  <Table.Td>
+                                    <Stack gap={4}>
+                                      <Text size="sm">
+                                        {event.ticketsSold} / {event.maxTickets}
+                                      </Text>
+                                      <Progress
+                                          value={(event.ticketsSold / event.maxTickets) * 100}
+                                          size="sm"
+                                          radius="xl"
+                                          color={
+                                            (event.ticketsSold / event.maxTickets) > 0.8 ? 'red' :
+                                                (event.ticketsSold / event.maxTickets) > 0.5 ? 'yellow' : 'green'
+                                          }
+                                      />
+                                    </Stack>
+                                  </Table.Td>
+                                  <Table.Td>
+                                    <Group gap="xs" wrap="nowrap">
+                                      <Button
+                                          size="xs"
+                                          variant="subtle"
+                                          leftSection={<IconEye size={14} />}
+                                          onClick={() => window.location.href = `/events/${event.id}`}
+                                      >
+                                        View
+                                      </Button>
+                                      {event.status === 'draft' && (
+                                          <Button
+                                              size="xs"
+                                              variant="subtle"
+                                              color="green"
+                                              leftSection={<IconFlame size={14} />}
+                                              onClick={() => handlePublishEvent(event.id)}
+                                              loading={publishingEventId === event.id}
+                                          >
+                                            Publish
+                                          </Button>
+                                      )}
+                                      <Button
+                                          size="xs"
+                                          variant="subtle"
+                                          leftSection={<IconEdit size={14} />}
+                                      >
+                                        Edit
+                                      </Button>
+                                    </Group>
+                                  </Table.Td>
+                                </Table.Tr>
+                            ))}
+                          </Table.Tbody>
+                        </Table>
+                      </Table.ScrollContainer>
                   )}
                 </Card>
               </Stack>
@@ -293,54 +379,75 @@ export const DashboardPage: React.FC = () => {
             <Grid.Col span={{ base: 12, lg: 4 }}>
               <Stack gap="lg">
                 {/* Quick Actions */}
-                <Card withBorder padding="lg">
-                  <Title order={4} mb="md">Quick Actions</Title>
+                <Card withBorder p="lg" radius="lg" shadow="sm">
+                  <Title order={4} mb="lg">Quick Actions</Title>
                   <Stack gap="sm">
                     <Button
                         fullWidth
+                        variant="light"
+                        size="md"
+                        leftSection={<IconPlus size={18} />}
                         onClick={() => window.location.href = '/create-event'}
                     >
-                      Create New Event
+                      Create Event
                     </Button>
-                    <Button variant="light" fullWidth>
+                    <Button
+                        fullWidth
+                        variant="light"
+                        size="md"
+                        leftSection={<IconDownload size={18} />}
+                    >
                       Export Data
                     </Button>
-                    <Button variant="light" fullWidth>
-                      View Reports
+                    <Button
+                        fullWidth
+                        variant="light"
+                        size="md"
+                        leftSection={<IconReport size={18} />}
+                    >
+                      Generate Report
                     </Button>
                   </Stack>
                 </Card>
 
                 {/* Recent Activity */}
-                <Card withBorder padding="lg">
-                  <Title order={4} mb="md">Recent Activity</Title>
+                <Card withBorder p="lg" radius="lg" shadow="sm">
+                  <Group justify="space-between" mb="md">
+                    <Title order={4}>Recent Activity</Title>
+                    <IconClock size={20} color="var(--mantine-color-gray-5)" />
+                  </Group>
                   <Stack gap="sm">
-                    <Text size="sm" c="dimmed">
-                      • 5 tickets sold for "Summer Music Festival"
-                    </Text>
-                    <Text size="sm" c="dimmed">
-                      • "Tech Conference 2024" published
-                    </Text>
-                    <Text size="sm" c="dimmed">
-                      • Payment processed for $150.00
-                    </Text>
-                    <Text size="sm" c="dimmed">
-                      • New user registered
-                    </Text>
+                    {[
+                      { id: 1, text: '5 tickets sold for "Summer Music Festival"', time: '2 hours ago' },
+                      { id: 2, text: '"Tech Conference 2024" published', time: '1 day ago' },
+                      { id: 3, text: 'Payment processed for $150.00', time: '2 days ago' },
+                      { id: 4, text: 'New user registered', time: '3 days ago' },
+                    ].map((activity) => (
+                        <Paper key={activity.id} p="sm" withBorder radius="md">
+                          <Text size="sm">{activity.text}</Text>
+                          <Text size="xs" c="dimmed" mt={4}>{activity.time}</Text>
+                        </Paper>
+                    ))}
                   </Stack>
                 </Card>
 
                 {/* Draft Events */}
                 {draftEvents.length > 0 && (
-                    <Card withBorder padding="lg">
-                      <Title order={4} mb="md">Draft Events</Title>
+                    <Card withBorder p="lg" radius="lg" shadow="sm">
+                      <Group justify="space-between" mb="md">
+                        <Title order={4}>Drafts ({draftEvents.length})</Title>
+                        <Badge variant="light" color="yellow">
+                          Needs Attention
+                        </Badge>
+                      </Group>
                       <Stack gap="sm">
                         {draftEvents.slice(0, 3).map((event) => (
-                            <Group key={event.id} justify="space-between">
-                              <Text size="sm" lineClamp={1}>{event.name}</Text>
+                            <Group key={event.id} justify="space-between" wrap="nowrap">
+                              <Text size="sm" lineClamp={1} style={{ flex: 1 }}>{event.name}</Text>
                               <Button
                                   size="xs"
                                   variant="light"
+                                  color="green"
                                   onClick={() => handlePublishEvent(event.id)}
                                   loading={publishingEventId === event.id}
                               >
@@ -348,6 +455,11 @@ export const DashboardPage: React.FC = () => {
                               </Button>
                             </Group>
                         ))}
+                        {draftEvents.length > 3 && (
+                            <Button variant="subtle" size="sm" mt="sm">
+                              View All Drafts
+                            </Button>
+                        )}
                       </Stack>
                     </Card>
                 )}

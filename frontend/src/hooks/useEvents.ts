@@ -15,8 +15,13 @@ export const useEvent = (id: string) => {
     queryKey: ['events', id],
     queryFn: () => eventsApi.getById(id),
     enabled: !!id,
+    refetchInterval: 30000,
+    staleTime: 15000,
+    refetchOnWindowFocus: true,
+    retry: 3,
   });
 };
+
 
 export const useCreateEvent = () => {
   const queryClient = useQueryClient();
@@ -40,6 +45,7 @@ export const useCreateEvent = () => {
     },
   });
 };
+
 
 export const usePublishEvent = () => {
   const queryClient = useQueryClient();
@@ -70,6 +76,6 @@ export const useEventStatistics = (id: string, from?: string, to?: string) => {
     queryKey: ['events', id, 'statistics', from, to],
     queryFn: () => eventsApi.getStatistics(id, from, to),
     enabled: !!id,
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 };

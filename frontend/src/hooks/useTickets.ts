@@ -40,6 +40,6 @@ export const useTicketAvailability = (eventId: string, ticketTypeId: string, qua
     queryKey: ['tickets', 'availability', eventId, ticketTypeId, quantity],
     queryFn: () => ticketsApi.checkAvailability(eventId, ticketTypeId, quantity),
     enabled: !!eventId && !!ticketTypeId && quantity > 0,
-    refetchInterval: 10000, // Check availability every 10 seconds
+    refetchInterval: 10000,
   });
 };
