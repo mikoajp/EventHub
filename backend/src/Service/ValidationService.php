@@ -7,7 +7,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-class ValidationService
+readonly class ValidationService
 {
     public function __construct(
         private ValidatorInterface $validator

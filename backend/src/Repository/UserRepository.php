@@ -5,45 +5,14 @@ namespace App\Repository;
 use App\Entity\User;
 use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
 use Exception;
-use Symfony\Component\Uid\Uuid;
 
-/**
- * @extends ServiceEntityRepository<User>
- */
 class UserRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, User::class);
-    }
-
-    /**
-     * Find a user by their UUID (string or Uuid object)
-     *
-     * @param Uuid|string $id The UUID of the user
-     * @param null $lockMode
-     * @param null $lockVersion
-     * @return User|null
-     */
-    public function findByUuid($id, $lockMode = null, $lockVersion = null): ?User
-    {
-        if ($id instanceof Uuid) {
-            return parent::find($id, $lockMode, $lockVersion);
-        }
-
-        if (is_string($id)) {
-            try {
-                $uuid = Uuid::fromString($id);
-                return parent::find($uuid, $lockMode, $lockVersion);
-            } catch (\InvalidArgumentException) {
-                return null;
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -87,19 +56,9 @@ class UserRepository extends ServiceEntityRepository
     }
 
     /**
-     * Find organizers (users with ROLE_ORGANIZER)
-     *
-     * @return User[]
-     */
-    public function findOrganizers(?int $limit = null, ?int $offset = null): array
-    {
-        return $this->findByRole('ROLE_ORGANIZER', $limit, $offset);
-    }
-
-    /**
      * Persist a user entity
      *
-     * @throws ORMException|Exception
+     * @throws Exception
      */
     public function persist(User $user, bool $flush = true): void
     {
@@ -121,7 +80,7 @@ class UserRepository extends ServiceEntityRepository
     /**
      * Remove a user entity
      *
-     * @throws ORMException|Exception
+     * @throws Exception
      */
     public function remove(User $user, bool $flush = true): void
     {

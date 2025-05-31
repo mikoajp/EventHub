@@ -17,7 +17,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class CacheController extends AbstractController
 {
     public function __construct(
-        private CacheStatsService $cacheStatsService
+        private readonly CacheStatsService $cacheStatsService
     ) {}
 
     /**

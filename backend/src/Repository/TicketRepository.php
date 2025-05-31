@@ -5,7 +5,6 @@ namespace App\Repository;
 use App\Entity\Event;
 use App\Entity\Ticket;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\Query\Expr;
 use Doctrine\Persistence\ManagerRegistry;
 
 class TicketRepository extends ServiceEntityRepository
@@ -162,5 +161,74 @@ class TicketRepository extends ServiceEntityRepository
             ->setParameter('valid_statuses', [Ticket::STATUS_PURCHASED, Ticket::STATUS_RESERVED])
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * Check ticket availability for given event and ticket type
+     */
+    public function checkAvailability(string $eventId, string $ticketTypeId, int $quantity): array
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->select([
+                'COUNT(t.id) as sold_count',
+                'tt.quantity as total_quantity',
+                'tt.name as ticket_type_name',
+                'tt.price as ticket_price'
+            ])
+            ->join('t.ticketType', 'tt')
+            ->join('t.event', 'e')
+            ->where('e.id = :event_id')
+            ->andWhere('tt.id = :ticket_type_id')
+            ->andWhere('t.status IN (:valid_statuses)')
+            ->setParameter('event_id', $eventId)
+            ->setParameter('ticket_type_id', $ticketTypeId)
+            ->setParameter('valid_statuses', [Ticket::STATUS_PURCHASED, Ticket::STATUS_RESERVED])
+            ->groupBy('tt.id, tt.quantity, tt.name, tt.price');
+
+        $result = $qb->getQuery()->getOneOrNullResult();
+
+        if (!$result) {
+            $qb2 = $this->getEntityManager()->createQueryBuilder()
+                ->select([
+                    '0 as sold_count',
+                    'tt.quantity as total_quantity',
+                    'tt.name as ticket_type_name',
+                    'tt.price as ticket_price'
+                ])
+                ->from('App\Entity\TicketType', 'tt')
+                ->join('tt.event', 'e')
+                ->where('e.id = :event_id')
+                ->andWhere('tt.id = :ticket_type_id')
+                ->setParameter('event_id', $eventId)
+                ->setParameter('ticket_type_id', $ticketTypeId);
+
+            $result = $qb2->getQuery()->getOneOrNullResult();
+        }
+
+        if (!$result) {
+            return [
+                'available' => false,
+                'quantity' => 0,
+                'message' => 'Ticket type not found'
+            ];
+        }
+
+        $soldCount = (int) $result['sold_count'];
+        $totalQuantity = (int) $result['total_quantity'];
+        $availableQuantity = $totalQuantity - $soldCount;
+        $isAvailable = $availableQuantity >= $quantity;
+
+        return [
+            'available' => $isAvailable,
+            'quantity' => $availableQuantity,
+            'requested' => $quantity,
+            'ticket_type' => [
+                'name' => $result['ticket_type_name'],
+                'price' => $result['ticket_price']
+            ],
+            'message' => $isAvailable
+                ? 'Tickets available'
+                : "Only {$availableQuantity} tickets available, but {$quantity} requested"
+        ];
     }
 }

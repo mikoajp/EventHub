@@ -28,9 +28,7 @@ class CacheService
                 $this->cache = new RedisAdapter($this->redis);
             } catch (\Exception $e) {
                 $this->isEnabled = false;
-                if ($this->logger) {
-                    $this->logger->error('Failed to connect to Redis: ' . $e->getMessage());
-                }
+                $this->logger?->error('Failed to connect to Redis: ' . $e->getMessage());
             }
         }
     }
@@ -44,7 +42,7 @@ class CacheService
      * @return mixed
      * @throws InvalidArgumentException
      */
-    public function get(string $key, callable $callback, int $ttl = 3600)
+    public function get(string $key, callable $callback, int $ttl = 3600): mixed
     {
         if (!$this->isEnabled) {
             return $callback();
@@ -56,9 +54,7 @@ class CacheService
                 return $callback();
             });
         } catch (\Exception $e) {
-            if ($this->logger) {
-                $this->logger->error('Cache error: ' . $e->getMessage());
-            }
+            $this->logger?->error('Cache error: ' . $e->getMessage());
             return $callback();
         }
     }
@@ -79,9 +75,7 @@ class CacheService
         try {
             return $this->cache->delete($key);
         } catch (\Exception $e) {
-            if ($this->logger) {
-                $this->logger->error('Cache delete error: ' . $e->getMessage());
-            }
+            $this->logger?->error('Cache delete error: ' . $e->getMessage());
             return false;
         }
     }
@@ -107,9 +101,7 @@ class CacheService
 
             return true;
         } catch (\Exception $e) {
-            if ($this->logger) {
-                $this->logger->error('Cache pattern delete error: ' . $e->getMessage());
-            }
+            $this->logger?->error('Cache pattern delete error: ' . $e->getMessage());
             return false;
         }
     }
@@ -128,9 +120,7 @@ class CacheService
         try {
             return $this->cache->clear();
         } catch (\Exception $e) {
-            if ($this->logger) {
-                $this->logger->error('Cache clear error: ' . $e->getMessage());
-            }
+            $this->logger?->error('Cache clear error: ' . $e->getMessage());
             return false;
         }
     }

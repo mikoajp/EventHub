@@ -20,9 +20,9 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class EventController extends AbstractController
 {
     public function __construct(
-        private EventService $eventService,
-        private ErrorHandlerService $errorHandler,
-        private ValidationService $validationService
+        private readonly EventService        $eventService,
+        private readonly ErrorHandlerService $errorHandler,
+        private readonly ValidationService $validationService
     ) {}
 
     #[Route('', name: 'api_events_list', methods: ['GET'])]

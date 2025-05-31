@@ -6,7 +6,11 @@ use App\Entity\Event;
 use App\Entity\User;
 use App\DTO\EventDTO;
 use App\Repository\EventRepository;
+use DateMalformedStringException;
+use DateTimeImmutable;
+use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
 
 class EventService
@@ -19,11 +23,14 @@ class EventService
     private const CACHE_KEY_STATISTICS_PREFIX = 'event.statistics.';
 
     public function __construct(
-        private EventRepository $eventRepository,
-        private EntityManagerInterface $entityManager,
-        private CacheService $cacheService
+        private readonly EventRepository        $eventRepository,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly CacheService           $cacheService
     ) {}
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function getPublishedEvents(): array
     {
         return $this->cacheService->get(self::CACHE_KEY_PUBLISHED_EVENTS, function() {
@@ -31,6 +38,9 @@ class EventService
         }, self::CACHE_TTL_PUBLISHED_EVENTS);
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function findEventOrFail(string $id): Event
     {
         $cacheKey = self::CACHE_KEY_EVENT_PREFIX . $id;
@@ -44,6 +54,10 @@ class EventService
         }, self::CACHE_TTL_SINGLE_EVENT);
     }
 
+    /**
+     * @throws DateMalformedStringException
+     * @throws InvalidArgumentException|Exception
+     */
     public function getEventStatistics(string $eventId, ?string $from = null, ?string $to = null): array
     {
         $cacheKey = self::CACHE_KEY_STATISTICS_PREFIX . $eventId . '_' . ($from ?? '') . '_' . ($to ?? '');
@@ -51,8 +65,8 @@ class EventService
         return $this->cacheService->get($cacheKey, function() use ($eventId, $from, $to) {
             $event = $this->findEventOrFail($eventId);
 
-            $fromDate = $from ? new \DateTimeImmutable($from) : null;
-            $toDate = $to ? new \DateTimeImmutable($to) : null;
+            $fromDate = $from ? new DateTimeImmutable($from) : null;
+            $toDate = $to ? new DateTimeImmutable($to) : null;
 
             $statistics = $this->eventRepository->getEventStatistics($event, $fromDate, $toDate);
 
@@ -97,6 +111,9 @@ class EventService
         return $event;
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function publishEvent(string $id, User $user): void
     {
         $event = $this->findEventOrFail($id);
@@ -197,6 +214,9 @@ class EventService
         return 0.0;
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     private function invalidateEventCache(Event $event): void
     {
         $this->cacheService->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId());

@@ -24,21 +24,4 @@ final readonly class TicketAvailabilityService
         return $availableQuantity >= $requestedQuantity;
     }
 
-    public function getAvailableQuantity(TicketType $ticketType): int
-    {
-        $soldTickets = $this->ticketRepository->count([
-            'ticketType' => $ticketType,
-            'status' => [Ticket::STATUS_PURCHASED, Ticket::STATUS_RESERVED]
-        ]);
-
-        return max(0, $ticketType->getQuantity() - $soldTickets);
-    }
-
-    public function reserveExpiredTickets(): int
-    {
-        // Clean up expired reservations (older than 15 minutes)
-        $expiryTime = new \DateTimeImmutable('-15 minutes');
-        
-        return $this->ticketRepository->cancelExpiredReservations($expiryTime);
-    }
 }

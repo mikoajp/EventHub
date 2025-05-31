@@ -21,13 +21,12 @@ class JwtAuthenticator extends AbstractAuthenticator
     private const TOKEN_PREFIX = 'Bearer ';
 
     public function __construct(
-        private UserRepository $userRepository,
-        private TokenExtractorInterface $tokenExtractor
+        private readonly UserRepository $userRepository,
+        private readonly TokenExtractorInterface $tokenExtractor
     ) {}
 
     public function supports(Request $request): ?bool
     {
-        // Check if there's an Authorization header with Bearer token
         return $request->headers->has(self::HEADER_AUTH) &&
                str_starts_with($request->headers->get(self::HEADER_AUTH), self::TOKEN_PREFIX);
     }
@@ -69,7 +68,6 @@ class JwtAuthenticator extends AbstractAuthenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?Response
     {
-        // On success, return null to continue the request
         return null;
     }
 

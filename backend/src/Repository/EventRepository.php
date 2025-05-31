@@ -3,17 +3,12 @@
 namespace App\Repository;
 
 use App\Entity\Event;
-use App\Entity\User;
 use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
 use Exception;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * @extends ServiceEntityRepository<Event>
- */
 class EventRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -48,130 +43,9 @@ class EventRepository extends ServiceEntityRepository
     }
 
     /**
-     * Find events organized by a specific user
-     *
-     * @return Event[]
-     */
-    public function findByOrganizer(User $organizer, ?int $limit = null, ?int $offset = null): array
-    {
-        $qb = $this->createQueryBuilder('e')
-            ->where('e.organizer = :organizer')
-            ->setParameter('organizer', $organizer)
-            ->orderBy('e.startDate', 'ASC');
-
-        if ($limit !== null) {
-            $qb->setMaxResults($limit);
-        }
-        if ($offset !== null) {
-            $qb->setFirstResult($offset);
-        }
-
-        return $qb->getQuery()
-            ->useQueryCache(true)
-            ->getResult();
-    }
-
-    /**
-     * Find upcoming events
-     *
-     * @return Event[]
-     */
-    public function findUpcoming(int $limit = 10, ?int $offset = null): array
-    {
-        $qb = $this->createQueryBuilder('e')
-            ->where('e.startDate > :now')
-            ->setParameter('now', new DateTimeImmutable())
-            ->orderBy('e.startDate', 'ASC')
-            ->setMaxResults($limit);
-
-        if ($offset !== null) {
-            $qb->setFirstResult($offset);
-        }
-
-        return $qb->getQuery()
-            ->useQueryCache(true)
-            ->getResult();
-    }
-
-    /**
-     * Find events by category
-     *
-     * @return Event[]
-     */
-    public function findByCategory(string $category, ?int $limit = null, ?int $offset = null): array
-    {
-        $qb = $this->createQueryBuilder('e')
-            ->where('e.category = :category')
-            ->setParameter('category', $category)
-            ->orderBy('e.startDate', 'ASC');
-
-        if ($limit !== null) {
-            $qb->setMaxResults($limit);
-        }
-        if ($offset !== null) {
-            $qb->setFirstResult($offset);
-        }
-
-        return $qb->getQuery()
-            ->useQueryCache(true)
-            ->getResult();
-    }
-
-    /**
-     * Search events by name or description
-     *
-     * @return Event[]
-     */
-    public function searchByTerm(string $searchTerm, ?int $limit = null, ?int $offset = null): array
-    {
-        $qb = $this->createQueryBuilder('e')
-            ->where('LOWER(e.name) LIKE LOWER(:searchTerm)')
-            ->orWhere('LOWER(e.description) LIKE LOWER(:searchTerm)')
-            ->setParameter('searchTerm', '%' . $searchTerm . '%')
-            ->orderBy('e.startDate', 'ASC');
-
-        if ($limit !== null) {
-            $qb->setMaxResults($limit);
-        }
-        if ($offset !== null) {
-            $qb->setFirstResult($offset);
-        }
-
-        return $qb->getQuery()
-            ->useQueryCache(true)
-            ->getResult();
-    }
-
-    /**
-     * Find events with available tickets
-     *
-     * @return Event[]
-     */
-    public function findWithAvailableTickets(?int $limit = null, ?int $offset = null): array
-    {
-        $qb = $this->createQueryBuilder('e')
-            ->join('e.ticketTypes', 'tt')
-            ->where('tt.remainingQuantity > 0')
-            ->andWhere('e.startDate > :now')
-            ->setParameter('now', new DateTimeImmutable())
-            ->orderBy('e.startDate', 'ASC');
-
-        if ($limit !== null) {
-            $qb->setMaxResults($limit);
-        }
-        if ($offset !== null) {
-            $qb->setFirstResult($offset);
-        }
-
-        return $qb->getQuery()
-            ->useQueryCache(true)
-            ->getResult();
-    }
-
-    /**
      * Persist an event entity
      *
-     * @throws ORMException|Exception
+     * @throws Exception
      */
     public function persist(Event $event, bool $flush = true): void
     {
@@ -193,7 +67,6 @@ class EventRepository extends ServiceEntityRepository
     /**
      * Remove an event entity
      *
-     * @throws ORMException
      * @throws Exception
      */
     public function remove(Event $event, bool $flush = true): void
@@ -350,6 +223,7 @@ class EventRepository extends ServiceEntityRepository
      * @param DateTimeImmutable|null $from
      * @param DateTimeImmutable|null $to
      * @return array
+     * @throws \Doctrine\DBAL\Exception
      */
     public function getDailyStatistics(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
     {
@@ -399,6 +273,7 @@ class EventRepository extends ServiceEntityRepository
      * @param DateTimeImmutable|null $from Start date for filtering (optional)
      * @param DateTimeImmutable|null $to End date for filtering (optional)
      * @return array<string, mixed>
+     * @throws \Doctrine\DBAL\Exception
      */
     public function getEventStatistics(
         Event              $event,
@@ -422,92 +297,4 @@ class EventRepository extends ServiceEntityRepository
         ];
     }
 
-    /**
-     * Get total revenue for an event
-     *
-     * @param Event $event
-     * @return float
-     */
-    public function getTotalRevenue(Event $event): float
-    {
-        $result = $this->getEntityManager()->createQueryBuilder()
-            ->select('SUM(t.price) as total_revenue')
-            ->from('App\Entity\Ticket', 't')
-            ->where('t.event = :event')
-            ->andWhere('t.status = :status')
-            ->setParameter('event', $event)
-            ->setParameter('status', 'purchased')
-            ->getQuery()
-            ->useQueryCache(true)
-            ->getSingleScalarResult();
-
-        return (float) ($result ?: 0);
-    }
-
-    /**
-     * Get total tickets sold for an event
-     *
-     * @param Event $event
-     * @return int
-     */
-    public function getTotalTicketsSold(Event $event): int
-    {
-        $result = $this->getEntityManager()->createQueryBuilder()
-            ->select('COUNT(t.id) as total_sold')
-            ->from('App\Entity\Ticket', 't')
-            ->where('t.event = :event')
-            ->andWhere('t.status = :status')
-            ->setParameter('event', $event)
-            ->setParameter('status', 'purchased')
-            ->getQuery()
-            ->useQueryCache(true)
-            ->getSingleScalarResult();
-
-        return (int) ($result ?: 0);
-    }
-
-    /**
-     * Get revenue by ticket type for an event
-     *
-     * @param Event $event
-     * @param DateTimeImmutable|null $from
-     * @param DateTimeImmutable|null $to
-     * @return array
-     */
-    public function getRevenueByTicketType(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
-    {
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('tt.name as ticketTypeName, AVG(t.price) as avgPrice, COUNT(t.id) as soldCount, SUM(t.price) as totalRevenue')
-            ->from('App\Entity\Ticket', 't')
-            ->join('t.ticketType', 'tt')
-            ->where('t.event = :event')
-            ->andWhere('t.status = :status')
-            ->setParameter('event', $event)
-            ->setParameter('status', 'purchased');
-
-        if ($from) {
-            $qb->andWhere('t.purchasedAt >= :from')
-                ->setParameter('from', $from);
-        }
-
-        if ($to) {
-            $qb->andWhere('t.purchasedAt <= :to')
-                ->setParameter('to', $to);
-        }
-
-        $results = $qb->groupBy('tt.id')
-            ->getQuery()
-            ->useQueryCache(true)
-            ->getResult();
-
-        return array_map(function($result) {
-            return [
-                'ticket_type' => $result['ticketTypeName'],
-                'avg_price' => (float)$result['avgPrice'],
-                'sold_count' => (int)$result['soldCount'],
-                'total_revenue' => (float)$result['totalRevenue'],
-                'revenue_formatted' => number_format($result['totalRevenue'] / 100, 2)
-            ];
-        }, $results);
-    }
 }

@@ -5,15 +5,16 @@ namespace App\Service;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Throwable;
 
-class ErrorHandlerService
+readonly class ErrorHandlerService
 {
     public function __construct(
         #[Autowire('%kernel.environment%')]
         private string $environment
     ) {}
 
-    public function createJsonResponse(\Throwable $e, string $errorMessage = null): JsonResponse
+    public function createJsonResponse(Throwable $e, string $errorMessage = null): JsonResponse
     {
         $statusCode = $this->determineStatusCode($e);
 

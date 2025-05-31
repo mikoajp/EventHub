@@ -6,125 +6,14 @@ use App\Entity\Event;
 use App\Entity\TicketType;
 use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
 use Exception;
-use InvalidArgumentException;
-use Symfony\Component\Uid\Uuid;
 
-/**
- * @extends ServiceEntityRepository<TicketType>
- */
 class TicketTypeRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, TicketType::class);
-    }
-
-    /**
-     * Find a ticket type by its UUID (string or Uuid object)
-     *
-     * @param Uuid|string $id The UUID of the ticket type
-     * @param null $lockMode
-     * @param null $lockVersion
-     * @return TicketType|null
-     */
-    public function findByUuid($id, $lockMode = null, $lockVersion = null): ?TicketType
-    {
-        if ($id instanceof Uuid) {
-            return parent::find($id, $lockMode, $lockVersion);
-        }
-
-        if (is_string($id)) {
-            try {
-                $uuid = Uuid::fromString($id);
-                return parent::find($uuid, $lockMode, $lockVersion);
-            } catch (InvalidArgumentException $e) {
-                return null;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Find all ticket types for a specific event, ordered by price ascending
-     *
-     * @return TicketType[]
-     */
-    public function findByEvent(Event $event): array
-    {
-        return $this->createQueryBuilder('tt')
-            ->where('tt.event = :event')
-            ->setParameter('event', $event)
-            ->orderBy('tt.price', 'ASC')
-            ->getQuery()
-            ->useQueryCache(true)
-            ->getResult();
-    }
-
-    /**
-     * Find available ticket types for an event (with remaining quantity > 0)
-     *
-     * @return TicketType[]
-     */
-    public function findAvailableByEvent(Event $event, ?int $limit = null, ?int $offset = null): array
-    {
-        $qb = $this->createQueryBuilder('tt')
-            ->where('tt.event = :event')
-            ->andWhere('tt.remainingQuantity > 0')
-            ->setParameter('event', $event)
-            ->orderBy('tt.price', 'ASC');
-
-        if ($limit !== null) {
-            $qb->setMaxResults($limit);
-        }
-        if ($offset !== null) {
-            $qb->setFirstResult($offset);
-        }
-
-        return $qb->getQuery()
-            ->useQueryCache(true)
-            ->getResult();
-    }
-
-    /**
-     * Check if a ticket type has available tickets
-     *
-     * @param TicketType $ticketType
-     * @return bool
-     */
-    public function isAvailable(TicketType $ticketType): bool
-    {
-        return $ticketType->getRemainingQuantity() > 0;
-    }
-
-    /**
-     * Decrease the remaining quantity of a ticket type
-     *
-     * @throws InvalidArgumentException|Exception If the entity is not managed
-     */
-    public function decreaseRemainingQuantity(TicketType $ticketType, int $quantity = 1): void
-    {
-        if (!$this->getEntityManager()->contains($ticketType)) {
-            throw new InvalidArgumentException('TicketType entity is not managed.');
-        }
-
-        $em = $this->getEntityManager();
-        $em->beginTransaction();
-
-        try {
-            $ticketType->setRemainingQuantity(
-                max(0, $ticketType->getRemainingQuantity() - $quantity)
-            );
-            $em->persist($ticketType);
-            $em->flush();
-            $em->commit();
-        } catch (\Exception $e) {
-            $em->rollback();
-            throw $e;
-        }
     }
 
     /**

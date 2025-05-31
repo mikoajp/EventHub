@@ -3,7 +3,6 @@
 namespace App\Service;
 
 use Symfony\Component\Cache\Adapter\RedisAdapter;
-use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Service for monitoring Redis cache performance

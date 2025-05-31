@@ -4,8 +4,8 @@ namespace App\Service;
 
 use App\Entity\User;
 use App\DTO\UserRegistrationDTO;
-use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -17,11 +17,10 @@ class AuthService
     private const CACHE_KEY_USER_PROFILE_PREFIX = 'user.profile.';
 
     public function __construct(
-        private UserPasswordHasherInterface $passwordHasher,
-        private EntityManagerInterface $entityManager,
-        private ValidatorInterface $validator,
-        private CacheService $cacheService,
-        private UserRepository $userRepository
+        private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly EntityManagerInterface      $entityManager,
+        private readonly ValidatorInterface          $validator,
+        private readonly CacheService                $cacheService,
     ) {}
 
     public function validateUser(?User $user): void
@@ -74,6 +73,9 @@ class AuthService
         return $user;
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function formatLoginResponse(User $user): array
     {
         $this->invalidateUserProfileCache($user);
@@ -84,6 +86,9 @@ class AuthService
         ];
     }
 
+    /**
+     * @throws InvalidArgumentException
+     */
     public function formatUserProfileResponse(User $user): array
     {
         $cacheKey = self::CACHE_KEY_USER_PROFILE_PREFIX . $user->getId();
@@ -121,6 +126,7 @@ class AuthService
 
     /**
      * Invalidate user profile cache
+     * @throws InvalidArgumentException
      */
     private function invalidateUserProfileCache(User $user): void
     {
