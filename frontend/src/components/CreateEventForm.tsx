@@ -7,12 +7,15 @@ import {
   Stack,
   Group,
   Card,
-  Text,
   ActionIcon,
+  Divider,
+  Title,
+  rem,
+  Paper, Grid,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
-import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconTicket, IconCalendarEvent, IconMapPin } from '@tabler/icons-react';
 import type { CreateEventData } from '../types';
 import { useCreateEvent } from '../hooks/useEvents';
 
@@ -70,100 +73,165 @@ export const CreateEventForm: React.FC<CreateEventFormProps> = ({ onSuccess }) =
   };
 
   return (
-    <form onSubmit={form.onSubmit(handleSubmit)}>
-      <Stack gap="md">
-        <TextInput
-          label="Event Name"
-          required
-          {...form.getInputProps('name')}
-        />
+      <Paper withBorder p="lg" radius="lg" shadow="sm">
+        <Title order={2} mb="xl" style={{ fontSize: rem(28) }}>
+          Create New Event
+        </Title>
 
-        <Textarea
-          label="Description"
-          required
-          minRows={3}
-          {...form.getInputProps('description')}
-        />
+        <form onSubmit={form.onSubmit(handleSubmit)}>
+          <Stack gap="xl">
+            {/* Basic Information Section */}
+            <Card withBorder padding="lg" radius="md">
+              <Title order={4} mb="md" style={{ fontSize: rem(18) }}>
+                Event Details
+              </Title>
 
-        <DateTimePicker
-          label="Event Date & Time"
-          required
-          valueFormat="DD/MM/YYYY HH:mm"
-          {...form.getInputProps('eventDate')}
-        />
+              <Stack gap="md">
+                <TextInput
+                    label="Event Name"
+                    required
+                    placeholder="Enter event name"
+                    size="md"
+                    {...form.getInputProps('name')}
+                />
 
-        <TextInput
-          label="Venue"
-          required
-          {...form.getInputProps('venue')}
-        />
+                <Textarea
+                    label="Description"
+                    required
+                    placeholder="Describe your event"
+                    minRows={4}
+                    size="md"
+                    {...form.getInputProps('description')}
+                />
+              </Stack>
+            </Card>
 
-        <NumberInput
-          label="Maximum Tickets"
-          required
-          min={1}
-          {...form.getInputProps('maxTickets')}
-        />
+            {/* Date & Location Section */}
+            <Card withBorder padding="lg" radius="md">
+              <Title order={4} mb="md" style={{ fontSize: rem(18) }}>
+                Date & Location
+              </Title>
 
-        <div>
-          <Group justify="space-between" align="center" mb="md">
-            <Text fw={500}>Ticket Types</Text>
-            <Button
-              leftSection={<IconPlus size={16} />}
-              variant="light"
-              onClick={addTicketType}
-            >
-              Add Ticket Type
-            </Button>
-          </Group>
-
-          <Stack gap="md">
-            {form.values.ticketTypes.map((_, index) => (
-              <Card key={index} withBorder padding="md">
-                <Group align="flex-end">
+              <Grid gutter="md">
+                <Grid.Col span={{ base: 12, md: 6 }}>
+                  <DateTimePicker
+                      label="Event Date & Time"
+                      required
+                      placeholder="Select date and time"
+                      valueFormat="DD/MM/YYYY hh:mm A"
+                      size="md"
+                      leftSection={<IconCalendarEvent size={18} />}
+                      {...form.getInputProps('eventDate')}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, md: 6 }}>
                   <TextInput
-                    label="Name"
-                    required
-                    style={{ flex: 1 }}
-                    {...form.getInputProps(`ticketTypes.${index}.name`)}
+                      label="Venue"
+                      required
+                      placeholder="Enter venue name"
+                      size="md"
+                      leftSection={<IconMapPin size={18} />}
+                      {...form.getInputProps('venue')}
                   />
-                  <NumberInput
-                    label="Price (cents)"
-                    required
-                    min={0}
-                    style={{ flex: 1 }}
-                    {...form.getInputProps(`ticketTypes.${index}.price`)}
-                  />
-                  <NumberInput
-                    label="Quantity"
-                    required
-                    min={1}
-                    style={{ flex: 1 }}
-                    {...form.getInputProps(`ticketTypes.${index}.quantity`)}
-                  />
-                  {form.values.ticketTypes.length > 1 && (
-                    <ActionIcon
-                      color="red"
-                      variant="light"
-                      onClick={() => removeTicketType(index)}
-                    >
-                      <IconTrash size={16} />
-                    </ActionIcon>
-                  )}
-                </Group>
-              </Card>
-            ))}
-          </Stack>
-        </div>
+                </Grid.Col>
+              </Grid>
+            </Card>
 
-        <Button
-          type="submit"
-          loading={createEventMutation.isPending}
-          size="lg"
-        >
-          Create Event
-        </Button>
-      </Stack>
-    </form>
+            {/* Tickets Section */}
+            <Card withBorder padding="lg" radius="md">
+              <Group justify="space-between" mb="md">
+                <Title order={4} style={{ fontSize: rem(18) }}>
+                  Ticket Options
+                </Title>
+                <Button
+                    leftSection={<IconPlus size={18} />}
+                    variant="light"
+                    size="sm"
+                    onClick={addTicketType}
+                >
+                  Add Ticket Type
+                </Button>
+              </Group>
+
+              <NumberInput
+                  label="Total Available Tickets"
+                  required
+                  min={1}
+                  size="md"
+                  mb="xl"
+                  {...form.getInputProps('maxTickets')}
+              />
+
+              <Stack gap="md">
+                {form.values.ticketTypes.map((_, index) => (
+                    <Card key={index} withBorder padding="lg" radius="md">
+                      <Group align="flex-end" wrap="nowrap">
+                        <TextInput
+                            label="Ticket Type"
+                            required
+                            placeholder="e.g., VIP, General Admission"
+                            style={{ flex: 2 }}
+                            size="sm"
+                            leftSection={<IconTicket size={16} />}
+                            {...form.getInputProps(`ticketTypes.${index}.name`)}
+                        />
+                        <NumberInput
+                            label="Price ($)"
+                            required
+                            min={0}
+                            style={{ flex: 1 }}
+                            size="sm"
+                            leftSection="$"
+                            decimalScale={2}
+                            {...form.getInputProps(`ticketTypes.${index}.price`, {
+                              getInputProps: (value: number) => ({
+                                value: value / 100,
+                                onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+                                  const dollars = parseFloat(event.target.value) || 0;
+                                  form.setFieldValue(`ticketTypes.${index}.price`, dollars * 100);
+                                }
+                              })
+                            })}
+                        />
+                        <NumberInput
+                            label="Quantity"
+                            required
+                            min={1}
+                            style={{ flex: 1 }}
+                            size="sm"
+                            {...form.getInputProps(`ticketTypes.${index}.quantity`)}
+                        />
+                        {form.values.ticketTypes.length > 1 && (
+                            <ActionIcon
+                                color="red"
+                                variant="light"
+                                size="lg"
+                                onClick={() => removeTicketType(index)}
+                            >
+                              <IconTrash size={18} />
+                            </ActionIcon>
+                        )}
+                      </Group>
+                    </Card>
+                ))}
+              </Stack>
+            </Card>
+
+            <Divider my="sm" />
+
+            <Group justify="flex-end">
+              <Button
+                  type="submit"
+                  loading={createEventMutation.isPending}
+                  size="lg"
+                  radius="md"
+                  style={{ minWidth: rem(200) }}
+              >
+                Create Event
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Paper>
   );
 };
