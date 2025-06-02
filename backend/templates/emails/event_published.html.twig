@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>New Event Published</title>
+</head>
+<body>
+<h1>🎉 New Event Published!</h1>
+
+<h2>{{ event.name }}</h2>
+
+<p><strong>Description:</strong> {{ event.description }}</p>
+<p><strong>Venue:</strong> {{ event.venue }}</p>
+<p><strong>Date:</strong> {{ event.eventDate|date('F j, Y \\a\\t g:i A') }}</p>
+<p><strong>Max Tickets:</strong> {{ event.maxTickets }}</p>
+
+<p>Don't miss out - get your tickets now!</p>
+
+<hr>
+<p><small>This is an automated email from EventHub.</small></p>
+</body>
+</html>
