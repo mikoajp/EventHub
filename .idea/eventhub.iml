@@ -3,7 +3,6 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/backend/src" isTestSource="false" packagePrefix="App\" />
-      <sourceFolder url="file://$MODULE_DIR$/backend/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/backend/tests" isTestSource="true" packagePrefix="App\Tests\" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/api-platform/core" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/composer" />
@@ -152,6 +151,9 @@
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/willdurand/negotiation" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/zenstruck/assert" />
       <excludeFolder url="file://$MODULE_DIR$/backend/vendor/zenstruck/foundry" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/asmblah/php-amqp-compat" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/nytris/nytris" />
+      <excludeFolder url="file://$MODULE_DIR$/backend/vendor/symfony/amqp-messenger" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

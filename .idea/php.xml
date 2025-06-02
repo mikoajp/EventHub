@@ -160,6 +160,15 @@
       <path value="$PROJECT_DIR$/backend/vendor/symfony/runtime" />
       <path value="$PROJECT_DIR$/backend/vendor/symfony/deprecation-contracts" />
       <path value="$PROJECT_DIR$/backend/vendor/nelmio/cors-bundle" />
+      <path value="$PROJECT_DIR$/backend/vendor/predis/predis" />
+      <path value="$PROJECT_DIR$/backend/vendor/psr/http-message" />
+      <path value="$PROJECT_DIR$/backend/vendor/php-amqplib/php-amqplib" />
+      <path value="$PROJECT_DIR$/backend/vendor/paragonie/constant_time_encoding" />
+      <path value="$PROJECT_DIR$/backend/vendor/paragonie/random_compat" />
+      <path value="$PROJECT_DIR$/backend/vendor/phpseclib/phpseclib" />
+      <path value="$PROJECT_DIR$/backend/vendor/asmblah/php-amqp-compat" />
+      <path value="$PROJECT_DIR$/backend/vendor/nytris/nytris" />
+      <path value="$PROJECT_DIR$/backend/vendor/symfony/amqp-messenger" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />

@@ -4,7 +4,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8001:8000"
       - "8443:443"
     depends_on:
       - postgres
@@ -15,9 +15,8 @@ services:
       - DATABASE_URL=postgresql://eventhub:secret@postgres:5432/eventhub
       - MESSENGER_TRANSPORT_DSN=redis://redis:6379/messages
       - MAILER_DSN=smtp://mailhog:1025
-      - MERCURE_URL=http://mercure:3000/.well-known/mercure
-      - MERCURE_PUBLIC_URL=http://localhost:3000/.well-known/mercure
-      - MERCURE_JWT_SECRET=X7p9qW3zT2rY6mB8nK4vL0jF5hG2tC1xA9eD8uI
+      - RABBITMQ_STOMP_URL=stomp://eventhub:secret@rabbitmq:61613
+      - RABBITMQ_WEB_STOMP_URL=ws://localhost:15674/ws
     volumes:
       - ./backend:/var/www/html
 
@@ -33,8 +32,9 @@ services:
       - ./frontend:/app
     environment:
       - VITE_API_URL=http://backend:8000
-      - VITE_MERCURE_URL=http://localhost:3000/.well-known/mercure
-      - VITE_MERCURE_JWT=X7p9qW3zT2rY6mB8nK4vL0jF5hG2tC1xA9eD8uI
+      - VITE_STOMP_URL=ws://localhost:15674/ws
+      - VITE_RABBITMQ_USER=eventhub
+      - VITE_RABBITMQ_PASS=secret
 
   postgres:
     image: postgres:16-alpine
@@ -61,29 +61,20 @@ services:
       RABBITMQ_DEFAULT_USER: eventhub
       RABBITMQ_DEFAULT_PASS: secret
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+      - "15674:15674" # Web STOMP
+      - "61613:61613" # STOMP
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+      - ./docker/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./docker/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
 
   mailhog:
     image: mailhog/mailhog:latest
     ports:
       - "1025:1025"
       - "8025:8025"
-
-  mercure:
-    image: dunglas/mercure:latest
-    environment:
-      - SERVER_NAME=:3000
-      - MERCURE_PUBLISHER_JWT_KEY=X7p9qW3zT2rY6mB8nK4vL0jF5hG2tC1xA9eD8uI
-      - MERCURE_SUBSCRIBER_JWT_KEY=X7p9qW3zT2rY6mB8nK4vL0jF5hG2tC1xA9eD8uI
-      - MERCURE_EXTRA_DIRECTIVES=anonymous
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./docker/mercure/Caddyfile:/etc/caddy/Caddyfile
-    command: /usr/bin/caddy run --config /etc/caddy/Caddyfile
 
 volumes:
   postgres_data:

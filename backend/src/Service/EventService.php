@@ -34,7 +34,7 @@ class EventService
     public function getPublishedEvents(): array
     {
         return $this->cacheService->get(self::CACHE_KEY_PUBLISHED_EVENTS, function() {
-            return $this->eventRepository->findBy(['status' => 'published']);
+            return $this->eventRepository->findBy(['status' => Event::STATUS_PUBLISHED]);
         }, self::CACHE_TTL_PUBLISHED_EVENTS);
     }
 
@@ -108,13 +108,33 @@ class EventService
         $this->entityManager->persist($event);
         $this->entityManager->flush();
 
+        $this->invalidateEventCache($event);
+
+        return $event;
+    }
+
+    public function updateEventFromDTO(Event $event, EventDTO $eventDTO): Event
+    {
+        $event->setName($eventDTO->name)
+            ->setDescription($eventDTO->description)
+            ->setEventDate($eventDTO->eventDate)
+            ->setVenue($eventDTO->venue)
+            ->setMaxTickets($eventDTO->maxTickets);
+
+        if ($event->getStatus() === Event::STATUS_PUBLISHED && $event->getTicketsSold() === 0) {
+            $event->setStatus(Event::STATUS_DRAFT);
+        }
+
+        $this->entityManager->flush();
+        $this->invalidateEventCache($event);
+
         return $event;
     }
 
     /**
      * @throws InvalidArgumentException
      */
-    public function publishEvent(string $id, User $user): void
+    public function publishEvent(string $id, User $user): Event
     {
         $event = $this->findEventOrFail($id);
 
@@ -122,9 +142,48 @@ class EventService
             throw new \RuntimeException('Access denied', Response::HTTP_FORBIDDEN);
         }
 
-        $event->setStatus('published');
-        $this->entityManager->flush();
+        if ($event->getStatus() === Event::STATUS_CANCELLED) {
+            throw new \RuntimeException('Cannot publish a cancelled event', Response::HTTP_BAD_REQUEST);
+        }
 
+        $event->setStatus(Event::STATUS_PUBLISHED)
+            ->setPublishedAt(new \DateTime());
+
+        $this->entityManager->flush();
+        $this->invalidateEventCache($event);
+
+        return $event;
+    }
+
+    public function unpublishEvent(Event $event): void
+    {
+        if ($event->getStatus() !== Event::STATUS_PUBLISHED) {
+            throw new \RuntimeException('Only published events can be unpublished', Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($event->getTicketsSold() > 0) {
+            throw new \RuntimeException('Cannot unpublish event with sold tickets', Response::HTTP_BAD_REQUEST);
+        }
+
+        $event->setStatus(Event::STATUS_DRAFT)
+            ->setPublishedAt(null);
+
+        $this->entityManager->flush();
+        $this->invalidateEventCache($event);
+    }
+
+    public function cancelEvent(Event $event): void
+    {
+        if ($event->getStatus() === Event::STATUS_CANCELLED) {
+            throw new \RuntimeException('Event is already cancelled', Response::HTTP_BAD_REQUEST);
+        }
+
+        $previousStatus = $event->getStatus();
+        $event->setStatus(Event::STATUS_CANCELLED)
+            ->setCancelledAt(new \DateTime())
+            ->setPreviousStatus($previousStatus);
+
+        $this->entityManager->flush();
         $this->invalidateEventCache($event);
     }
 
@@ -165,8 +224,13 @@ class EventService
             'ticketsSold' => $event->getTicketsSold(),
             'availableTickets' => $event->getAvailableTickets(),
             'status' => $event->getStatus(),
+            'publishedAt' => $event->getPublishedAt()?->format('c'),
+            'cancelledAt' => $event->getCancelledAt()?->format('c'),
+            'createdAt' => $event->getCreatedAt()->format('c'),
+            'updatedAt' => $event->getUpdatedAt()->format('c'),
             'organizer' => $this->formatOrganizerData($event->getOrganizer()),
             'ticketTypes' => array_map([$this, 'formatTicketTypeData'], $event->getTicketTypes()->toArray()),
+            'attendeesCount' => $event->getAttendees()->count(),
         ];
     }
 
@@ -175,6 +239,7 @@ class EventService
         return [
             'id' => $organizer->getId()->toString(),
             'fullName' => $organizer->getFullName(),
+            'email' => $organizer->getEmail(),
         ];
     }
 
@@ -195,6 +260,28 @@ class EventService
         if (!$user) {
             throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
         }
+    }
+
+    public function canUserModifyEvent(Event $event, User $user): bool
+    {
+        return $event->getOrganizer() === $user || in_array('ROLE_ADMIN', $user->getRoles());
+    }
+
+    public function canEventBeModified(Event $event): bool
+    {
+        return $event->getStatus() !== Event::STATUS_CANCELLED &&
+            ($event->getStatus() !== Event::STATUS_PUBLISHED || $event->getTicketsSold() === 0);
+    }
+
+    public function canEventBeCancelled(Event $event): bool
+    {
+        return $event->getStatus() !== Event::STATUS_CANCELLED;
+    }
+
+    public function canEventBePublished(Event $event): bool
+    {
+        return $event->getStatus() === Event::STATUS_DRAFT &&
+            $event->getEventDate() > new \DateTime();
     }
 
     /**
