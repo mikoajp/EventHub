@@ -13,10 +13,10 @@ class RabbitMQConnection
     private array $declaredExchanges = [];
 
     public function __construct(
-        private string $host = 'rabbitmq',
-        private int $port = 5672,
-        private string $user = 'eventhub',
-        private string $password = 'secret'
+        private string $host,
+        private int $port,
+        private string $user,
+        private string $password
     ) {}
 
     /**
@@ -78,13 +78,19 @@ class RabbitMQConnection
 
     public function publishEvent(array $eventData): bool
     {
-        return $this->publish('events', 'published', $eventData);
+        error_log("RabbitMQConnection::publishEvent called with data: " . json_encode($eventData));
+        $result = $this->publish('events', 'published', $eventData);
+        error_log("RabbitMQConnection::publishEvent result: " . ($result ? 'SUCCESS' : 'FAILED'));
+        return $result;
     }
 
     public function publishNotification(array $notificationData, ?string $userId = null): bool
     {
         $routingKey = $userId ? "user.{$userId}" : 'global';
-        return $this->publish('notifications', $routingKey, $notificationData);
+        error_log("RabbitMQConnection::publishNotification called with routing key '{$routingKey}' and data: " . json_encode($notificationData));
+        $result = $this->publish('notifications', $routingKey, $notificationData);
+        error_log("RabbitMQConnection::publishNotification result: " . ($result ? 'SUCCESS' : 'FAILED'));
+        return $result;
     }
 
     public function publishSocial(array $socialData, string $platform = 'general'): bool

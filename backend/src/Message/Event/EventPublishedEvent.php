@@ -6,6 +6,7 @@ final readonly class EventPublishedEvent
 {
     public function __construct(
         public string $eventId,
-        public \DateTimeImmutable $occurredAt
+        public string $publishedBy,
+        public \DateTimeImmutable $publishedAt
     ) {}
 }

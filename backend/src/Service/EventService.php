@@ -312,4 +312,13 @@ class EventService
         $pattern = self::CACHE_KEY_STATISTICS_PREFIX . $event->getId() . '_*';
         $this->cacheService->deletePattern($pattern);
     }
+
+    public function validateUserCanPublishEvent(Event $event, User $user): void
+    {
+        $this->validateUser($user);
+
+        if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
+            throw new \RuntimeException('Access denied', Response::HTTP_FORBIDDEN);
+        }
+    }
 }

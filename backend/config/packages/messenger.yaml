@@ -1,28 +1,76 @@
+# config/packages/messenger.yaml
 framework:
     messenger:
         failure_transport: failed
 
         transports:
             sync: 'sync://'
+
+            # Primary async transport using Doctrine (reliable fallback)
             async:
-                dsn: '%env(REDIS_URL)%'
-                options:
-                    stream: 'async'
+                dsn: 'doctrine://default?queue_name=async'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+                    max_delay: 10000
+
+            # High priority commands
             high_priority:
-                dsn: '%env(REDIS_URL)%'
+                dsn: 'doctrine://default?queue_name=high_priority'
+                retry_strategy:
+                    max_retries: 5
+                    delay: 500
+                    multiplier: 1.5
+                    max_delay: 5000
+
+            # Option 1: Use phpamqplib (no C extension required)
+            notifications_phpamqplib:
+                dsn: 'phpamqplib://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%//%2f/notifications'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+                    max_delay: 30000
                 options:
-                    stream: 'high_priority'
-            notifications:
-                dsn: '%env(REDIS_URL)%'
-                options:
-                    stream: 'notifications'
+                    exchange:
+                        name: notifications
+                        type: direct
+                    queues:
+                        notifications: ~
+
+            # Option 2: Classic AMQP (requires C extension)
+            notifications_amqp:
+                dsn: 'amqp://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/notifications'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000
+                    multiplier: 2
+                    max_delay: 30000
+
+            # Doctrine fallback for notifications
+            notifications_fallback:
+                dsn: 'doctrine://default?queue_name=notifications_fallback'
+                retry_strategy:
+                    max_retries: 5
+                    delay: 2000
+                    multiplier: 2
+
+            # Failed messages storage
             failed: 'doctrine://default?queue_name=failed'
 
         routing:
+            # Route payment commands to high priority
             'App\Message\Command\Payment\*': high_priority
+
+            # Route regular commands to async
             'App\Message\Command\*': async
+
+            # Route queries synchronously
             'App\Message\Query\*': sync
-            'App\Message\Event\*': notifications
+
+            # Route events to notifications (try phpamqplib first)
+            'App\Message\Event\*': notifications_phpamqplib
 
         default_bus: command.bus
         buses:
@@ -33,4 +81,9 @@ framework:
             query.bus:
                 middleware:
                     - validation
-            event.bus: ~
+            event.bus:
+                default_middleware:
+                    enabled: true
+                    allow_no_handlers: true
+                middleware:
+                    - validation

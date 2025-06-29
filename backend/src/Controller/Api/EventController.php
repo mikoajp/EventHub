@@ -4,7 +4,7 @@ namespace App\Controller\Api;
 
 use App\Entity\Event;
 use App\Entity\User;
-use App\DTO\EventDTO;
+use App\Message\Command\Event\PublishEventCommand;
 use App\Service\EventService;
 use App\Service\NotificationService;
 use App\Service\ErrorHandlerService;
@@ -13,6 +13,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -21,6 +22,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class EventController extends AbstractController
 {
     public function __construct(
+        private readonly MessageBusInterface $commandBus,
         private readonly EventService        $eventService,
         private readonly NotificationService $notificationService,
         private readonly ErrorHandlerService $errorHandler,
@@ -83,21 +85,28 @@ class EventController extends AbstractController
     public function publish(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         try {
-            $event = $this->eventService->publishEvent($id, $user);
+            $event = $this->eventService->findEventOrFail($id);
+            $this->eventService->validateUserCanPublishEvent($event, $user);
 
-            $this->notificationService->notifyEventPublished($event);
+            if ($event->getStatus() !== Event::STATUS_DRAFT) {
+                throw new \InvalidArgumentException('Only draft events can be published');
+            }
 
-            // Share on social media
-            $this->notificationService->shareOnSocialMedia($event);
+            $this->commandBus->dispatch(new PublishEventCommand(
+                $id,
+                $user->getId()->toString()
+            ));
 
             return $this->json([
-                'message' => 'Event published successfully',
-                'event' => $this->eventService->formatSingleEventResponse($event)
-            ]);
+                'message' => 'Event publication queued successfully',
+                'event_id' => $id
+            ], Response::HTTP_ACCEPTED);
+
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to publish event');
+            return $this->errorHandler->createJsonResponse($e, 'Failed to queue event publication');
         }
     }
+
 
     #[Route('/{id}', name: 'api_events_update', methods: ['PUT', 'PATCH'])]
     #[IsGranted('ROLE_ORGANIZER')]

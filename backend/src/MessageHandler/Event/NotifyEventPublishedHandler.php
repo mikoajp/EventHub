@@ -24,10 +24,6 @@ final readonly class NotifyEventPublishedHandler
             return;
         }
 
-        // Notify subscribers about new event
-        $this->notificationService->notifyEventPublished($eventEntity);
-        
-        // Send to social media, etc.
         $this->notificationService->shareOnSocialMedia($eventEntity);
     }
 }
