@@ -7,7 +7,8 @@ use App\Message\Command\Event\PublishEventCommand;
 use App\Message\Event\EventPublishedEvent;
 use App\Repository\EventRepository;
 use App\Repository\UserRepository;
-use App\Service\NotificationService;
+use App\Application\Service\EventApplicationService;
+use App\Application\Service\NotificationApplicationService;
 use Doctrine\DBAL\Driver\PDO\PDOException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -23,7 +24,8 @@ final readonly class PublishEventHandler
         private UserRepository $userRepository,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $eventBus,
-        private NotificationService $notificationService,
+        private EventApplicationService $eventApplicationService,
+        private NotificationApplicationService $notificationApplicationService,
         private LoggerInterface $logger
     ) {}
 
@@ -60,7 +62,7 @@ final readonly class PublishEventHandler
                 $this->sendSuccessNotifications($event, $user);
 
                 // Notify all subscribers about the published event
-                $this->notificationService->notifyEventPublished($event);
+                $this->notificationApplicationService->sendEventPublishedNotifications($event);
 
                 if ($event->getPublishedAt()) {
                     $this->eventBus->dispatch(new EventPublishedEvent(
@@ -103,7 +105,8 @@ final readonly class PublishEventHandler
 
             $this->sendSuccessNotifications($event, $user);
 
-            $this->notificationService->notifyEventPublished($event);
+            // Notify all subscribers about the published event
+            $this->notificationApplicationService->sendEventPublishedNotifications($event);
 
             $this->eventBus->dispatch(new EventPublishedEvent(
                 $event->getId()->toString(),
@@ -182,20 +185,12 @@ final readonly class PublishEventHandler
     private function sendSuccessNotifications(Event $event, $user): void
     {
         try {
-            $this->notificationService->publishNotificationToUser($user->getId()->toString(), [
+            $this->notificationApplicationService->sendNotificationToUser($user->getId()->toString(), [
                 'title' => 'Event Published Successfully!',
                 'message' => "Your event '{$event->getName()}' has been published and is now visible to users.",
                 'type' => 'success',
                 'event_id' => $event->getId()->toString(),
                 'timestamp' => $event->getPublishedAt()->format('c')
-            ]);
-
-            $this->notificationService->sendRealTimeUpdate("users/{$user->getId()->toString()}/events", [
-                'type' => 'event_published',
-                'event_id' => $event->getId()->toString(),
-                'event_name' => $event->getName(),
-                'published_at' => $event->getPublishedAt()->format('c'),
-                'message' => "Event '{$event->getName()}' published successfully"
             ]);
         } catch (\Exception $e) {
             $this->logger->warning('Failed to send success notifications', [

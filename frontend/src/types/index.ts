@@ -97,6 +97,43 @@ export interface HydraResponse<T> {
   'hydra:totalItems': number;
 }
 
-export type EventsResponse = HydraResponse<Event>;
+export type EventsResponse = {
+  events: Event[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+};
+
 export type TicketsResponse = HydraResponse<Ticket>;
 export type UsersResponse = HydraResponse<User>;
+
+export interface EventFilters {
+  search?: string;
+  status?: string[];
+  venue?: string[];
+  organizer_id?: string;
+  date_from?: string;
+  date_to?: string;
+  price_min?: number;
+  price_max?: number;
+  has_available_tickets?: boolean;
+  sort_by?: 'date' | 'name' | 'price' | 'popularity' | 'created_at' | 'venue';
+  sort_direction?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
+}
+
+export interface FilterOptions {
+  venues: string[];
+  priceRange: {
+    min: number;
+    max: number;
+  };
+  statuses: Array<{
+    value: string;
+    label: string;
+  }>;
+}

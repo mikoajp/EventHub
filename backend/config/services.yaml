@@ -30,7 +30,45 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    # RabbitMQ Connection Service
+    # Infrastructure Services
+    App\Infrastructure\Cache\CacheInterface:
+        alias: App\Infrastructure\Cache\RedisCacheAdapter
+
+    App\Infrastructure\Cache\RedisCacheAdapter:
+        arguments:
+            $redisUrl: '%env(REDIS_URL)%'
+            $cacheEnabled: true
+
+    App\Infrastructure\Messaging\MessageBusInterface:
+        alias: App\Infrastructure\Messaging\RabbitMQAdapter
+
+    App\Infrastructure\Messaging\RabbitMQAdapter:
+        arguments:
+            $host: '%rabbitmq.host%'
+            $port: '%rabbitmq.port%'
+            $user: '%rabbitmq.user%'
+            $password: '%rabbitmq.password%'
+
+    App\Infrastructure\Email\EmailServiceInterface:
+        alias: App\Infrastructure\Email\SymfonyMailerAdapter
+
+    App\Infrastructure\Email\SymfonyMailerAdapter:
+        arguments:
+            $fromEmail: '%env(FROM_EMAIL)%'
+
+    # Payment Infrastructure
+    App\Infrastructure\Payment\PaymentGatewayInterface:
+        alias: App\Infrastructure\Payment\StripePaymentGateway
+
+    App\Infrastructure\Payment\StripePaymentGateway:
+        arguments:
+            $stripeSecretKey: '%env(STRIPE_SECRET_KEY)%'
+
+    # Validation Infrastructure
+    App\Infrastructure\Validation\RequestValidatorInterface:
+        alias: App\Infrastructure\Validation\SymfonyRequestValidator
+
+    # Legacy RabbitMQ Connection Service (for backward compatibility)
     App\Service\RabbitMQConnection:
         arguments:
             $host: '%rabbitmq.host%'
@@ -38,7 +76,7 @@ services:
             $user: '%rabbitmq.user%'
             $password: '%rabbitmq.password%'
 
-    # NotificationService with RabbitMQ dependency
+    # Legacy NotificationService (for backward compatibility)
     App\Service\NotificationService:
         arguments:
             $emailService: '@App\Service\EmailService'

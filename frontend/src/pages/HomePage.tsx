@@ -1,12 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Container,
   Title,
   SimpleGrid,
-  TextInput,
-  Select,
   Group,
-  Button,
   Stack,
   Text,
   Loader,
@@ -17,30 +14,206 @@ import {
   Divider,
   Box,
 } from '@mantine/core';
-import { IconSearch, IconFilter, IconAdjustments } from '@tabler/icons-react';
-import { EventCard } from '../components/EventCard';
 import { TicketPurchaseModal } from '../components/TicketPurchaseModal';
-import { useEvents } from '../hooks/useEvents';
-import type { Event } from '../types';
+import { AdvancedEventFilters } from '../components/AdvancedEventFilters';
+import { useEvents, useFilterOptions } from '../hooks/useEvents';
+import { EventCard } from '../components/EventCard';
+import type { Event, EventFilters, FilterOptions } from '../types';
 
 export const HomePage: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
 
-  const { data: events, isLoading, error } = useEvents();
+  // Event filters state
+  const [filters, setFilters] = useState<EventFilters>({
+    search: '',
+    status: ['published'], // Only show published events on home page
+    venue: [],
+    date_from: undefined,
+    date_to: undefined,
+    price_min: undefined,
+    price_max: undefined,
+    has_available_tickets: false,
+    sort_by: 'date',
+    sort_direction: 'asc',
+    page: 1,
+    limit: 50,
+  });
 
-  const filteredEvents = events?.filter(event => {
-    const matchesSearch = event.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.venue.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === '' || event.status === statusFilter;
+  const basicFilters = {
+    search: '',
+    status: ['published'],
+    venue: [],
+    date_from: undefined,
+    date_to: undefined,
+    price_min: undefined,
+    price_max: undefined,
+    has_available_tickets: false,
+    sort_by: 'date' as const,
+    sort_direction: 'asc' as const,
+    page: 1,
+    limit: 100,
+  };
 
-    return matchesSearch && matchesStatus;
-  }) || [];
+  const { data: eventsResponse, isLoading, error} = useEvents(basicFilters);
+  const { data: filterOptionsFromAPI, isLoading: isLoadingFilterOptions } = useFilterOptions();
+
+  const allEvents = Array.isArray(eventsResponse)
+      ? eventsResponse
+      : eventsResponse?.events || [];
+
+  const events = useMemo(() => {
+    if (!allEvents || allEvents.length === 0) return [];
+
+    let filteredEvents = [...allEvents];
+
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase();
+      filteredEvents = filteredEvents.filter((event: Event) =>
+          event.name.toLowerCase().includes(searchTerm) ||
+          event.venue.toLowerCase().includes(searchTerm) ||
+          event.description?.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    if (filters.status && filters.status.length > 0) {
+      filteredEvents = filteredEvents.filter((event: Event) =>
+          filters.status!.includes(event.status)
+      );
+    }
+
+    if (filters.venue && filters.venue.length > 0) {
+      filteredEvents = filteredEvents.filter((event: Event) =>
+          filters.venue!.includes(event.venue)
+      );
+    }
+
+    if (filters.date_from) {
+      const fromDate = new Date(filters.date_from);
+      filteredEvents = filteredEvents.filter((event: Event) =>
+          new Date(event.eventDate) >= fromDate
+      );
+    }
+
+    if (filters.date_to) {
+      const toDate = new Date(filters.date_to);
+      filteredEvents = filteredEvents.filter((event: Event) =>
+          new Date(event.eventDate) <= toDate
+      );
+    }
+
+    if (filters.price_min !== undefined) {
+      filteredEvents = filteredEvents.filter((event: Event) =>
+          event.ticketTypes?.some(tt => (tt.price / 100) >= filters.price_min!)
+      );
+    }
+
+    if (filters.price_max !== undefined) {
+      filteredEvents = filteredEvents.filter((event: Event) =>
+          event.ticketTypes?.some(tt => (tt.price / 100) <= filters.price_max!)
+      );
+    }
+
+    if (filters.has_available_tickets) {
+      filteredEvents = filteredEvents.filter((event: Event) =>
+          event.availableTickets > 0
+      );
+    }
+
+    if (filters.sort_by) {
+      filteredEvents.sort((a: Event, b: Event) => {
+        let aValue: any, bValue: any;
+
+        switch (filters.sort_by) {
+          case 'date':
+            aValue = new Date(a.eventDate);
+            bValue = new Date(b.eventDate);
+            break;
+          case 'name':
+            aValue = a.name.toLowerCase();
+            bValue = b.name.toLowerCase();
+            break;
+          case 'venue':
+            aValue = a.venue.toLowerCase();
+            bValue = b.venue.toLowerCase();
+            break;
+          case 'price':
+            aValue = Math.min(...(a.ticketTypes?.map(tt => tt.price) || [0]));
+            bValue = Math.min(...(b.ticketTypes?.map(tt => tt.price) || [0]));
+            break;
+          case 'created_at':
+            aValue = new Date(a.createdAt || 0);
+            bValue = new Date(b.createdAt || 0);
+            break;
+          default:
+            return 0;
+        }
+
+        if (aValue < bValue) return filters.sort_direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return filters.sort_direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filteredEvents;
+  }, [allEvents, filters]);
+
+  const filterOptions = useMemo<FilterOptions | null>(() => {
+    if (filterOptionsFromAPI) {
+      return filterOptionsFromAPI;
+    }
+
+    if (!allEvents || allEvents.length === 0) return null;
+
+    const venues = [...new Set(allEvents.map((event: Event) => event.venue))];
+    const statuses = [
+      { value: 'published', label: 'Published' },
+      { value: 'draft', label: 'Draft' },
+      { value: 'cancelled', label: 'Cancelled' },
+    ];
+
+    const allPrices = allEvents.flatMap((event: Event) =>
+        event.ticketTypes?.map(tt => tt.price / 100) || []
+    );
+    const priceRange = allPrices.length > 0 ? {
+      min: Math.min(...allPrices),
+      max: Math.max(...allPrices)
+    } : { min: 0, max: 1000 };
+
+    return {
+      venues,
+      statuses,
+      priceRange
+    };
+  }, [allEvents, filterOptionsFromAPI]);
+
+  const handleFiltersChange = (newFilters: Partial<EventFilters>) => {
+    setFilters(prev => ({
+      ...prev,
+      ...newFilters,
+      page: 1
+    }));
+  };
+
+  const handleResetFilters = () => {
+    setFilters({
+      search: '',
+      status: ['published'],
+      venue: [],
+      date_from: undefined,
+      date_to: undefined,
+      price_min: undefined,
+      price_max: undefined,
+      has_available_tickets: false,
+      sort_by: 'date',
+      sort_direction: 'asc',
+      page: 1,
+      limit: 50,
+    });
+  };
 
   const handlePurchaseTicket = (eventId: string) => {
-    const event = events?.find(e => e.id === eventId);
+    const event = events.find((e: Event) => e.id === eventId);
     if (event) {
       setSelectedEvent(event);
       setIsPurchaseModalOpen(true);
@@ -51,7 +224,7 @@ export const HomePage: React.FC = () => {
     window.location.href = `/events/${eventId}`;
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingFilterOptions) {
     return (
         <Center h={400}>
           <Loader size="lg" type="dots" />
@@ -82,79 +255,30 @@ export const HomePage: React.FC = () => {
             </Text>
           </Box>
 
-          <Paper withBorder p="md" radius="lg" shadow="sm">
-            <Group wrap="nowrap" grow gap="sm">
-              <TextInput
-                  placeholder="Search events by name or venue..."
-                  leftSection={<IconSearch size={18} />}
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  radius="md"
-                  size="md"
-              />
-
-              <Select
-                  placeholder="Filter by status"
-                  leftSection={<IconFilter size={18} />}
-                  data={[
-                    { value: '', label: 'All Events' },
-                    { value: 'published', label: 'Published' },
-                    { value: 'draft', label: 'Draft' },
-                    { value: 'cancelled', label: 'Cancelled' },
-                  ]}
-                  value={statusFilter}
-                  onChange={(value) => setStatusFilter(value || '')}
-                  clearable
-                  radius="md"
-                  size="md"
-              />
-
-              <Button
-                  variant="light"
-                  radius="md"
-                  size="md"
-                  leftSection={<IconAdjustments size={18} />}
-              >
-                Advanced Filters
-              </Button>
-            </Group>
-          </Paper>
+          {/* Advanced Filters Component */}
+          <AdvancedEventFilters
+              filters={filters}
+              filterOptions={filterOptions}
+              onFiltersChange={handleFiltersChange}
+              onReset={handleResetFilters}
+              loading={isLoading || isLoadingFilterOptions}
+          />
 
           <Divider my="sm" />
 
-          {filteredEvents.length === 0 ? (
+          {events.length === 0 ? (
               <Center py="xl">
                 <Stack align="center" gap="xs">
                   <Text size="xl" fw={500} c="dimmed">No events found</Text>
                   <Text c="dimmed">Try adjusting your search or filters</Text>
-                  <Button
-                      variant="subtle"
-                      size="sm"
-                      onClick={() => {
-                        setSearchTerm('');
-                        setStatusFilter('');
-                      }}
-                  >
-                    Clear all filters
-                  </Button>
                 </Stack>
               </Center>
           ) : (
               <>
                 <Group justify="space-between">
                   <Text c="dimmed">
-                    Showing <Badge variant="light" color="blue" radius="sm">{filteredEvents.length}</Badge> events
+                    Showing <Badge variant="light" color="blue" radius="sm">{events.length}</Badge> events
                   </Text>
-                  <Select
-                      placeholder="Sort by"
-                      data={[
-                        { value: 'date', label: 'Date' },
-                        { value: 'name', label: 'Name' },
-                        { value: 'price', label: 'Price' },
-                      ]}
-                      radius="md"
-                      size="sm"
-                  />
                 </Group>
 
                 <SimpleGrid
@@ -162,7 +286,7 @@ export const HomePage: React.FC = () => {
                     spacing="xl"
                     verticalSpacing="xl"
                 >
-                  {filteredEvents.map((event) => (
+                  {events.map((event: Event) => (
                       <EventCard
                           key={event.id}
                           event={event}

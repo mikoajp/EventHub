@@ -79,7 +79,7 @@ export const DashboardPage: React.FC = () => {
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [publishingEventId, setPublishingEventId] = useState<string | null>(null);
 
-  const { data: allEvents, isLoading: eventsLoading } = useEvents();
+  const { data: eventsResponse, isLoading: eventsLoading } = useEvents();
   const publishEventMutation = usePublishEvent();
   const { data: statistics, isLoading: statsLoading } = useEventStatistics(
       selectedEventId,
@@ -87,7 +87,7 @@ export const DashboardPage: React.FC = () => {
       undefined
   );
 
-  const myEvents = allEvents || [];
+  const myEvents = eventsResponse?.events || [];
   const draftEvents = myEvents.filter(e => e.status === 'draft');
   const publishedEvents = myEvents.filter(e => e.status === 'published');
   const totalTicketsSold = myEvents.reduce((sum, event) => sum + event.ticketsSold, 0);

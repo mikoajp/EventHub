@@ -1,9 +1,24 @@
-import type { Event, CreateEventData, EventStatistics, EventsResponse } from '../types';
+import type { Event, CreateEventData, EventStatistics, EventsResponse, EventFilters, FilterOptions } from '../types';
 import { apiClient } from './client';
 
 export const eventsApi = {
-  getAll: (): Promise<EventsResponse> =>
-      apiClient.get('/events'),
+  getAll: (filters?: EventFilters): Promise<EventsResponse> => {
+    const params = new URLSearchParams();
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          if (Array.isArray(value)) {
+            value.forEach(v => params.append(`${key}[]`, v.toString()));
+          } else {
+            params.append(key, value.toString());
+          }
+        }
+      });
+    }
+    
+    return apiClient.get(`/events?${params.toString()}`);
+  },
 
   getById: (id: string): Promise<Event> =>
     apiClient.get(`/events/${id}`),
@@ -27,4 +42,7 @@ export const eventsApi = {
     apiClient.get(`/events/${id}/statistics`, {
       params: { from, to }
     }),
+
+  getFilterOptions: (): Promise<FilterOptions> =>
+    apiClient.get('/events/filter-options'),
 };

@@ -3,9 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Service\AuthService;
+use App\Application\Service\UserApplicationService;
 use App\Service\ErrorHandlerService;
 use App\DTO\UserRegistrationDTO;
+use App\Infrastructure\Validation\RequestValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,7 +17,8 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 class AuthController extends AbstractController
 {
     public function __construct(
-        private AuthService $authService,
+        private UserApplicationService $userApplicationService,
+        private RequestValidatorInterface $requestValidator,
         private ErrorHandlerService $errorHandler
     ) {}
 
@@ -24,8 +26,10 @@ class AuthController extends AbstractController
     public function login(#[CurrentUser] ?User $user): JsonResponse
     {
         try {
-            $this->authService->validateUser($user);
-            return $this->json($this->authService->formatLoginResponse($user));
+            if (!$user) {
+                throw new \RuntimeException('User not authenticated', JsonResponse::HTTP_UNAUTHORIZED);
+            }
+            return $this->json($this->userApplicationService->formatLoginResponse($user));
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Login failed');
         }
@@ -35,8 +39,10 @@ class AuthController extends AbstractController
     public function me(#[CurrentUser] ?User $user): JsonResponse
     {
         try {
-            $this->authService->validateUser($user);
-            return $this->json($this->authService->formatUserProfileResponse($user));
+            if (!$user) {
+                throw new \RuntimeException('User not authenticated', JsonResponse::HTTP_UNAUTHORIZED);
+            }
+            return $this->json($this->userApplicationService->getUserProfile($user));
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Authentication check failed');
         }
@@ -46,9 +52,20 @@ class AuthController extends AbstractController
     public function register(Request $request): JsonResponse
     {
         try {
-            $user = $this->authService->registerUserFromRequest($request);
+            $data = $this->requestValidator->extractJsonData($request);
+            
+            $registrationDTO = new UserRegistrationDTO(
+                $data['email'] ?? '',
+                $data['password'] ?? '',
+                $data['firstName'] ?? '',
+                $data['lastName'] ?? '',
+                $data['phone'] ?? null
+            );
+
+            $user = $this->userApplicationService->registerUser($registrationDTO);
+            
             return $this->json(
-                $this->authService->formatRegistrationResponse($user),
+                $this->userApplicationService->formatRegistrationResponse($user),
                 JsonResponse::HTTP_CREATED
             );
         } catch (\Exception $e) {

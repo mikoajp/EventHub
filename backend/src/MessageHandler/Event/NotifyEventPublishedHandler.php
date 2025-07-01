@@ -4,7 +4,7 @@ namespace App\MessageHandler\Event;
 
 use App\Message\Event\EventPublishedEvent;
 use App\Repository\EventRepository;
-use App\Service\NotificationService;
+use App\Application\Service\NotificationApplicationService;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Uid\Uuid;
 
@@ -13,7 +13,7 @@ final readonly class NotifyEventPublishedHandler
 {
     public function __construct(
         private EventRepository $eventRepository,
-        private NotificationService $notificationService
+        private NotificationApplicationService $notificationApplicationService
     ) {}
 
     public function __invoke(EventPublishedEvent $event): void
@@ -24,6 +24,7 @@ final readonly class NotifyEventPublishedHandler
             return;
         }
 
-        $this->notificationService->shareOnSocialMedia($eventEntity);
+        // Send to social media, etc.
+        $this->notificationApplicationService->shareEventOnSocialMedia($eventEntity);
     }
 }

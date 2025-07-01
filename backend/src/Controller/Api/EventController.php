@@ -5,10 +5,11 @@ namespace App\Controller\Api;
 use App\Entity\Event;
 use App\Entity\User;
 use App\Message\Command\Event\PublishEventCommand;
-use App\Service\EventService;
-use App\Service\NotificationService;
+use App\Application\Service\EventApplicationService;
+use App\Application\Service\NotificationApplicationService;
 use App\Service\ErrorHandlerService;
-use App\Service\ValidationService;
+use App\Infrastructure\Validation\RequestValidatorInterface;
+use App\DTO\EventFiltersDTO;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,29 +24,130 @@ class EventController extends AbstractController
 {
     public function __construct(
         private readonly MessageBusInterface $commandBus,
-        private readonly EventService        $eventService,
-        private readonly NotificationService $notificationService,
+        private readonly EventApplicationService $eventApplicationService,
+        private readonly NotificationApplicationService $notificationApplicationService,
         private readonly ErrorHandlerService $errorHandler,
-        private readonly ValidationService   $validationService
+        private readonly RequestValidatorInterface $requestValidator
     ) {}
 
     #[Route('', name: 'api_events_list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
         try {
-            $events = $this->eventService->getPublishedEvents();
-            return $this->json($this->eventService->formatEventsCollectionResponse($events));
+            $filtersDTO = new EventFiltersDTO(
+                search: $request->query->get('search'),
+                status: $request->query->all('status') ?: ['published'],
+                venue: $request->query->all('venue') ?: [],
+                organizer_id: $request->query->get('organizer_id'),
+                date_from: $request->query->get('date_from'),
+                date_to: $request->query->get('date_to'),
+                price_min: $request->query->get('price_min') ? (float)$request->query->get('price_min') : null,
+                price_max: $request->query->get('price_max') ? (float)$request->query->get('price_max') : null,
+                has_available_tickets: $request->query->getBoolean('has_available_tickets', false),
+                sort_by: $request->query->get('sort_by', 'date'),
+                sort_direction: $request->query->get('sort_direction', 'asc'),
+                page: max(1, $request->query->getInt('page', 1)),
+                limit: min(100, max(1, $request->query->getInt('limit', 20)))
+            );
+
+            $violations = $this->requestValidator->validate($filtersDTO);
+            if (count($violations) > 0) {
+                return $this->json(['errors' => $violations], Response::HTTP_BAD_REQUEST);
+            }
+
+            $result = $this->eventApplicationService->getEventsWithFilters(
+                $filtersDTO->toArray(),
+                $filtersDTO->getSorting(),
+                $filtersDTO->page,
+                $filtersDTO->limit
+            );
+
+            return $this->json([
+                'events' => array_map(fn($event) => $this->formatEventResponse($event), $result['events']),
+                'pagination' => [
+                    'total' => $result['total'],
+                    'page' => $result['page'],
+                    'limit' => $result['limit'],
+                    'pages' => $result['pages']
+                ]
+            ]);
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to fetch events');
         }
+    }
+
+    #[Route('/filter-options', name: 'api_events_filter_options', methods: ['GET'])]
+    public function getFilterOptions(): JsonResponse
+    {
+        try {
+            $options = $this->eventApplicationService->getFilterOptions();
+            return $this->json($options);
+        } catch (\Exception $e) {
+            return $this->errorHandler->createJsonResponse($e, 'Failed to fetch filter options');
+        }
+    }
+
+    private function formatEventResponse($event): array
+    {
+        return [
+            'id' => $event->getId()->toString(),
+            'name' => $event->getName(),
+            'description' => $event->getDescription(),
+            'eventDate' => $event->getEventDate()->format('c'),
+            'venue' => $event->getVenue(),
+            'maxTickets' => $event->getMaxTickets(),
+            'ticketsSold' => $event->getTicketsSold(),
+            'availableTickets' => $event->getAvailableTickets(),
+            'status' => $event->getStatus(),
+            'publishedAt' => $event->getPublishedAt()?->format('c'),
+            'createdAt' => $event->getCreatedAt()->format('c'),
+            'organizer' => [
+                'id' => $event->getOrganizer()->getId()->toString(),
+                'name' => $event->getOrganizer()->getFullName()
+            ],
+            'ticketTypes' => array_map(fn($ticketType) => [
+                'id' => $ticketType->getId()->toString(),
+                'name' => $ticketType->getName(),
+                'price' => $ticketType->getPrice(),
+                'quantity' => $ticketType->getQuantity(),
+                'priceFormatted' => number_format($ticketType->getPrice() / 100, 2)
+            ], $event->getTicketTypes()->toArray())
+        ];
     }
 
     #[Route('/{id}', name: 'api_events_show', methods: ['GET'])]
     public function show(string $id): JsonResponse
     {
         try {
-            $event = $this->eventService->findEventOrFail($id);
-            return $this->json($this->eventService->formatSingleEventResponse($event));
+            $event = $this->eventApplicationService->getEventById($id);
+            if (!$event) {
+                throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
+            }
+            
+            return $this->json([
+                'id' => $event->getId()->toString(),
+                'name' => $event->getName(),
+                'description' => $event->getDescription(),
+                'eventDate' => $event->getEventDate()->format('c'),
+                'venue' => $event->getVenue(),
+                'maxTickets' => $event->getMaxTickets(),
+                'ticketsSold' => $event->getTicketsSold(),
+                'availableTickets' => $event->getAvailableTickets(),
+                'status' => $event->getStatus(),
+                'publishedAt' => $event->getPublishedAt()?->format('c'),
+                'createdAt' => $event->getCreatedAt()->format('c'),
+                'organizer' => [
+                    'id' => $event->getOrganizer()->getId()->toString(),
+                    'name' => $event->getOrganizer()->getFullName(),
+                    'email' => $event->getOrganizer()->getEmail()
+                ],
+                'ticketTypes' => array_map(fn($ticketType) => [
+                    'id' => $ticketType->getId()->toString(),
+                    'name' => $ticketType->getName(),
+                    'price' => $ticketType->getPrice(),
+                    'quantity' => $ticketType->getQuantity()
+                ], $event->getTicketTypes()->toArray())
+            ]);
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to fetch event');
         }
@@ -58,22 +160,30 @@ class EventController extends AbstractController
         #[CurrentUser] ?User $user
     ): JsonResponse {
         try {
-            $this->eventService->validateUser($user);
+            if (!$user) {
+                throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
+            }
 
-            $eventDTO = $this->validationService->validateAndCreateEventDTO($request);
-            $event = $this->eventService->createEventFromDTO($eventDTO, $user);
+            $eventDTO = $this->requestValidator->validateAndCreateEventDTO($request);
+            $event = $this->eventApplicationService->createEvent($eventDTO, $user);
 
-            $this->notificationService->sendRealTimeUpdate('events/draft_created', [
-                'event_id' => $event->getId()->toString(),
-                'event_name' => $event->getName(),
-                'organizer' => $user->getEmail(),
+            $this->notificationApplicationService->sendGlobalNotification([
+                'title' => 'Draft Event Created',
                 'message' => "Draft event '{$event->getName()}' created by {$user->getEmail()}",
+                'type' => 'info',
+                'event_id' => $event->getId()->toString(),
                 'timestamp' => (new \DateTime())->format('c')
             ]);
 
-            return $this->json(
-                $this->eventService->formatEventCreationResponse($event),
-                Response::HTTP_CREATED
+            return $this->json([
+                'message' => 'Event created successfully',
+                'event' => [
+                    'id' => $event->getId()->toString(),
+                    'name' => $event->getName(),
+                    'status' => $event->getStatus(),
+                    'createdAt' => $event->getCreatedAt()->format('c')
+                ]
+            ], Response::HTTP_CREATED
             );
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to create event');
@@ -85,8 +195,14 @@ class EventController extends AbstractController
     public function publish(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         try {
-            $event = $this->eventService->findEventOrFail($id);
-            $this->eventService->validateUserCanPublishEvent($event, $user);
+            if (!$user) {
+                throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
+            }
+
+            $event = $this->eventApplicationService->getEventById($id);
+            if (!$event) {
+                throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
+            }
 
             if ($event->getStatus() !== Event::STATUS_DRAFT) {
                 throw new \InvalidArgumentException('Only draft events can be published');
@@ -116,22 +232,37 @@ class EventController extends AbstractController
         #[CurrentUser] ?User $user
     ): JsonResponse {
         try {
-            $this->eventService->validateUser($user);
-
-            $event = $this->eventService->findEventOrFail($id);
-
-            if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('Access denied', Response::HTTP_FORBIDDEN);
+            if (!$user) {
+                throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
             }
 
-            $eventDTO = $this->validationService->validateAndCreateEventDTO($request);
-            $updatedEvent = $this->eventService->updateEventFromDTO($event, $eventDTO);
+            $event = $this->eventApplicationService->getEventById($id);
+            if (!$event) {
+                throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
+            }
 
-            $this->notificationService->notifyEventUpdated($updatedEvent);
+            $eventDTO = $this->requestValidator->validateAndCreateEventDTO($request);
+            $updatedEvent = $this->eventApplicationService->updateEvent($event, $eventDTO, $user);
+
+            $this->notificationApplicationService->sendGlobalNotification([
+                'title' => 'Event Updated',
+                'message' => "Event '{$updatedEvent->getName()}' has been updated",
+                'type' => 'info',
+                'event_id' => $updatedEvent->getId()->toString(),
+                'timestamp' => (new \DateTime())->format('c')
+            ]);
 
             return $this->json([
                 'message' => 'Event updated successfully',
-                'event' => $this->eventService->formatSingleEventResponse($updatedEvent)
+                'event' => [
+                    'id' => $updatedEvent->getId()->toString(),
+                    'name' => $updatedEvent->getName(),
+                    'description' => $updatedEvent->getDescription(),
+                    'eventDate' => $updatedEvent->getEventDate()->format('c'),
+                    'venue' => $updatedEvent->getVenue(),
+                    'maxAttendees' => $updatedEvent->getMaxAttendees(),
+                    'status' => $updatedEvent->getStatus()
+                ]
             ]);
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to update event');

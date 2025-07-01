@@ -297,4 +297,192 @@ class EventRepository extends ServiceEntityRepository
         ];
     }
 
+    /**
+     * Find published events
+     *
+     * @return Event[]
+     */
+    public function findPublishedEvents(): array
+    {
+        return $this->createQueryBuilder('e')
+            ->where('e.status = :status')
+            ->setParameter('status', Event::STATUS_PUBLISHED)
+            ->orderBy('e.eventDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Find events with advanced filters
+     *
+     * @param array $filters
+     * @param array $sorting
+     * @param int $page
+     * @param int $limit
+     * @return array
+     */
+    public function findEventsWithFilters(array $filters = [], array $sorting = [], int $page = 1, int $limit = 20): array
+    {
+        $qb = $this->createQueryBuilder('e')
+            ->leftJoin('e.organizer', 'o')
+            ->leftJoin('e.ticketTypes', 'tt');
+
+        // Apply filters
+        if (!empty($filters['search'])) {
+            $qb->andWhere('e.name LIKE :search OR e.description LIKE :search OR e.venue LIKE :search')
+                ->setParameter('search', '%' . $filters['search'] . '%');
+        }
+
+        if (!empty($filters['status'])) {
+            if (is_array($filters['status'])) {
+                $qb->andWhere('e.status IN (:statuses)')
+                    ->setParameter('statuses', $filters['status']);
+            } else {
+                $qb->andWhere('e.status = :status')
+                    ->setParameter('status', $filters['status']);
+            }
+        }
+
+        if (!empty($filters['venue'])) {
+            if (is_array($filters['venue'])) {
+                $qb->andWhere('e.venue IN (:venues)')
+                    ->setParameter('venues', $filters['venue']);
+            } else {
+                $qb->andWhere('e.venue LIKE :venue')
+                    ->setParameter('venue', '%' . $filters['venue'] . '%');
+            }
+        }
+
+        if (!empty($filters['organizer_id'])) {
+            $qb->andWhere('e.organizer = :organizer')
+                ->setParameter('organizer', $filters['organizer_id']);
+        }
+
+        if (!empty($filters['date_from'])) {
+            $qb->andWhere('e.eventDate >= :dateFrom')
+                ->setParameter('dateFrom', new \DateTime($filters['date_from']));
+        }
+
+        if (!empty($filters['date_to'])) {
+            $qb->andWhere('e.eventDate <= :dateTo')
+                ->setParameter('dateTo', new \DateTime($filters['date_to']));
+        }
+
+        if (!empty($filters['price_min'])) {
+            $qb->andWhere('tt.price >= :priceMin')
+                ->setParameter('priceMin', $filters['price_min'] * 100); // Convert to cents
+        }
+
+        if (!empty($filters['price_max'])) {
+            $qb->andWhere('tt.price <= :priceMax')
+                ->setParameter('priceMax', $filters['price_max'] * 100); // Convert to cents
+        }
+
+        if (isset($filters['has_available_tickets']) && $filters['has_available_tickets']) {
+            $qb->andWhere('e.maxTickets > (
+                SELECT COUNT(t.id) 
+                FROM App\Entity\Ticket t 
+                WHERE t.event = e AND t.status IN (:purchasedStatuses)
+            )')
+                ->setParameter('purchasedStatuses', ['purchased', 'reserved']);
+        }
+
+        // Apply sorting
+        $sortField = $sorting['field'] ?? 'eventDate';
+        $sortDirection = strtoupper($sorting['direction'] ?? 'ASC');
+
+        switch ($sortField) {
+            case 'name':
+                $qb->orderBy('e.name', $sortDirection);
+                break;
+            case 'venue':
+                $qb->orderBy('e.venue', $sortDirection);
+                break;
+            case 'created_at':
+                $qb->orderBy('e.createdAt', $sortDirection);
+                break;
+            case 'price':
+                $qb->orderBy('MIN(tt.price)', $sortDirection)
+                    ->groupBy('e.id');
+                break;
+            case 'popularity':
+                $qb->orderBy('(
+                    SELECT COUNT(t2.id) 
+                    FROM App\Entity\Ticket t2 
+                    WHERE t2.event = e AND t2.status = \'purchased\'
+                )', $sortDirection);
+                break;
+            default:
+                $qb->orderBy('e.eventDate', $sortDirection);
+        }
+
+        // Add secondary sorting
+        if ($sortField !== 'eventDate') {
+            $qb->addOrderBy('e.eventDate', 'ASC');
+        }
+
+        // Calculate total count
+        $countQb = clone $qb;
+        $countQb->select('COUNT(DISTINCT e.id)');
+        $totalCount = $countQb->getQuery()->getSingleScalarResult();
+
+        // Apply pagination
+        $offset = ($page - 1) * $limit;
+        $qb->setFirstResult($offset)
+            ->setMaxResults($limit);
+
+        // Get distinct events (in case of joins)
+        $qb->distinct();
+
+        $events = $qb->getQuery()->getResult();
+
+        return [
+            'events' => $events,
+            'total' => (int)$totalCount,
+            'page' => $page,
+            'limit' => $limit,
+            'pages' => (int)ceil($totalCount / $limit)
+        ];
+    }
+
+    /**
+     * Get unique venues for filter options
+     *
+     * @return array
+     */
+    public function getUniqueVenues(): array
+    {
+        $result = $this->createQueryBuilder('e')
+            ->select('DISTINCT e.venue')
+            ->where('e.status = :status')
+            ->setParameter('status', Event::STATUS_PUBLISHED)
+            ->orderBy('e.venue', 'ASC')
+            ->getQuery()
+            ->getScalarResult();
+
+        return array_column($result, 'venue');
+    }
+
+    /**
+     * Get price range for events
+     *
+     * @return array
+     */
+    public function getPriceRange(): array
+    {
+        $result = $this->getEntityManager()->createQueryBuilder()
+            ->select('MIN(tt.price) as min_price, MAX(tt.price) as max_price')
+            ->from('App\Entity\TicketType', 'tt')
+            ->join('tt.event', 'e')
+            ->where('e.status = :status')
+            ->setParameter('status', Event::STATUS_PUBLISHED)
+            ->getQuery()
+            ->getSingleResult();
+
+        return [
+            'min' => (float)($result['min_price'] ?? 0) / 100,
+            'max' => (float)($result['max_price'] ?? 0) / 100
+        ];
+    }
+
 }

@@ -1,12 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsApi } from '../api/events';
-import { type CreateEventData, type Event, type EventsResponse } from '../types';
+import { type CreateEventData, type EventsResponse, type EventFilters, type FilterOptions } from '../types';
 import { notifications } from '@mantine/notifications';
 
-export const useEvents = () => {
-  return useQuery<EventsResponse, Error, Event[]>({
-    queryKey: ['events'],
-    queryFn: eventsApi.getAll,
+export const useEvents = (filters?: EventFilters) => {
+  return useQuery<EventsResponse, Error>({
+    queryKey: ['events', filters],
+    queryFn: () => eventsApi.getAll(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useFilterOptions = () => {
+  return useQuery<FilterOptions, Error>({
+    queryKey: ['events', 'filter-options'],
+    queryFn: eventsApi.getFilterOptions,
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
   });
 };
 
