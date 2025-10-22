@@ -28,3 +28,6 @@
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
 ###< lexik/jwt-authentication-bundle ###
+
+# Symfony Secrets (do not commit private decrypt keys)
+/config/secrets/*/*.decrypt.private.php

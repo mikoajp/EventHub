@@ -119,6 +119,18 @@ cd frontend
 npm test
 ```
 
+## ✅ TODO (2025-10-22)
+- Secrets: move JWT/APP/Stripe to Symfony Secrets; remove from .env and README.
+- Auth/Security: json_login + JWT issuance, refresh tokens, tighten access_control, API Platform security/voters.
+- Messaging: standardize on Symfony Messenger + RabbitMQ (php-amqplib or amqp ext); fix DSN/hosts; drop unused STOMP/Mercure or wire it fully.
+- Redis: replace KEYS usage with SCAN/tagging in cache code.
+- Healthcheck: keep a single endpoint (controller or public/health.php) and remove duplicate.
+- Dev/Ports/Proxy: align docker-compose ports (8000/8001) with server/Apache; fix Vite proxy and VITE_API_URL; update README.
+- Frontend API: use import.meta.env.VITE_API_URL; implement JWT + refresh handling.
+- DDD/Refactor: move presentation logic out of entities to DTO/Presenters; retire legacy src\Service.
+- Payments: finalize Stripe integration and webhook flow; move keys to secrets; add tests.
+- CI/Tests: add minimal CI, smoke tests (auth/events/messenger) and critical e2e.
+
 ## 📜 License
 
 This project is licensed under the MIT License - see the **LICENSE** file for details.

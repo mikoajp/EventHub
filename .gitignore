@@ -1,0 +1,37 @@
+# Root ignores
+
+# OS/IDE
+.DS_Store
+Thumbs.db
+ehthumbs.db
+*.sw?
+.idea/
+.vscode/
+.vscode/*
+!.vscode/extensions.json
+
+# Env files (do not commit secrets)
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Docker
+/docker/*.env
+/docker-compose.override.yml
+/docker-compose.*.yml
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+
+# Node (frontend convenience)
+/frontend/node_modules/
+/frontend/dist/
+/frontend/dist-ssr/
+
+# Symfony (backend convenience)
+/backend/var/
