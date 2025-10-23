@@ -6,36 +6,54 @@ framework:
         transports:
             sync: 'sync://'
 
-            # Primary async transport using Doctrine (reliable fallback)
+            # Primary async transport using RabbitMQ (AMQP)
             async:
-                dsn: 'doctrine://default?queue_name=async'
+                dsn: 'amqp://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/async'
                 retry_strategy:
                     max_retries: 3
                     delay: 1000
                     multiplier: 2
                     max_delay: 10000
+                options:
+                    exchange:
+                        name: async_exchange
+                        type: direct
+                    queues:
+                        async_queue:
+                            binding_keys: [async]
 
-            # High priority commands
+            # High priority commands using RabbitMQ
             high_priority:
-                dsn: 'doctrine://default?queue_name=high_priority'
+                dsn: 'amqp://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/high_priority'
                 retry_strategy:
                     max_retries: 5
                     delay: 500
                     multiplier: 1.5
                     max_delay: 5000
+                options:
+                    exchange:
+                        name: high_priority_exchange
+                        type: direct
+                    queues:
+                        high_priority_queue:
+                            binding_keys: [high_priority]
 
-
-            # Option 2: Classic AMQP (requires C extension)
-            notifications_amqp:
+            # Events/notifications using RabbitMQ
+            notifications:
                 dsn: 'amqp://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/notifications'
                 retry_strategy:
                     max_retries: 3
                     delay: 1000
                     multiplier: 2
                     max_delay: 30000
+                options:
+                    exchange:
+                        name: events_exchange
+                        type: fanout
+                    queues:
+                        notifications_queue: {}
 
-
-            # Failed messages storage
+            # Failed messages storage (keep in Doctrine for reliability)
             failed: 'doctrine://default?queue_name=failed'
 
         routing:
@@ -48,8 +66,8 @@ framework:
             # Route queries synchronously
             'App\Message\Query\*': sync
 
-            # Route events to notifications (try phpamqplib first)
-            'App\Message\Event\*': notifications_amqp
+            # Route events to notifications
+            'App\Message\Event\*': notifications
 
         default_bus: command.bus
         buses:

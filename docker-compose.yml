@@ -14,7 +14,7 @@ services:
     environment:
       - APP_ENV=dev
       - DATABASE_URL=postgresql://eventhub:secret@postgres:5432/eventhub
-      - MESSENGER_TRANSPORT_DSN=redis://redis:6379/messages
+      - MESSENGER_TRANSPORT_DSN=amqp://eventhub:secret@rabbitmq:5672/%2f/messages
       - MAILER_DSN=smtp://mailhog:1025
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_PORT=5672
