@@ -76,12 +76,8 @@ services:
             $user: '%rabbitmq.user%'
             $password: '%rabbitmq.password%'
 
-    # Legacy NotificationService (for backward compatibility)
-    App\Service\NotificationService:
-        arguments:
-            $emailService: '@App\Service\EmailService'
-            $userRepository: '@App\Repository\UserRepository'
-            $rabbitMQ: '@App\Service\RabbitMQConnection'
+    # NotificationService - uses autowiring
+    # App\Service\NotificationService: (autowired by default)
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
