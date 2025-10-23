@@ -6,6 +6,7 @@ Thumbs.db
 ehthumbs.db
 *.sw?
 .idea/
+.idea/*
 .vscode/
 .vscode/*
 !.vscode/extensions.json
