@@ -28,7 +28,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchCurrentUser = useCallback(async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      if (!token) {
+      const refreshToken = localStorage.getItem('refresh_token');
+      
+      if (!token && !refreshToken) {
         setUser(null);
         setIsAuthenticated(false);
         return;
@@ -38,7 +40,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
+      // If refresh token exists, the interceptor will try to refresh
+      // If that fails, it will clear tokens and redirect
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
       setUser(null);
       setIsAuthenticated(false);
     }
@@ -56,12 +61,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post<{ token: string; user: User }>('/auth/login', {
+      const response = await apiClient.post<{ token: string; refresh_token: string; user?: User }>('/auth/login', {
         email,
         password,
       });
 
+      // Store both access token and refresh token
       localStorage.setItem('auth_token', response.token);
+      localStorage.setItem('refresh_token', response.refresh_token);
 
       await fetchCurrentUser();
 
@@ -75,7 +82,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    // Remove both tokens
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
     setUser(null);
     setIsAuthenticated(false);
   };
