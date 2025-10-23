@@ -84,9 +84,21 @@ EventHub/
    ```bash
    cd backend
    composer install
+   
+   # Generate JWT keys (will prompt for passphrase)
+   php bin/console lexik:jwt:generate-keypair
+   
+   # Set up secrets for development
+   php bin/console secrets:generate-keys --local
+   php bin/console secrets:set APP_SECRET --local
+   php bin/console secrets:set JWT_PASSPHRASE --local
+   php bin/console secrets:set STRIPE_SECRET_KEY --local
+   
+   # Database setup
    php bin/console doctrine:migrations:migrate
    php bin/console doctrine:fixtures:load
-   php bin/console lexik:jwt:generate-keypair
+   
+   # Start server
    symfony serve -d
    ```
 
@@ -120,7 +132,7 @@ npm test
 ```
 
 ## ✅ TODO (2025-10-22)
-- Secrets: move JWT/APP/Stripe to Symfony Secrets; remove from .env and README.
+- ✅ ~~Secrets: move JWT/APP/Stripe to Symfony Secrets; remove from .env and README.~~
 - Auth/Security: json_login + JWT issuance, refresh tokens, tighten access_control, API Platform security/voters.
 - Messaging: standardize on Symfony Messenger + RabbitMQ (php-amqplib or amqp ext); fix DSN/hosts; drop unused STOMP/Mercure or wire it fully.
 - Redis: replace KEYS usage with SCAN/tagging in cache code.
