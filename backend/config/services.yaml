@@ -42,12 +42,6 @@ services:
     App\Infrastructure\Messaging\MessageBusInterface:
         alias: App\Infrastructure\Messaging\MercureAdapter
 
-    App\Infrastructure\Messaging\RabbitMQAdapter:
-        arguments:
-            $host: '%rabbitmq.host%'
-            $port: '%rabbitmq.port%'
-            $user: '%rabbitmq.user%'
-            $password: '%rabbitmq.password%'
 
     App\Infrastructure\Email\EmailServiceInterface:
         alias: App\Infrastructure\Email\SymfonyMailerAdapter
@@ -67,14 +61,6 @@ services:
     # Validation Infrastructure
     App\Infrastructure\Validation\RequestValidatorInterface:
         alias: App\Infrastructure\Validation\SymfonyRequestValidator
-
-    # Legacy RabbitMQ Connection Service (for backward compatibility)
-    App\Service\RabbitMQConnection:
-        arguments:
-            $host: '%rabbitmq.host%'
-            $port: '%rabbitmq.port%'
-            $user: '%rabbitmq.user%'
-            $password: '%rabbitmq.password%'
 
     # NotificationService - uses autowiring
     # App\Service\NotificationService: (autowired by default)

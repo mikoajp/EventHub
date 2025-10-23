@@ -24,20 +24,6 @@ framework:
                     multiplier: 1.5
                     max_delay: 5000
 
-            # Option 1: Use phpamqplib (no C extension required)
-            notifications_phpamqplib:
-                dsn: 'phpamqplib://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%//%2f/notifications'
-                retry_strategy:
-                    max_retries: 3
-                    delay: 1000
-                    multiplier: 2
-                    max_delay: 30000
-                options:
-                    exchange:
-                        name: notifications
-                        type: direct
-                    queues:
-                        notifications: ~
 
             # Option 2: Classic AMQP (requires C extension)
             notifications_amqp:
@@ -48,13 +34,6 @@ framework:
                     multiplier: 2
                     max_delay: 30000
 
-            # Doctrine fallback for notifications
-            notifications_fallback:
-                dsn: 'doctrine://default?queue_name=notifications_fallback'
-                retry_strategy:
-                    max_retries: 5
-                    delay: 2000
-                    multiplier: 2
 
             # Failed messages storage
             failed: 'doctrine://default?queue_name=failed'
@@ -70,7 +49,7 @@ framework:
             'App\Message\Query\*': sync
 
             # Route events to notifications (try phpamqplib first)
-            'App\Message\Event\*': notifications_phpamqplib
+            'App\Message\Event\*': notifications_amqp
 
         default_bus: command.bus
         buses:
