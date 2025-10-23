@@ -68,7 +68,15 @@ class CacheStatsService
             
             $keyCounts = [];
             foreach ($keyPatterns as $name => $pattern) {
-                $keyCounts[$name] = count($this->redis->keys($pattern));
+                $count = 0;
+                if (method_exists($this->redis, 'scan')) {
+                    $it = null;
+                    do {
+                        $keys = $this->redis->scan($it, $pattern, 1000) ?: [];
+                        $count += is_array($keys) ? count($keys) : 0;
+                    } while ($it !== 0 && $it !== null);
+                }
+                $keyCounts[$name] = $count;
             }
             
             return [
@@ -145,7 +153,16 @@ class CacheStatsService
         }
 
         try {
-            $keys = $this->redis->keys($pattern);
+            $keys = [];
+            if (method_exists($this->redis, 'scan')) {
+                $it = null;
+                do {
+                    $batch = $this->redis->scan($it, $pattern, 1000) ?: [];
+                    if (!empty($batch)) {
+                        $keys = array_merge($keys, $batch);
+                    }
+                } while ($it !== 0 && $it !== null);
+            }
             $metrics = [];
             
             foreach ($keys as $key) {

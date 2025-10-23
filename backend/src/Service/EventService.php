@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use Symfony\Contracts\Cache\ItemInterface;
+
 use App\Entity\Event;
 use App\Entity\User;
 use App\DTO\EventDTO;
@@ -35,7 +37,7 @@ class EventService
     {
         return $this->cacheService->get(self::CACHE_KEY_PUBLISHED_EVENTS, function() {
             return $this->eventRepository->findBy(['status' => Event::STATUS_PUBLISHED]);
-        }, self::CACHE_TTL_PUBLISHED_EVENTS);
+        }, self::CACHE_TTL_PUBLISHED_EVENTS, ['events']);
     }
 
     /**
@@ -45,13 +47,13 @@ class EventService
     {
         $cacheKey = self::CACHE_KEY_EVENT_PREFIX . $id;
 
-        return $this->cacheService->get($cacheKey, function() use ($id) {
+        return $this->cacheService->get($cacheKey, function(ItemInterface $item) use ($id) {
             $event = $this->eventRepository->findByUuid($id);
             if (!$event) {
                 throw new \RuntimeException('Event not found', Response::HTTP_NOT_FOUND);
             }
             return $event;
-        }, self::CACHE_TTL_SINGLE_EVENT);
+        }, self::CACHE_TTL_SINGLE_EVENT, ['event:'.$id]);
     }
 
     /**
@@ -91,7 +93,7 @@ class EventService
                 'dailyBreakdown' => $statistics['daily_breakdown'],
                 'generatedAt' => (new \DateTime())->format('c')
             ];
-        }, self::CACHE_TTL_STATISTICS);
+        }, self::CACHE_TTL_STATISTICS, ['event:'.$eventId, 'event:stats:'.$eventId]);
     }
 
     public function createEventFromDTO(EventDTO $eventDTO, User $user): Event
@@ -306,11 +308,11 @@ class EventService
      */
     private function invalidateEventCache(Event $event): void
     {
-        $this->cacheService->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId());
-        $this->cacheService->delete(self::CACHE_KEY_PUBLISHED_EVENTS);
-
-        $pattern = self::CACHE_KEY_STATISTICS_PREFIX . $event->getId() . '_*';
-        $this->cacheService->deletePattern($pattern);
+        $this->cacheService->invalidateTags([
+            'events',
+            'event:'.$event->getId(),
+            'event:stats:'.$event->getId()
+        ]);
     }
 
     public function validateUserCanPublishEvent(Event $event, User $user): void

@@ -4,15 +4,36 @@ namespace App\Infrastructure\Cache;
 
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\Cache\Adapter\TagAwareAdapter;
 use Symfony\Contracts\Cache\ItemInterface;
 use Psr\Log\LoggerInterface;
 
 final class RedisCacheAdapter implements CacheInterface
 {
+    /**
+     * Invalidate all items matching any of the provided tags.
+     */
+    public function invalidateTags(array $tags): bool
+    {
+        if (!$this->isEnabled) {
+            return true;
+        }
+        try {
+            if ($this->pool instanceof TagAwareAdapter) {
+                return $this->pool->invalidateTags($tags);
+            }
+            return false;
+        } catch (\Exception $e) {
+            $this->logger?->error('Cache invalidate tags error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
     private $cache;
     private $redis;
     private $logger;
     private $isEnabled;
+    private $pool;
 
     public function __construct(
         string $redisUrl = 'redis://localhost:6379',
@@ -26,6 +47,7 @@ final class RedisCacheAdapter implements CacheInterface
             try {
                 $this->redis = RedisAdapter::createConnection($redisUrl);
                 $this->cache = new RedisAdapter($this->redis);
+                $this->pool = new TagAwareAdapter($this->cache);
             } catch (\Exception $e) {
                 $this->isEnabled = false;
                 $this->logger?->error('Failed to connect to Redis: ' . $e->getMessage());
@@ -40,7 +62,7 @@ final class RedisCacheAdapter implements CacheInterface
         }
 
         try {
-            return $this->cache->get($key, function (ItemInterface $item) use ($callback, $ttl) {
+            return $this->pool->get($key, function (ItemInterface $item) use ($callback, $ttl) {
                 $item->expiresAfter($ttl);
                 return $callback();
             });
@@ -50,17 +72,20 @@ final class RedisCacheAdapter implements CacheInterface
         }
     }
 
-    public function set(string $key, mixed $value, int $ttl = 3600): bool
+    public function set(string $key, mixed $value, int $ttl = 3600, array $tags = []): bool
     {
         if (!$this->isEnabled) {
             return true;
         }
 
         try {
-            $item = $this->cache->getItem($key);
+            $item = $this->pool->getItem($key);
             $item->set($value);
+            if (!empty($tags) && method_exists($item, 'tag')) {
+                $item->tag($tags); // requires TagAwareAdapter pool
+            }
             $item->expiresAfter($ttl);
-            return $this->cache->save($item);
+            return $this->pool->save($item);
         } catch (\Exception $e) {
             $this->logger?->error('Cache set error: ' . $e->getMessage());
             return false;
@@ -74,7 +99,7 @@ final class RedisCacheAdapter implements CacheInterface
         }
 
         try {
-            return $this->cache->delete($key);
+            return $this->pool->deleteItem($key);
         } catch (\Exception $e) {
             $this->logger?->error('Cache delete error: ' . $e->getMessage());
             return false;
@@ -88,12 +113,21 @@ final class RedisCacheAdapter implements CacheInterface
         }
 
         try {
-            $keys = $this->redis->keys($pattern);
-
-            if (!empty($keys)) {
-                $this->redis->del($keys);
+            $deleted = 0;
+            if (method_exists($this->redis, 'scan')) {
+                $it = null;
+                do {
+                    $keys = $this->redis->scan($it, $pattern, 1000) ?: [];
+                    if (!empty($keys)) {
+                        $deleted += $this->redis->del($keys);
+                    }
+                } while ($it !== 0 && $it !== null);
+            } elseif (class_exists('Predis\\Collection\\Iterator\\Keyspace') && $this->redis instanceof \Predis\ClientInterface) {
+                foreach (new \Predis\Collection\Iterator\Keyspace($this->redis, $pattern, 1000) as $key) {
+                    $this->redis->del([$key]);
+                    $deleted++;
+                }
             }
-
             return true;
         } catch (\Exception $e) {
             $this->logger?->error('Cache pattern delete error: ' . $e->getMessage());
@@ -108,7 +142,7 @@ final class RedisCacheAdapter implements CacheInterface
         }
 
         try {
-            return $this->cache->clear();
+            return $this->pool->clear();
         } catch (\Exception $e) {
             $this->logger?->error('Cache clear error: ' . $e->getMessage());
             return false;
