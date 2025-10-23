@@ -24,11 +24,26 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\HasLifecycleCallbacks]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(),
-        new Post(processor: EventStateProcessor::class),
-        new Patch(processor: EventStateProcessor::class),
-        new Delete()
+        new GetCollection(
+            security: "is_granted('PUBLIC_ACCESS')"
+        ),
+        new Get(
+            security: "is_granted('PUBLIC_ACCESS')"
+        ),
+        new Post(
+            security: "is_granted('IS_AUTHENTICATED_FULLY')",
+            securityMessage: "You must be logged in to create an event.",
+            processor: EventStateProcessor::class
+        ),
+        new Patch(
+            security: "is_granted('ROLE_ADMIN') or object.getOrganizer() == user",
+            securityMessage: "You can only edit your own events.",
+            processor: EventStateProcessor::class
+        ),
+        new Delete(
+            security: "is_granted('ROLE_ADMIN') or object.getOrganizer() == user",
+            securityMessage: "You can only delete your own events."
+        )
     ],
     normalizationContext: ['groups' => ['event:read']],
     denormalizationContext: ['groups' => ['event:write']]

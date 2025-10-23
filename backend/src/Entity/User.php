@@ -21,9 +21,23 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Table(name: '`user`')]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(),
-        new Post()
+        new GetCollection(
+            security: "is_granted('ROLE_ADMIN')"
+        ),
+        new Get(
+            security: "is_granted('IS_AUTHENTICATED_FULLY')"
+        ),
+        new Post(
+            security: "is_granted('PUBLIC_ACCESS')"
+        ),
+        new Patch(
+            security: "is_granted('IS_AUTHENTICATED_FULLY') and object == user",
+            securityMessage: "You can only edit your own profile."
+        ),
+        new Delete(
+            security: "is_granted('ROLE_ADMIN')",
+            securityMessage: "Only administrators can delete users."
+        )
     ],
     normalizationContext: ['groups' => ['user:read']],
     denormalizationContext: ['groups' => ['user:write']]
@@ -46,7 +60,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private array $roles = [];
 
     #[ORM\Column]
-    #[Groups(['user:write'])]
     private string $password;
 
     #[ORM\Column(length: 100)]

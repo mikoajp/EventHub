@@ -204,6 +204,11 @@ class EventController extends AbstractController
                 throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
             }
 
+            // Check ownership
+            if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
+                throw new \RuntimeException('You can only publish your own events', Response::HTTP_FORBIDDEN);
+            }
+
             if ($event->getStatus() !== Event::STATUS_DRAFT) {
                 throw new \InvalidArgumentException('Only draft events can be published');
             }
@@ -239,6 +244,11 @@ class EventController extends AbstractController
             $event = $this->eventApplicationService->getEventById($id);
             if (!$event) {
                 throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
+            }
+
+            // Check ownership
+            if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
+                throw new \RuntimeException('You can only edit your own events', Response::HTTP_FORBIDDEN);
             }
 
             $eventDTO = $this->requestValidator->validateAndCreateEventDTO($request);
@@ -279,7 +289,7 @@ class EventController extends AbstractController
             $event = $this->eventService->findEventOrFail($id);
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('Access denied', Response::HTTP_FORBIDDEN);
+                throw new \RuntimeException('You can only cancel your own events', Response::HTTP_FORBIDDEN);
             }
 
             $this->eventService->cancelEvent($event);
@@ -305,7 +315,7 @@ class EventController extends AbstractController
             $event = $this->eventService->findEventOrFail($id);
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('Access denied', Response::HTTP_FORBIDDEN);
+                throw new \RuntimeException('You can only unpublish your own events', Response::HTTP_FORBIDDEN);
             }
 
             $this->eventService->unpublishEvent($event);
@@ -336,7 +346,7 @@ class EventController extends AbstractController
             $event = $this->eventService->findEventOrFail($id);
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('Access denied', Response::HTTP_FORBIDDEN);
+                throw new \RuntimeException('You can only view statistics for your own events', Response::HTTP_FORBIDDEN);
             }
 
             $from = $request->query->get('from');
@@ -363,7 +373,7 @@ class EventController extends AbstractController
             $event = $this->eventService->findEventOrFail($id);
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('Access denied', Response::HTTP_FORBIDDEN);
+                throw new \RuntimeException('You can only send notifications for your own events', Response::HTTP_FORBIDDEN);
             }
 
             $data = json_decode($request->getContent(), true);
