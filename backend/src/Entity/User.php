@@ -60,6 +60,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private array $roles = [];
 
     #[ORM\Column]
+    #[Groups(['user:write'])]
     private string $password;
 
     #[ORM\Column(length: 100)]
