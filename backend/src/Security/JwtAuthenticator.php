@@ -4,6 +4,7 @@ namespace App\Security;
 
 use App\Repository\UserRepository;
 use Lexik\Bundle\JWTAuthenticationBundle\TokenExtractor\TokenExtractorInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,7 +23,8 @@ class JwtAuthenticator extends AbstractAuthenticator
 
     public function __construct(
         private readonly UserRepository $userRepository,
-        private readonly TokenExtractorInterface $tokenExtractor
+        private readonly TokenExtractorInterface $tokenExtractor,
+        private readonly JWTEncoderInterface $jwtEncoder
     ) {}
 
     public function supports(Request $request): ?bool
@@ -39,12 +41,14 @@ class JwtAuthenticator extends AbstractAuthenticator
             throw new CustomUserMessageAuthenticationException('No JWT token found');
         }
         
-        // Parse JWT token and extract user identifier
-        // This is a simplified example - in a real implementation, 
-        // you would use the JWT service to decode and validate the token
+        // Decode and validate JWT using Lexik encoder
         try {
-            $payload = $this->decodeJwtToken($token);
-            $userIdentifier = $payload['username'] ?? null;
+            $payload = $this->jwtEncoder->decode($token);
+            if (!$payload) {
+                throw new CustomUserMessageAuthenticationException('Invalid JWT token');
+            }
+            // Use the same claim as configured (user_id_claim: email)
+            $userIdentifier = $payload['email'] ?? $payload['username'] ?? null;
             
             if (!$userIdentifier) {
                 throw new CustomUserMessageAuthenticationException('Invalid JWT token');
@@ -80,24 +84,5 @@ class JwtAuthenticator extends AbstractAuthenticator
         return new JsonResponse($data, Response::HTTP_UNAUTHORIZED);
     }
     
-    /**
-     * Simple JWT token decoder
-     * In a real implementation, you would use the JWT service
-     */
-    private function decodeJwtToken(string $token): array
-    {
-        $tokenParts = explode('.', $token);
-        if (count($tokenParts) !== 3) {
-            throw new \InvalidArgumentException('Invalid JWT token format');
-        }
-        
-        $payload = base64_decode(strtr($tokenParts[1], '-_', '+/'));
-        $payloadData = json_decode($payload, true);
-        
-        if (!$payloadData) {
-            throw new \InvalidArgumentException('Invalid JWT payload');
-        }
-        
-        return $payloadData;
-    }
+
 }
