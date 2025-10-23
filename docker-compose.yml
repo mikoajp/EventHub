@@ -10,13 +10,19 @@ services:
       - postgres
       - redis
       - rabbitmq
+      - mercure
     environment:
       - APP_ENV=dev
       - DATABASE_URL=postgresql://eventhub:secret@postgres:5432/eventhub
       - MESSENGER_TRANSPORT_DSN=redis://redis:6379/messages
       - MAILER_DSN=smtp://mailhog:1025
-      - RABBITMQ_STOMP_URL=stomp://eventhub:secret@rabbitmq:61613
-      - RABBITMQ_WEB_STOMP_URL=ws://localhost:15674/ws
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=eventhub
+      - RABBITMQ_PASSWORD=secret
+      - MERCURE_URL=http://mercure/.well-known/mercure
+      - MERCURE_PUBLIC_URL=http://localhost:3000/.well-known/mercure
+      - MERCURE_JWT_SECRET=!ChangeThisMercureHubJWTSecretKey!
     volumes:
       - ./backend:/var/www/html
 
@@ -28,13 +34,12 @@ services:
       - "5173:5173"
     depends_on:
       - backend
+      - mercure
     volumes:
       - ./frontend:/app
     environment:
       - VITE_API_URL=http://backend:8000
-      - VITE_STOMP_URL=ws://localhost:15674/ws
-      - VITE_RABBITMQ_USER=eventhub
-      - VITE_RABBITMQ_PASS=secret
+      - VITE_MERCURE_URL=http://localhost:3000/.well-known/mercure
 
   postgres:
     image: postgres:16-alpine
@@ -76,7 +81,26 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  mercure:
+    image: dunglas/mercure:v0.15
+    restart: unless-stopped
+    environment:
+      SERVER_NAME: ':80'
+      MERCURE_PUBLISHER_JWT_KEY: '!ChangeThisMercureHubJWTSecretKey!'
+      MERCURE_SUBSCRIBER_JWT_KEY: '!ChangeThisMercureHubJWTSecretKey!'
+      # Allow anonymous subscriptions (for development)
+      MERCURE_EXTRA_DIRECTIVES: |
+        cors_origins http://localhost:5173
+        anonymous
+    ports:
+      - "3000:80"
+    volumes:
+      - mercure_data:/data
+      - mercure_config:/config
+
 volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
+  mercure_data:
+  mercure_config:

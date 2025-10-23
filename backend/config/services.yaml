@@ -40,7 +40,7 @@ services:
             $cacheEnabled: true
 
     App\Infrastructure\Messaging\MessageBusInterface:
-        alias: App\Infrastructure\Messaging\RabbitMQAdapter
+        alias: App\Infrastructure\Messaging\MercureAdapter
 
     App\Infrastructure\Messaging\RabbitMQAdapter:
         arguments:
