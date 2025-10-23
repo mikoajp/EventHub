@@ -2,6 +2,12 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Repository\TicketRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -9,6 +15,33 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: TicketRepository::class)]
+#[ApiResource(
+    operations: [
+        new GetCollection(
+            security: "is_granted('IS_AUTHENTICATED_FULLY')",
+            securityPostDenormalize: "is_granted('IS_AUTHENTICATED_FULLY')",
+            securityMessage: "You must be logged in to view tickets."
+        ),
+        new Get(
+            security: "is_granted('TICKET_VIEW', object)",
+            securityMessage: "You can only view your own tickets, or tickets for events you organize."
+        ),
+        new Post(
+            security: "is_granted('IS_AUTHENTICATED_FULLY')",
+            securityMessage: "You must be logged in to purchase tickets."
+        ),
+        new Patch(
+            security: "is_granted('ROLE_ADMIN')",
+            securityMessage: "Only administrators can modify tickets."
+        ),
+        new Delete(
+            security: "is_granted('TICKET_CANCEL', object)",
+            securityMessage: "You can only cancel your own tickets."
+        )
+    ],
+    normalizationContext: ['groups' => ['ticket:read']],
+    denormalizationContext: ['groups' => ['ticket:write']]
+)]
 class Ticket
 {
     public const STATUS_RESERVED = 'reserved';
