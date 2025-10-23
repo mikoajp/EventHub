@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
-import { Client } from '@stomp/stompjs';
 
 interface RealTimeUpdate {
   type: string;
@@ -26,176 +25,117 @@ export const useRealTime = () => {
 export const RealTimeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<RealTimeUpdate | null>(null);
-  const clientRef = useRef<Client | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    const client = new Client({
-      brokerURL: import.meta.env.VITE_STOMP_URL || 'ws://localhost:15674/ws',
-      connectHeaders: {
-        login: import.meta.env.VITE_RABBITMQ_USER || 'eventhub',
-        passcode: import.meta.env.VITE_RABBITMQ_PASS || 'secret',
-      },
-      debug: (str) => {
-        console.log('STOMP Debug:', str);
-      },
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
+    const mercureUrl = import.meta.env.VITE_MERCURE_URL || 'http://localhost:3000/.well-known/mercure';
+    
+    // Subscribe to multiple topics
+    const topics = [
+      'events',
+      'notifications',
+      'social',
+      'tickets'
+    ];
+    
+    const url = new URL(mercureUrl);
+    topics.forEach(topic => {
+      url.searchParams.append('topic', `https://eventhub.local/${topic}`);
     });
 
-    clientRef.current = client;
+    const eventSource = new EventSource(url.toString());
+    eventSourceRef.current = eventSource;
 
-    client.onConnect = (frame) => {
-      console.log('Connected to STOMP:', frame);
+    eventSource.onopen = () => {
+      console.log('Connected to Mercure Hub');
       setIsConnected(true);
-
-      client.subscribe('/exchange/events/draft_created', (message) => {
-        try {
-          const data = JSON.parse(message.body);
-          setLastUpdate({
-            type: 'event_draft_created',
-            data,
-            timestamp: new Date().toISOString(),
-          });
-
-          notifications.show({
-            title: 'Draft Event Created',
-            message: data.message,
-            color: 'blue',
-            autoClose: 3000,
-          });
-        } catch (error) {
-          console.error('Failed to parse draft created update:', error);
-        }
-      });
-
-      client.subscribe('/exchange/events/published', (message) => {
-        try {
-          const data = JSON.parse(message.body);
-          setLastUpdate({
-            type: 'event_published',
-            data,
-            timestamp: new Date().toISOString(),
-          });
-
-          notifications.show({
-            title: 'New Event Published!',
-            message: data.message || 'A new event has been published',
-            color: 'blue',
-            autoClose: 5000,
-          });
-        } catch (error) {
-          console.error('Failed to parse event published update:', error);
-        }
-      });
-
-      client.subscribe('/exchange/events/updated', (message) => {
-        try {
-          const data = JSON.parse(message.body);
-          setLastUpdate({
-            type: 'event_updated',
-            data,
-            timestamp: new Date().toISOString(),
-          });
-
-          notifications.show({
-            title: 'Event Updated',
-            message: data.message,
-            color: 'yellow',
-            autoClose: 5000,
-          });
-        } catch (error) {
-          console.error('Failed to parse event updated update:', error);
-        }
-      });
-
-      client.subscribe('/exchange/events/cancelled', (message) => {
-        try {
-          const data = JSON.parse(message.body);
-          setLastUpdate({
-            type: 'event_cancelled',
-            data,
-            timestamp: new Date().toISOString(),
-          });
-
-          notifications.show({
-            title: 'Event Cancelled',
-            message: data.message,
-            color: 'red',
-            autoClose: 10000,
-          });
-        } catch (error) {
-          console.error('Failed to parse event cancelled update:', error);
-        }
-      });
-
-      client.subscribe('/exchange/notifications/global', (message) => {
-        try {
-          const data = JSON.parse(message.body);
-          setLastUpdate({
-            type: 'global_notification',
-            data,
-            timestamp: new Date().toISOString(),
-          });
-
-          notifications.show({
-            title: data.title || 'Notification',
-            message: data.message,
-            color: data.type === 'error' ? 'red' : data.type === 'success' ? 'green' : 'blue',
-            autoClose: 5000,
-          });
-        } catch (error) {
-          console.error('Failed to parse global notification:', error);
-        }
-      });
-
-      // Subscribe to user-specific notifications (you'd need to get current user ID)
-      // client.subscribe('/exchange/notifications/user.USER_ID', (message) => {
-      //   // Handle user-specific notifications
-      // });
-
-      client.subscribe('/exchange/social/post.*', (message) => {
-        try {
-          const data = JSON.parse(message.body);
-          setLastUpdate({
-            type: 'social_post',
-            data,
-            timestamp: new Date().toISOString(),
-          });
-
-          notifications.show({
-            title: 'Social Media Update',
-            message: 'Event shared on social media!',
-            color: 'grape',
-            autoClose: 3000,
-          });
-        } catch (error) {
-          console.error('Failed to parse social update:', error);
-        }
-      });
     };
 
-    client.onStompError = (frame) => {
-      console.error('STOMP error:', frame.headers['message']);
-      console.error('Additional details:', frame.body);
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        const updateType = data.type || 'unknown';
+        
+        setLastUpdate({
+          type: updateType,
+          data,
+          timestamp: new Date().toISOString(),
+        });
+
+        // Handle different message types
+        switch (updateType) {
+          case 'event_published':
+            notifications.show({
+              title: 'New Event Published!',
+              message: data.message || 'A new event has been published',
+              color: 'blue',
+              autoClose: 5000,
+            });
+            break;
+
+          case 'event_updated':
+            notifications.show({
+              title: 'Event Updated',
+              message: data.message,
+              color: 'yellow',
+              autoClose: 5000,
+            });
+            break;
+
+          case 'event_cancelled':
+            notifications.show({
+              title: 'Event Cancelled',
+              message: data.message,
+              color: 'red',
+              autoClose: 10000,
+            });
+            break;
+
+          case 'notification':
+            notifications.show({
+              title: data.title || 'Notification',
+              message: data.message,
+              color: data.notificationType === 'error' ? 'red' : 
+                     data.notificationType === 'success' ? 'green' : 'blue',
+              autoClose: 5000,
+            });
+            break;
+
+          case 'social_post':
+            notifications.show({
+              title: 'Social Media Update',
+              message: 'Event shared on social media!',
+              color: 'grape',
+              autoClose: 3000,
+            });
+            break;
+
+          case 'ticket_purchased':
+            notifications.show({
+              title: 'Ticket Purchased',
+              message: data.message || 'Your ticket has been purchased successfully',
+              color: 'green',
+              autoClose: 5000,
+            });
+            break;
+
+          default:
+            console.log('Received update:', data);
+        }
+      } catch (error) {
+        console.error('Failed to parse Mercure update:', error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('Mercure connection error:', error);
       setIsConnected(false);
+      // EventSource will automatically reconnect
     };
-
-    client.onWebSocketError = (error) => {
-      console.error('WebSocket error:', error);
-      setIsConnected(false);
-    };
-
-    client.onDisconnect = () => {
-      console.log('Disconnected from STOMP');
-      setIsConnected(false);
-    };
-
-    client.activate();
 
     return () => {
-      if (clientRef.current) {
-        clientRef.current.deactivate();
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
       }
     };
   }, []);

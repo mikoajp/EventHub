@@ -4,13 +4,14 @@ namespace App\Service;
 
 use App\Entity\Event;
 use App\Repository\UserRepository;
+use App\Infrastructure\RealTime\MercurePublisher;
 
 final readonly class NotificationService
 {
     public function __construct(
         private EmailService $emailService,
         private UserRepository $userRepository,
-        private RabbitMQConnection $rabbitMQ
+        private MercurePublisher $mercurePublisher
     ) {}
 
     public function notifyEventPublished(Event $event): void
@@ -20,11 +21,14 @@ final readonly class NotificationService
         $subscribers = $this->userRepository->findAll();
         error_log("Found " . count($subscribers) . " subscribers to notify");
 
+        // Send email notifications
         foreach ($subscribers as $subscriber) {
             $this->emailService->sendEventPublishedNotification($event, $subscriber);
         }
 
+        // Publish event to Mercure for real-time updates
         $eventData = [
+            'type' => 'event_published',
             'event_id' => $event->getId()->toString(),
             'event_name' => $event->getName(),
             'event_date' => $event->getEventDate()->format('Y-m-d H:i:s'),
@@ -33,10 +37,10 @@ final readonly class NotificationService
             'timestamp' => (new \DateTime())->format('c')
         ];
 
-        error_log("Publishing event data to RabbitMQ: " . json_encode($eventData));
-        $eventResult = $this->rabbitMQ->publishEvent($eventData);
-        error_log("Event publish result: " . ($eventResult ? 'SUCCESS' : 'FAILED'));
+        error_log("Publishing event data to Mercure: " . json_encode($eventData));
+        $this->mercurePublisher->publishEvent($eventData);
 
+        // Send notifications to all subscribers
         foreach ($subscribers as $subscriber) {
             $notificationData = [
                 'title' => 'New Event Available',
@@ -46,8 +50,7 @@ final readonly class NotificationService
             ];
             
             error_log("Publishing notification to user {$subscriber->getId()->toString()}: " . json_encode($notificationData));
-            $notificationResult = $this->rabbitMQ->publishNotification($notificationData, $subscriber->getId()->toString());
-            error_log("User notification publish result: " . ($notificationResult ? 'SUCCESS' : 'FAILED'));
+            $this->mercurePublisher->publishNotification($notificationData, $subscriber->getId()->toString());
         }
         
         error_log("NotificationService::notifyEventPublished completed");
@@ -66,9 +69,9 @@ final readonly class NotificationService
             'timestamp' => (new \DateTime())->format('c')
         ];
 
-        $this->rabbitMQ->publishSocial($socialData);
+        $this->mercurePublisher->publishSocial($socialData);
 
-        $this->rabbitMQ->publishNotification([
+        $this->mercurePublisher->publishNotification([
             'title' => 'Event Shared',
             'message' => "Event '{$event->getName()}' has been shared on social media",
             'type' => 'success'
@@ -77,52 +80,60 @@ final readonly class NotificationService
 
     public function sendRealTimeUpdate(string $topic, array $data): void
     {
-        $topicParts = explode('/', $topic);
-        $exchange = $topicParts[0] ?? 'notifications';
-        $routingKey = isset($topicParts[1]) ? $topicParts[1] : 'general';
-
-        $this->rabbitMQ->publish($exchange, $routingKey, $data);
+        error_log("Sending real-time update to topic: {$topic}");
+        $this->mercurePublisher->publish($topic, $data);
     }
 
     public function publishNotificationToUser(string $userId, array $notificationData): void
     {
         error_log("Publishing notification to user {$userId}: " . json_encode($notificationData));
-        $result = $this->rabbitMQ->publishNotification($notificationData, $userId);
-        error_log("Notification publish result: " . ($result ? 'SUCCESS' : 'FAILED'));
+        $this->mercurePublisher->publishNotification($notificationData, $userId);
     }
 
     public function publishGlobalNotification(array $notificationData): void
     {
-        $this->rabbitMQ->publishNotification($notificationData);
+        error_log("Publishing global notification: " . json_encode($notificationData));
+        $this->mercurePublisher->publishNotification($notificationData);
     }
 
     public function notifyEventUpdated(Event $event): void
     {
-        $this->rabbitMQ->publish('events', 'updated', [
+        $eventData = [
+            'type' => 'event_updated',
             'event_id' => $event->getId()->toString(),
             'event_name' => $event->getName(),
             'message' => "Event '{$event->getName()}' has been updated",
             'timestamp' => (new \DateTime())->format('c')
-        ]);
+        ];
+
+        error_log("Publishing event updated to Mercure: " . json_encode($eventData));
+        $this->mercurePublisher->publishEvent($eventData);
     }
 
     public function notifyEventCancelled(Event $event): void
     {
         $attendees = $event->getAttendees();
 
+        // Send email notifications
         foreach ($attendees as $attendee) {
             $this->emailService->sendEventCancelledNotification($event, $attendee);
         }
 
-        $this->rabbitMQ->publish('events', 'cancelled', [
+        // Publish to Mercure
+        $eventData = [
+            'type' => 'event_cancelled',
             'event_id' => $event->getId()->toString(),
             'event_name' => $event->getName(),
             'message' => "Event '{$event->getName()}' has been cancelled",
             'timestamp' => (new \DateTime())->format('c')
-        ]);
+        ];
 
+        error_log("Publishing event cancelled to Mercure: " . json_encode($eventData));
+        $this->mercurePublisher->publishEvent($eventData);
+
+        // Send individual notifications to attendees
         foreach ($attendees as $attendee) {
-            $this->rabbitMQ->publishNotification([
+            $this->mercurePublisher->publishNotification([
                 'title' => 'Event Cancelled',
                 'message' => "Unfortunately, the event '{$event->getName()}' has been cancelled",
                 'type' => 'error',
