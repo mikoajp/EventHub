@@ -27,7 +27,8 @@ final readonly class EventApplicationService
         private UserRepository $userRepository,
         private CacheInterface $cache,
         private MessageBusInterface $messageBus,
-        private EmailServiceInterface $emailService
+        private EmailServiceInterface $emailService,
+        private NotificationApplicationService $notificationApplicationService
     ) {}
 
     public function createEvent(EventDTO $eventDTO, User $organizer): Event
@@ -94,8 +95,8 @@ final readonly class EventApplicationService
 
         $publishedAt = $this->eventPublishingService->publishEvent($event, $publisher);
 
-        // Send notifications
-        $this->sendEventPublishedNotifications($event);
+        // Send notifications via NotificationApplicationService
+        $this->notificationApplicationService->sendEventPublishedNotifications($event);
 
         // Invalidate cache
         $this->cache->deletePattern('events.*');
@@ -150,34 +151,4 @@ final readonly class EventApplicationService
         );
     }
 
-    private function sendEventPublishedNotifications(Event $event): void
-    {
-        // Send emails to all subscribers
-        $subscribers = $this->userRepository->findAll();
-        
-        foreach ($subscribers as $subscriber) {
-            $this->emailService->sendEventPublishedNotification($event, $subscriber);
-        }
-
-        // Publish to message bus for real-time notifications
-        $eventData = [
-            'event_id' => $event->getId()->toString(),
-            'event_name' => $event->getName(),
-            'event_date' => $event->getEventDate()->format('Y-m-d H:i:s'),
-            'venue' => $event->getVenue(),
-            'message' => "New event published: {$event->getName()}",
-            'timestamp' => (new \DateTime())->format('c')
-        ];
-
-        $this->messageBus->publishEvent($eventData);
-
-        foreach ($subscribers as $subscriber) {
-            $this->messageBus->publishNotification([
-                'title' => 'New Event Available',
-                'message' => "Check out the new event: {$event->getName()}",
-                'type' => 'info',
-                'event_id' => $event->getId()->toString()
-            ], $subscriber->getId()->toString());
-        }
-    }
 }
