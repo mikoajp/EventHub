@@ -39,9 +39,6 @@ services:
             $redisUrl: '%env(REDIS_URL)%'
             $cacheEnabled: true
 
-    App\Infrastructure\Messaging\MessageBusInterface:
-        alias: App\Infrastructure\Messaging\MercureAdapter
-
 
     App\Infrastructure\Email\EmailServiceInterface:
         alias: App\Infrastructure\Email\SymfonyMailerAdapter
