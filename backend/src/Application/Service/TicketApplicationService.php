@@ -2,14 +2,14 @@
 
 namespace App\Application\Service;
 
+use App\Domain\Ticket\Service\TicketAvailabilityChecker;
 use App\Domain\Ticket\Service\TicketDomainService;
-use App\Domain\Ticket\Service\TicketAvailabilityService;
-use App\Entity\User;
 use App\Entity\Event;
 use App\Entity\TicketType;
+use App\Entity\User;
 use App\Infrastructure\Cache\CacheInterface;
-use App\Repository\TicketRepository;
 use App\Repository\EventRepository;
+use App\Repository\TicketRepository;
 use App\Repository\TicketTypeRepository;
 
 final readonly class TicketApplicationService
@@ -20,7 +20,7 @@ final readonly class TicketApplicationService
 
     public function __construct(
         private TicketDomainService $ticketDomainService,
-        private TicketAvailabilityService $ticketAvailabilityService,
+        private TicketAvailabilityChecker $ticketAvailabilityChecker,
         private TicketRepository $ticketRepository,
         private EventRepository $eventRepository,
         private TicketTypeRepository $ticketTypeRepository,
@@ -41,14 +41,14 @@ final readonly class TicketApplicationService
         $cacheKey = self::CACHE_KEY_AVAILABILITY_PREFIX . 'event.' . $event->getId()->toString();
 
         return $this->cache->get($cacheKey, function() use ($event) {
-            return $this->ticketAvailabilityService->checkEventAvailability($event);
+            return $this->ticketAvailabilityChecker->checkEventAvailability($event);
         }, self::CACHE_TTL_AVAILABILITY);
     }
 
     public function purchaseTicket(User $user, Event $event, TicketType $ticketType): array
     {
         // Check availability
-        if (!$this->ticketAvailabilityService->isAvailable($ticketType, 1)) {
+        if (!$this->ticketAvailabilityChecker->isAvailable($ticketType, 1)) {
             throw new \DomainException('Ticket is not available');
         }
 
