@@ -9,7 +9,6 @@ use App\Entity\User;
 use App\DTO\EventDTO;
 use App\Repository\EventRepository;
 use App\Infrastructure\Cache\CacheInterface;
-use App\Infrastructure\Messaging\MessageBusInterface;
 use App\Infrastructure\Email\EmailServiceInterface;
 use App\Repository\UserRepository;
 
@@ -26,7 +25,6 @@ final readonly class EventApplicationService
         private EventRepository $eventRepository,
         private UserRepository $userRepository,
         private CacheInterface $cache,
-        private MessageBusInterface $messageBus,
         private EmailServiceInterface $emailService,
         private NotificationApplicationService $notificationApplicationService
     ) {}

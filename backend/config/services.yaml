@@ -10,10 +10,6 @@ parameters:
     rabbitmq.password: '%env(RABBITMQ_PASSWORD)%'
 
 services:
-    App\Service\ErrorHandlerService:
-        arguments:
-            $environment: '%kernel.environment%'
-
     # default configuration for services in *this* file
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
