@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\EventRepository;
 use App\State\EventStateProcessor;
+use App\State\EventStateProvider;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -25,10 +26,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(
-            security: "is_granted('PUBLIC_ACCESS')"
+            security: "is_granted('PUBLIC_ACCESS')",
+            provider: EventStateProvider::class
         ),
         new Get(
-            security: "is_granted('PUBLIC_ACCESS')"
+            security: "is_granted('PUBLIC_ACCESS')",
+            provider: EventStateProvider::class
         ),
         new Post(
             security: "is_granted('IS_AUTHENTICATED_FULLY')",

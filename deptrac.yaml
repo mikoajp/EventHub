@@ -1,0 +1,29 @@
+paths:
+  - ./backend/src
+layers:
+  - name: Domain
+    collectors:
+      - type: directory
+        regex: backend/src/Domain/.*
+  - name: Application
+    collectors:
+      - type: directory
+        regex: backend/src/Application/.*
+  - name: Infrastructure
+    collectors:
+      - type: directory
+        regex: backend/src/Infrastructure/.*
+  - name: Presentation
+    collectors:
+      - type: directory
+        regex: backend/src/(Controller|ApiResource|State|DTO)/.*
+ruleset:
+  Domain: ~
+  Application:
+    - Domain
+  Infrastructure:
+    - Application
+    - Domain
+  Presentation:
+    - Application
+    - Domain

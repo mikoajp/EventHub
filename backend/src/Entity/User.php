@@ -6,6 +6,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
+use App\State\UserStateProvider;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -22,10 +23,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(
-            security: "is_granted('ROLE_ADMIN')"
+            security: "is_granted('ROLE_ADMIN')",
+            provider: UserStateProvider::class
         ),
         new Get(
-            security: "is_granted('IS_AUTHENTICATED_FULLY')"
+            security: "is_granted('IS_AUTHENTICATED_FULLY')",
+            provider: UserStateProvider::class
         ),
         new Post(
             security: "is_granted('PUBLIC_ACCESS')"

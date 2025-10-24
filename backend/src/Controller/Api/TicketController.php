@@ -2,7 +2,10 @@
 
 namespace App\Controller\Api;
 
-use App\Service\TicketService;
+use App\Application\Service\TicketApplicationService;
+use App\Repository\EventRepository;
+use App\Repository\TicketTypeRepository;
+use App\Entity\User;
 use App\Service\ErrorHandlerService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -10,12 +13,15 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 #[Route('/api/tickets')]
 class TicketController extends AbstractController
 {
     public function __construct(
-        private readonly TicketService       $ticketService,
+        private readonly TicketApplicationService $ticketApplicationService,
+        private readonly EventRepository $eventRepository,
+        private readonly TicketTypeRepository $ticketTypeRepository,
         private readonly ErrorHandlerService $errorHandler,
     ) {}
 
@@ -28,28 +34,80 @@ class TicketController extends AbstractController
             $quantity = (int) $request->query->get('quantity', 1);
 
             if (!$eventId) {
-                return $this->json([
-                    'error' => 'eventId parameter is required'
-                ], Response::HTTP_BAD_REQUEST);
+                return $this->json(['error' => 'eventId parameter is required'], Response::HTTP_BAD_REQUEST);
             }
-
             if (!$ticketTypeId) {
-                return $this->json([
-                    'error' => 'ticketTypeId parameter is required'
-                ], Response::HTTP_BAD_REQUEST);
+                return $this->json(['error' => 'ticketTypeId parameter is required'], Response::HTTP_BAD_REQUEST);
             }
-
             if ($quantity < 1 || $quantity > 10) {
-                return $this->json([
-                    'error' => 'quantity must be between 1 and 10'
-                ], Response::HTTP_BAD_REQUEST);
+                return $this->json(['error' => 'quantity must be between 1 and 10'], Response::HTTP_BAD_REQUEST);
             }
 
-            $availability = $this->ticketService->checkTicketAvailability($eventId, $ticketTypeId, $quantity);
-
+            $availability = $this->ticketApplicationService->checkTicketAvailability($eventId, $ticketTypeId, $quantity);
             return $this->json($availability);
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to check ticket availability');
+        }
+    }
+
+    #[Route('/purchase', name: 'api_tickets_purchase', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function purchase(Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        try {
+            if (!$user) {
+                return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+            }
+            $data = json_decode($request->getContent(), true) ?? [];
+            $eventId = $data['eventId'] ?? null;
+            $ticketTypeId = $data['ticketTypeId'] ?? null;
+            if (!$eventId || !$ticketTypeId) {
+                return $this->json(['error' => 'eventId and ticketTypeId are required'], Response::HTTP_BAD_REQUEST);
+            }
+            $event = $this->eventRepository->findByUuid($eventId) ?? $this->eventRepository->find($eventId);
+            if (!$event) {
+                return $this->json(['error' => 'Event not found'], Response::HTTP_NOT_FOUND);
+            }
+            $ticketType = $this->ticketTypeRepository->find($ticketTypeId);
+            if (!$ticketType) {
+                return $this->json(['error' => 'Ticket type not found'], Response::HTTP_NOT_FOUND);
+            }
+            $result = $this->ticketApplicationService->purchaseTicket($user, $event, $ticketType);
+            return $this->json($result, Response::HTTP_CREATED);
+        } catch (\Exception $e) {
+            return $this->errorHandler->createJsonResponse($e, 'Failed to purchase ticket');
+        }
+    }
+
+    #[Route('/my', name: 'api_tickets_my', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function my(#[CurrentUser] ?User $user): JsonResponse
+    {
+        try {
+            if (!$user) {
+                return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+            }
+            $tickets = $this->ticketApplicationService->getUserTickets($user);
+            return $this->json(['tickets' => $tickets]);
+        } catch (\Exception $e) {
+            return $this->errorHandler->createJsonResponse($e, 'Failed to fetch user tickets');
+        }
+    }
+
+    #[Route('/{id}/cancel', name: 'api_tickets_cancel', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function cancel(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    {
+        try {
+            if (!$user) {
+                return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+            }
+            $data = json_decode($request->getContent(), true) ?? [];
+            $reason = $data['reason'] ?? null;
+            $this->ticketApplicationService->cancelTicket($id, $user, $reason);
+            return $this->json(['message' => 'Ticket cancelled']);
+        } catch (\Exception $e) {
+            return $this->errorHandler->createJsonResponse($e, 'Failed to cancel ticket');
         }
     }
 }
