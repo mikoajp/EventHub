@@ -7,6 +7,7 @@ use App\Repository\EventRepository;
 use App\Repository\TicketTypeRepository;
 use App\Entity\User;
 use App\Service\ErrorHandlerService;
+use App\Presenter\TicketPresenter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,6 +24,7 @@ class TicketController extends AbstractController
         private readonly EventRepository $eventRepository,
         private readonly TicketTypeRepository $ticketTypeRepository,
         private readonly ErrorHandlerService $errorHandler,
+        private readonly TicketPresenter $ticketPresenter,
     ) {}
 
     #[Route('/availability', name: 'api_tickets_availability', methods: ['GET'])]
@@ -44,7 +46,7 @@ class TicketController extends AbstractController
             }
 
             $availability = $this->ticketApplicationService->checkTicketAvailability($eventId, $ticketTypeId, $quantity);
-            return $this->json($availability);
+            return $this->json($this->ticketPresenter->presentAvailability($availability));
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to check ticket availability');
         }
@@ -73,7 +75,7 @@ class TicketController extends AbstractController
                 return $this->json(['error' => 'Ticket type not found'], Response::HTTP_NOT_FOUND);
             }
             $result = $this->ticketApplicationService->purchaseTicket($user, $event, $ticketType);
-            return $this->json($result, Response::HTTP_CREATED);
+            return $this->json($this->ticketPresenter->presentPurchase($result), Response::HTTP_CREATED);
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to purchase ticket');
         }
@@ -88,7 +90,7 @@ class TicketController extends AbstractController
                 return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
             }
             $tickets = $this->ticketApplicationService->getUserTickets($user);
-            return $this->json(['tickets' => $tickets]);
+            return $this->json($this->ticketPresenter->presentUserTickets($tickets));
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to fetch user tickets');
         }
@@ -105,7 +107,7 @@ class TicketController extends AbstractController
             $data = json_decode($request->getContent(), true) ?? [];
             $reason = $data['reason'] ?? null;
             $this->ticketApplicationService->cancelTicket($id, $user, $reason);
-            return $this->json(['message' => 'Ticket cancelled']);
+            return $this->json($this->ticketPresenter->presentCancel());
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to cancel ticket');
         }

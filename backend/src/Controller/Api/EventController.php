@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Message\Command\Event\PublishEventCommand;
 use App\Application\Service\EventApplicationService;
 use App\Application\Service\NotificationApplicationService;
+use App\Presenter\EventPresenter;
 use App\Service\ErrorHandlerService;
 use App\Infrastructure\Validation\RequestValidatorInterface;
 use App\DTO\EventFiltersDTO;
@@ -27,7 +28,8 @@ class EventController extends AbstractController
         private readonly EventApplicationService $eventApplicationService,
         private readonly NotificationApplicationService $notificationApplicationService,
         private readonly ErrorHandlerService $errorHandler,
-        private readonly RequestValidatorInterface $requestValidator
+        private readonly RequestValidatorInterface $requestValidator,
+        private readonly EventPresenter $eventPresenter
     ) {}
 
     #[Route('', name: 'api_events_list', methods: ['GET'])]
@@ -63,7 +65,7 @@ class EventController extends AbstractController
             );
 
             return $this->json([
-                'events' => array_map(fn($event) => $this->formatEventResponse($event), $result['events']),
+                'events' => array_map(fn($event) => $this->eventPresenter->presentListItem($event), $result['events']),
                 'pagination' => [
                     'total' => $result['total'],
                     'page' => $result['page'],
@@ -124,30 +126,7 @@ class EventController extends AbstractController
                 throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
             }
             
-            return $this->json([
-                'id' => $event->getId()->toString(),
-                'name' => $event->getName(),
-                'description' => $event->getDescription(),
-                'eventDate' => $event->getEventDate()->format('c'),
-                'venue' => $event->getVenue(),
-                'maxTickets' => $event->getMaxTickets(),
-                'ticketsSold' => $event->getTicketsSold(),
-                'availableTickets' => $event->getAvailableTickets(),
-                'status' => $event->getStatus(),
-                'publishedAt' => $event->getPublishedAt()?->format('c'),
-                'createdAt' => $event->getCreatedAt()->format('c'),
-                'organizer' => [
-                    'id' => $event->getOrganizer()->getId()->toString(),
-                    'name' => $event->getOrganizer()->getFullName(),
-                    'email' => $event->getOrganizer()->getEmail()
-                ],
-                'ticketTypes' => array_map(fn($ticketType) => [
-                    'id' => $ticketType->getId()->toString(),
-                    'name' => $ticketType->getName(),
-                    'price' => $ticketType->getPrice(),
-                    'quantity' => $ticketType->getQuantity()
-                ], $event->getTicketTypes()->toArray())
-            ]);
+            return $this->json($this->eventPresenter->presentDetails($event));
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to fetch event');
         }
@@ -284,22 +263,26 @@ class EventController extends AbstractController
     public function cancel(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         try {
-            $this->eventService->validateUser($user);
+            if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
 
-            $event = $this->eventService->findEventOrFail($id);
+            $event = $this->eventApplicationService->getEventById($id);
+            if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
                 throw new \RuntimeException('You can only cancel your own events', Response::HTTP_FORBIDDEN);
             }
 
-            $this->eventService->cancelEvent($event);
+            $this->eventApplicationService->cancelEvent($event);
 
-            $this->notificationService->notifyEventCancelled($event);
-
-            return $this->json([
-                'message' => 'Event cancelled successfully',
-                'event' => $this->eventService->formatSingleEventResponse($event)
+            $this->notificationApplicationService->sendGlobalNotification([
+                'title' => 'Event Cancelled',
+                'message' => "Event '{$event->getName()}' has been cancelled",
+                'type' => 'warning',
+                'event_id' => $event->getId()->toString(),
+                'timestamp' => (new \DateTime())->format('c')
             ]);
+
+            return $this->json(['message' => 'Event cancelled successfully', 'event' => $this->eventPresenter->presentDetails($event)]);
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to cancel event');
         }
@@ -310,20 +293,22 @@ class EventController extends AbstractController
     public function unpublish(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         try {
-            $this->eventService->validateUser($user);
+            if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
 
-            $event = $this->eventService->findEventOrFail($id);
+            $event = $this->eventApplicationService->getEventById($id);
+            if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
                 throw new \RuntimeException('You can only unpublish your own events', Response::HTTP_FORBIDDEN);
             }
 
-            $this->eventService->unpublishEvent($event);
+            $this->eventApplicationService->unpublishEvent($event);
 
-            $this->notificationService->sendRealTimeUpdate('events/unpublished', [
-                'event_id' => $event->getId()->toString(),
-                'event_name' => $event->getName(),
+            $this->notificationApplicationService->sendGlobalNotification([
+                'title' => 'Event Unpublished',
                 'message' => "Event '{$event->getName()}' has been unpublished",
+                'type' => 'info',
+                'event_id' => $event->getId()->toString(),
                 'timestamp' => (new \DateTime())->format('c')
             ]);
 
@@ -341,9 +326,10 @@ class EventController extends AbstractController
         #[CurrentUser] ?User $user
     ): JsonResponse {
         try {
-            $this->eventService->validateUser($user);
+            if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
 
-            $event = $this->eventService->findEventOrFail($id);
+            $event = $this->eventApplicationService->getEventById($id);
+            if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
                 throw new \RuntimeException('You can only view statistics for your own events', Response::HTTP_FORBIDDEN);
@@ -352,7 +338,7 @@ class EventController extends AbstractController
             $from = $request->query->get('from');
             $to = $request->query->get('to');
 
-            $statistics = $this->eventService->getEventStatistics($id, $from, $to);
+            $statistics = $this->eventApplicationService->getEventStatistics($id, $from, $to);
 
             return $this->json($statistics);
         } catch (\Exception $e) {
@@ -368,9 +354,10 @@ class EventController extends AbstractController
         #[CurrentUser] ?User $user
     ): JsonResponse {
         try {
-            $this->eventService->validateUser($user);
+            if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
 
-            $event = $this->eventService->findEventOrFail($id);
+            $event = $this->eventApplicationService->getEventById($id);
+            if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
                 throw new \RuntimeException('You can only send notifications for your own events', Response::HTTP_FORBIDDEN);
@@ -384,7 +371,7 @@ class EventController extends AbstractController
 
             $attendees = $event->getAttendees();
             foreach ($attendees as $attendee) {
-                $this->notificationService->publishNotificationToUser($attendee->getId()->toString(), [
+                $this->notificationApplicationService->publishNotificationToUser($attendee->getId()->toString(), [
                     'title' => $data['title'] ?? 'Event Update',
                     'message' => $data['message'],
                     'type' => $data['type'] ?? 'info',
