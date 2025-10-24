@@ -3,8 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Application\Service\TicketApplicationService;
-use App\Repository\EventRepository;
-use App\Repository\TicketTypeRepository;
+
 use App\Entity\User;
 use App\Service\ErrorHandlerService;
 use App\Presenter\TicketPresenter;
@@ -21,8 +20,7 @@ class TicketController extends AbstractController
 {
     public function __construct(
         private readonly TicketApplicationService $ticketApplicationService,
-        private readonly EventRepository $eventRepository,
-        private readonly TicketTypeRepository $ticketTypeRepository,
+        
         private readonly ErrorHandlerService $errorHandler,
         private readonly TicketPresenter $ticketPresenter,
     ) {}
