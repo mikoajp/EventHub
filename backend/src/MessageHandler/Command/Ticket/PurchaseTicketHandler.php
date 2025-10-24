@@ -2,6 +2,7 @@
 
 namespace App\MessageHandler\Command\Ticket;
 
+use App\Domain\Ticket\Service\TicketAvailabilityChecker;
 use App\Entity\Ticket;
 use App\Message\Command\Payment\ProcessPaymentCommand;
 use App\Message\Command\Ticket\PurchaseTicketCommand;
@@ -9,7 +10,6 @@ use App\Message\Event\TicketReservedEvent;
 use App\Repository\EventRepository;
 use App\Repository\TicketTypeRepository;
 use App\Repository\UserRepository;
-use App\Service\TicketAvailabilityService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -23,7 +23,7 @@ final readonly class PurchaseTicketHandler
         private EventRepository $eventRepository,
         private TicketTypeRepository $ticketTypeRepository,
         private UserRepository $userRepository,
-        private TicketAvailabilityService $availabilityService,
+        private TicketAvailabilityChecker $availabilityChecker,
         private MessageBusInterface $commandBus,
         private MessageBusInterface $eventBus
     ) {}
@@ -45,7 +45,7 @@ final readonly class PurchaseTicketHandler
                 throw new \InvalidArgumentException('Event is not published');
             }
 
-            if (!$this->availabilityService->isAvailable($ticketType, $command->quantity)) {
+            if (!$this->availabilityChecker->isAvailable($ticketType, $command->quantity)) {
                 throw new \InvalidArgumentException('Not enough tickets available');
             }
 
