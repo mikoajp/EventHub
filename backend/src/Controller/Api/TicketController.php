@@ -66,15 +66,7 @@ class TicketController extends AbstractController
             if (!$eventId || !$ticketTypeId) {
                 return $this->json(['error' => 'eventId and ticketTypeId are required'], Response::HTTP_BAD_REQUEST);
             }
-            $event = $this->eventRepository->findByUuid($eventId) ?? $this->eventRepository->find($eventId);
-            if (!$event) {
-                return $this->json(['error' => 'Event not found'], Response::HTTP_NOT_FOUND);
-            }
-            $ticketType = $this->ticketTypeRepository->find($ticketTypeId);
-            if (!$ticketType) {
-                return $this->json(['error' => 'Ticket type not found'], Response::HTTP_NOT_FOUND);
-            }
-            $result = $this->ticketApplicationService->purchaseTicket($user, $event, $ticketType);
+            $result = $this->ticketApplicationService->purchaseTicketByIds($user, $eventId, $ticketTypeId);
             return $this->json($this->ticketPresenter->presentPurchase($result), Response::HTTP_CREATED);
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Failed to purchase ticket');

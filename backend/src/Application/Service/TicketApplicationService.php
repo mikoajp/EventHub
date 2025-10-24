@@ -9,6 +9,8 @@ use App\Entity\Event;
 use App\Entity\TicketType;
 use App\Infrastructure\Cache\CacheInterface;
 use App\Repository\TicketRepository;
+use App\Repository\EventRepository;
+use App\Repository\TicketTypeRepository;
 
 final readonly class TicketApplicationService
 {
@@ -20,6 +22,8 @@ final readonly class TicketApplicationService
         private TicketDomainService $ticketDomainService,
         private TicketAvailabilityService $ticketAvailabilityService,
         private TicketRepository $ticketRepository,
+        private EventRepository $eventRepository,
+        private TicketTypeRepository $ticketTypeRepository,
         private CacheInterface $cache
     ) {}
 
@@ -64,6 +68,19 @@ final readonly class TicketApplicationService
         ];
     }
 
+    public function purchaseTicketByIds(User $user, string $eventId, string $ticketTypeId): array
+    {
+        $event = $this->eventRepository->findByUuid($eventId) ?? $this->eventRepository->find($eventId);
+        if (!$event) {
+            throw new \InvalidArgumentException('Event not found');
+        }
+        $ticketType = $this->ticketTypeRepository->find($ticketTypeId);
+        if (!$ticketType) {
+            throw new \InvalidArgumentException('Ticket type not found');
+        }
+        return $this->purchaseTicket($user, $event, $ticketType);
+    }
+
     public function confirmTicketPurchase(string $ticketId, string $paymentId): void
     {
         $ticket = $this->ticketRepository->find($ticketId);
@@ -92,7 +109,7 @@ final readonly class TicketApplicationService
                     'ticket_type' => $ticket->getTicketType()->getName(),
                     'price' => $ticket->getPrice(),
                     'status' => $ticket->getStatus(),
-                    'purchase_date' => $ticket->getPurchaseDate()->format('c')
+                    'purchase_date' => $ticket->getPurchasedAt()?->format('c')
                 ];
             }, $tickets);
         }, 1800); // 30 minutes
