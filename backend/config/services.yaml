@@ -47,6 +47,10 @@ services:
     App\Infrastructure\Payment\PaymentGatewayInterface:
         alias: App\Infrastructure\Payment\StripePaymentGateway
 
+    # Messaging Infrastructure
+    App\Infrastructure\Messaging\MessageBusInterface:
+        alias: App\Infrastructure\Messaging\NullMessageBus
+
     App\Infrastructure\Payment\StripePaymentGateway:
         arguments:
             $stripeSecretKey: '%env(STRIPE_SECRET_KEY)%'
