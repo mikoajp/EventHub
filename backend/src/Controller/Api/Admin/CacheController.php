@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Controller\Admin;
+namespace App\Controller\Api\Admin;
 
 use App\Service\CacheStatsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
