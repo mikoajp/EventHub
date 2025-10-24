@@ -118,6 +118,7 @@ class Order
         return $this;
     }
 
+    // Presentation concern moved to Presenter (Faza 4); kept for BC for now.
     #[Groups(['order:read'])]
     public function getTotalAmountFormatted(): string
     {
@@ -243,6 +244,7 @@ class Order
         return $this->status === self::STATUS_PAID;
     }
 
+    // Presentation concern moved to Presenter (Faza 4); kept for BC for now.
     #[Groups(['order:read'])]
     public function getStatusLabel(): string
     {
