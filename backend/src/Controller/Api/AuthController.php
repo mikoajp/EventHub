@@ -4,7 +4,6 @@ namespace App\Controller\Api;
 
 use App\Entity\User;
 use App\Application\Service\UserApplicationService;
-use App\Service\ErrorHandlerService;
 use App\DTO\UserRegistrationDTO;
 use App\Infrastructure\Validation\RequestValidatorInterface;
 use App\Presenter\UserPresenter;
@@ -20,7 +19,6 @@ class AuthController extends AbstractController
     public function __construct(
         private UserApplicationService $userApplicationService,
         private RequestValidatorInterface $requestValidator,
-        private ErrorHandlerService $errorHandler,
         private UserPresenter $userPresenter
     ) {}
 
@@ -33,7 +31,8 @@ class AuthController extends AbstractController
             }
             return $this->json($this->userPresenter->presentLoginResponse($this->userApplicationService->formatLoginResponse($user)));
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Login failed');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Login failed', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -46,7 +45,8 @@ class AuthController extends AbstractController
             }
             return $this->json($this->userPresenter->presentProfile($this->userApplicationService->getUserProfile($user)));
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Authentication check failed');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 401;
+            return $this->json(['error' => 'Authentication check failed', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -71,7 +71,8 @@ class AuthController extends AbstractController
                 JsonResponse::HTTP_CREATED
             );
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Registration failed');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Registration failed', 'message' => $e->getMessage()], $status);
         }
     }
 }
