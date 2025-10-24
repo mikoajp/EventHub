@@ -55,6 +55,37 @@ final readonly class EventApplicationService
         return $updatedEvent;
     }
 
+    public function cancelEvent(Event $event): void
+    {
+        if (!$this->eventDomainService->canBeCancelled($event)) {
+            throw new \InvalidArgumentException('Event cannot be cancelled');
+        }
+        $this->eventDomainService->cancelEvent($event);
+        $this->cache->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId()->toString());
+        $this->cache->deletePattern('events.*');
+    }
+
+    public function unpublishEvent(Event $event): void
+    {
+        if (!$this->eventDomainService->canBeUnpublished($event)) {
+            throw new \InvalidArgumentException('Event cannot be unpublished');
+        }
+        $this->eventDomainService->unpublishEvent($event);
+        $this->cache->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId()->toString());
+        $this->cache->deletePattern('events.*');
+    }
+
+    public function getEventStatistics(string $eventId, ?string $from = null, ?string $to = null): array
+    {
+        $event = $this->getEventById($eventId);
+        if (!$event) {
+            throw new \InvalidArgumentException('Event not found');
+        }
+        $fromDt = $from ? new \DateTimeImmutable($from) : null;
+        $toDt = $to ? new \DateTimeImmutable($to) : null;
+        return $this->eventRepository->getEventStatistics($event, $fromDt, $toDt);
+    }
+
     public function publishEvent(Event $event, User $publisher): void
     {
         if (!$this->eventDomainService->isEventPublishable($event)) {
@@ -84,7 +115,7 @@ final readonly class EventApplicationService
     {
         return $this->cache->get(
             self::CACHE_KEY_EVENT_PREFIX . $eventId,
-            fn() => $this->eventRepository->find($eventId),
+            fn() => $this->eventRepository->findByUuid($eventId) ?? $this->eventRepository->find($eventId),
             self::CACHE_TTL_SINGLE_EVENT
         );
     }
