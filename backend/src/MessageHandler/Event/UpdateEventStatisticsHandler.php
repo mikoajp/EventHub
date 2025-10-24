@@ -2,8 +2,8 @@
 
 namespace App\MessageHandler\Event;
 
+use App\Application\Service\EventStatisticsService;
 use App\Message\Event\TicketPurchasedEvent;
-use App\Service\EventStatisticsService;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]

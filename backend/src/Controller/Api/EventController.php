@@ -252,7 +252,7 @@ class EventController extends AbstractController
                     'description' => $updatedEvent->getDescription(),
                     'eventDate' => $updatedEvent->getEventDate()->format('c'),
                     'venue' => $updatedEvent->getVenue(),
-                    'maxAttendees' => $updatedEvent->getMaxAttendees(),
+                    'maxTickets' => $updatedEvent->getMaxTickets(),
                     'status' => $updatedEvent->getStatus()
                 ]
             ]);
@@ -378,7 +378,7 @@ class EventController extends AbstractController
 
             $attendees = $event->getAttendees();
             foreach ($attendees as $attendee) {
-                $this->notificationApplicationService->publishNotificationToUser($attendee->getId()->toString(), [
+                $this->notificationApplicationService->sendNotificationToUser($attendee->getId()->toString(), [
                     'title' => $data['title'] ?? 'Event Update',
                     'message' => $data['message'],
                     'type' => $data['type'] ?? 'info',

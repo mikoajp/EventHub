@@ -31,7 +31,7 @@ final readonly class NotificationApplicationService
             'event_date' => $event->getEventDate()->format('Y-m-d H:i:s'),
             'venue' => $event->getVenue(),
             'message' => "New event published: {$event->getName()}",
-            'timestamp' => (new \DateTime())->format('c')
+            'timestamp' => (new \DateTimeImmutable())->format('c')
         ];
 
         $this->messageBus->publishEvent($eventData);
@@ -60,7 +60,7 @@ final readonly class NotificationApplicationService
             'event_id' => $event->getId()->toString(),
             'event_name' => $event->getName(),
             'message' => "Event '{$event->getName()}' has been cancelled",
-            'timestamp' => (new \DateTime())->format('c')
+            'timestamp' => (new \DateTimeImmutable())->format('c')
         ]);
 
         foreach ($attendees as $attendee) {
@@ -81,7 +81,7 @@ final readonly class NotificationApplicationService
             'event_id' => $event->getId()->toString(),
             'message' => $message,
             'platform' => 'general',
-            'timestamp' => (new \DateTime())->format('c')
+            'timestamp' => (new \DateTimeImmutable())->format('c')
         ];
 
         $this->messageBus->publishSocial($socialData);

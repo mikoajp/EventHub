@@ -58,7 +58,6 @@ final readonly class EventPublishingService
         }
 
         $event->setStatus(Event::STATUS_CANCELLED);
-        $event->setCancellationReason($reason);
         $event->setCancelledAt(new \DateTimeImmutable());
 
         $this->entityManager->flush();

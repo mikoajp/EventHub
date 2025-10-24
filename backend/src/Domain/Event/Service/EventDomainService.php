@@ -22,7 +22,7 @@ final readonly class EventDomainService
             ->setDescription($eventDTO->description)
             ->setEventDate($eventDTO->eventDate)
             ->setVenue($eventDTO->venue)
-            ->setMaxAttendees($eventDTO->maxAttendees)
+            ->setMaxTickets($eventDTO->maxTickets)
             ->setOrganizer($organizer)
             ->setStatus(Event::STATUS_DRAFT);
 
@@ -38,7 +38,7 @@ final readonly class EventDomainService
             ->setDescription($eventDTO->description)
             ->setEventDate($eventDTO->eventDate)
             ->setVenue($eventDTO->venue)
-            ->setMaxAttendees($eventDTO->maxAttendees);
+            ->setMaxTickets($eventDTO->maxTickets);
 
         $this->entityManager->flush();
 

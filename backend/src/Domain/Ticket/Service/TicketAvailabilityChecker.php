@@ -7,7 +7,7 @@ use App\Entity\TicketType;
 use App\Entity\Event;
 use App\Repository\TicketRepository;
 
-final readonly class TicketAvailabilityService
+final readonly class TicketAvailabilityChecker
 {
     public function __construct(
         private TicketRepository $ticketRepository

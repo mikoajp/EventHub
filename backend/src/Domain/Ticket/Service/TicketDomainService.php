@@ -23,7 +23,6 @@ final readonly class TicketDomainService
             ->setEvent($event)
             ->setTicketType($ticketType)
             ->setStatus(Ticket::STATUS_RESERVED)
-            ->setPurchaseDate(new \DateTimeImmutable())
             ->setPrice($ticketType->getPrice());
 
         $this->entityManager->persist($ticket);
@@ -35,26 +34,21 @@ final readonly class TicketDomainService
     public function confirmTicketPurchase(Ticket $ticket, string $paymentId): void
     {
         $ticket->setStatus(Ticket::STATUS_PURCHASED)
-            ->setPaymentId($paymentId)
-            ->setPurchaseDate(new \DateTimeImmutable());
+            ->setPurchasedAt(new \DateTimeImmutable());
 
         $this->entityManager->flush();
     }
 
     public function cancelTicket(Ticket $ticket, string $reason = null): void
     {
-        $ticket->setStatus(Ticket::STATUS_CANCELLED)
-            ->setCancellationReason($reason)
-            ->setCancelledAt(new \DateTimeImmutable());
+        $ticket->setStatus(Ticket::STATUS_CANCELLED);
 
         $this->entityManager->flush();
     }
 
     public function refundTicket(Ticket $ticket, string $refundId): void
     {
-        $ticket->setStatus(Ticket::STATUS_REFUNDED)
-            ->setRefundId($refundId)
-            ->setRefundedAt(new \DateTimeImmutable());
+        $ticket->setStatus(Ticket::STATUS_REFUNDED);
 
         $this->entityManager->flush();
     }
@@ -71,8 +65,7 @@ final readonly class TicketDomainService
             throw new \DomainException('Ticket cannot be transferred');
         }
 
-        $ticket->setUser($newOwner)
-            ->setTransferredAt(new \DateTimeImmutable());
+        $ticket->setUser($newOwner);
 
         $this->entityManager->flush();
     }

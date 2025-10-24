@@ -190,7 +190,7 @@ final readonly class PublishEventHandler
                 'message' => "Your event '{$event->getName()}' has been published and is now visible to users.",
                 'type' => 'success',
                 'event_id' => $event->getId()->toString(),
-                'timestamp' => $event->getPublishedAt()->format('c')
+                'timestamp' => $event->getPublishedAt()?->format('c')
             ]);
         } catch (\Exception $e) {
             $this->logger->warning('Failed to send success notifications', [
