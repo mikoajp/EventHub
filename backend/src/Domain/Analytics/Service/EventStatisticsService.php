@@ -27,7 +27,7 @@ final readonly class EventStatisticsService
     public function calculateBasicStats(Event $event): array
     {
         return [
-            'total_capacity' => $event->getMaxAttendees(),
+            'total_capacity' => $event->getMaxTickets(),
             'tickets_sold' => $event->getTicketsSold(),
             'tickets_available' => $event->getAvailableTickets(),
             'occupancy_rate' => $this->calculateOccupancyRate($event),
@@ -38,15 +38,15 @@ final readonly class EventStatisticsService
     public function calculateRevenueStats(Event $event): array
     {
         $totalRevenue = $this->ticketRepository->getTotalRevenue($event);
-        $averageTicketPrice = $event->getTicketsSold() > 0 
-            ? $totalRevenue / $event->getTicketsSold() 
+        $averageTicketPrice = $event->getTicketsSold() > 0
+            ? $totalRevenue / $event->getTicketsSold()
             : 0;
 
         return [
             'total_revenue' => $totalRevenue,
             'average_ticket_price' => $averageTicketPrice,
             'projected_revenue' => $this->calculateProjectedRevenue($event),
-            'revenue_by_type' => $this->ticketRepository->getRevenueByTicketType($event)
+            'revenue_by_type' => $this->ticketRepository->getSalesByTicketType($event)
         ];
     }
 
@@ -97,8 +97,8 @@ final readonly class EventStatisticsService
 
     private function calculateOccupancyRate(Event $event): float
     {
-        return $event->getMaxAttendees() > 0 
-            ? ($event->getTicketsSold() / $event->getMaxAttendees()) * 100 
+        return $event->getMaxTickets() > 0
+            ? ($event->getTicketsSold() / $event->getMaxTickets()) * 100
             : 0;
     }
 
