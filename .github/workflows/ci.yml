@@ -1,0 +1,40 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer
+
+      - name: Install dependencies
+        run: cd backend && composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Validate composer.json
+        run: cd backend && composer validate --no-check-publish
+
+      - name: Run PHPUnit
+        run: cd backend && vendor/bin/phpunit -c phpunit.xml.dist
+
+      - name: PHPStan (if available)
+        run: |
+          cd backend
+          if [ -x vendor/bin/phpstan ]; then vendor/bin/phpstan analyse -c ../phpstan.neon; else echo "phpstan not installed"; fi
+
+      - name: Deptrac (if available)
+        run: |
+          cd backend
+          if [ -x vendor/bin/deptrac ]; then vendor/bin/deptrac --config=../deptrac.yaml; else echo "deptrac not installed"; fi
+
+      - name: Rector dry-run (if available)
+        run: |
+          cd backend
+          if [ -x vendor/bin/rector ]; then vendor/bin/rector process --dry-run -c ../rector.php; else echo "rector not installed"; fi
