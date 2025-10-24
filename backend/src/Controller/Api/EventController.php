@@ -8,7 +8,6 @@ use App\Message\Command\Event\PublishEventCommand;
 use App\Application\Service\EventApplicationService;
 use App\Application\Service\NotificationApplicationService;
 use App\Presenter\EventPresenter;
-use App\Service\ErrorHandlerService;
 use App\Infrastructure\Validation\RequestValidatorInterface;
 use App\DTO\EventFiltersDTO;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,7 +26,6 @@ class EventController extends AbstractController
         private readonly MessageBusInterface $commandBus,
         private readonly EventApplicationService $eventApplicationService,
         private readonly NotificationApplicationService $notificationApplicationService,
-        private readonly ErrorHandlerService $errorHandler,
         private readonly RequestValidatorInterface $requestValidator,
         private readonly EventPresenter $eventPresenter
     ) {}
@@ -74,7 +72,8 @@ class EventController extends AbstractController
                 ]
             ]);
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to fetch events');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to fetch events', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -85,7 +84,8 @@ class EventController extends AbstractController
             $options = $this->eventApplicationService->getFilterOptions();
             return $this->json($options);
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to fetch filter options');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to fetch filter options', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -128,7 +128,8 @@ class EventController extends AbstractController
             
             return $this->json($this->eventPresenter->presentDetails($event));
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to fetch event');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to fetch event', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -165,7 +166,8 @@ class EventController extends AbstractController
             ], Response::HTTP_CREATED
             );
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to create event');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to create event', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -203,7 +205,8 @@ class EventController extends AbstractController
             ], Response::HTTP_ACCEPTED);
 
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to queue event publication');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to queue event publication', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -254,7 +257,8 @@ class EventController extends AbstractController
                 ]
             ]);
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to update event');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to update event', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -284,7 +288,8 @@ class EventController extends AbstractController
 
             return $this->json(['message' => 'Event cancelled successfully', 'event' => $this->eventPresenter->presentDetails($event)]);
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to cancel event');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to cancel event', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -314,7 +319,8 @@ class EventController extends AbstractController
 
             return $this->json(['message' => 'Event unpublished successfully']);
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to unpublish event');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to unpublish event', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -342,7 +348,8 @@ class EventController extends AbstractController
 
             return $this->json($statistics);
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to fetch event statistics');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to fetch event statistics', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -384,7 +391,8 @@ class EventController extends AbstractController
                 'recipients' => count($attendees)
             ]);
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to send notification');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to send notification', 'message' => $e->getMessage()], $status);
         }
     }
 }

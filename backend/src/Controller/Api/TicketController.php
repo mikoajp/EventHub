@@ -5,7 +5,7 @@ namespace App\Controller\Api;
 use App\Application\Service\TicketApplicationService;
 
 use App\Entity\User;
-use App\Service\ErrorHandlerService;
+
 use App\Presenter\TicketPresenter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -21,7 +21,6 @@ class TicketController extends AbstractController
     public function __construct(
         private readonly TicketApplicationService $ticketApplicationService,
         
-        private readonly ErrorHandlerService $errorHandler,
         private readonly TicketPresenter $ticketPresenter,
     ) {}
 
@@ -46,7 +45,8 @@ class TicketController extends AbstractController
             $availability = $this->ticketApplicationService->checkTicketAvailability($eventId, $ticketTypeId, $quantity);
             return $this->json($this->ticketPresenter->presentAvailability($availability));
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to check ticket availability');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to check ticket availability', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -67,7 +67,8 @@ class TicketController extends AbstractController
             $result = $this->ticketApplicationService->purchaseTicketByIds($user, $eventId, $ticketTypeId);
             return $this->json($this->ticketPresenter->presentPurchase($result), Response::HTTP_CREATED);
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to purchase ticket');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to purchase ticket', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -82,7 +83,8 @@ class TicketController extends AbstractController
             $tickets = $this->ticketApplicationService->getUserTickets($user);
             return $this->json($this->ticketPresenter->presentUserTickets($tickets));
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to fetch user tickets');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to fetch user tickets', 'message' => $e->getMessage()], $status);
         }
     }
 
@@ -99,7 +101,8 @@ class TicketController extends AbstractController
             $this->ticketApplicationService->cancelTicket($id, $user, $reason);
             return $this->json($this->ticketPresenter->presentCancel());
         } catch (\Exception $e) {
-            return $this->errorHandler->createJsonResponse($e, 'Failed to cancel ticket');
+            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
+            return $this->json(['error' => 'Failed to cancel ticket', 'message' => $e->getMessage()], $status);
         }
     }
 }
