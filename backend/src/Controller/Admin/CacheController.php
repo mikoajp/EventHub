@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Service\CacheStatsService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use App\Presenter\CachePresenter;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -17,7 +18,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class CacheController extends AbstractController
 {
     public function __construct(
-        private readonly CacheStatsService $cacheStatsService
+        private readonly CacheStatsService $cacheStatsService,
+        private readonly CachePresenter $cachePresenter
     ) {}
 
     /**
@@ -28,7 +30,7 @@ class CacheController extends AbstractController
     {
         $stats = $this->cacheStatsService->getRedisStats();
         
-        return $this->json($stats);
+        return $this->json($this->cachePresenter->presentStats($stats));
     }
 
     /**
@@ -39,7 +41,7 @@ class CacheController extends AbstractController
     {
         $result = $this->cacheStatsService->clearAllCache();
         
-        return $this->json($result);
+        return $this->json($this->cachePresenter->presentResult($result));
     }
 
     /**
@@ -50,7 +52,7 @@ class CacheController extends AbstractController
     {
         $metrics = $this->cacheStatsService->getKeyMetrics($pattern);
         
-        return $this->json($metrics);
+        return $this->json($this->cachePresenter->presentMetrics($metrics));
     }
 
     /**

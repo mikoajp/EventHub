@@ -7,6 +7,7 @@ use App\Application\Service\UserApplicationService;
 use App\Service\ErrorHandlerService;
 use App\DTO\UserRegistrationDTO;
 use App\Infrastructure\Validation\RequestValidatorInterface;
+use App\Presenter\UserPresenter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,7 +20,8 @@ class AuthController extends AbstractController
     public function __construct(
         private UserApplicationService $userApplicationService,
         private RequestValidatorInterface $requestValidator,
-        private ErrorHandlerService $errorHandler
+        private ErrorHandlerService $errorHandler,
+        private UserPresenter $userPresenter
     ) {}
 
     #[Route('/login', name: 'api_login', methods: ['POST'])]
@@ -29,7 +31,7 @@ class AuthController extends AbstractController
             if (!$user) {
                 throw new \RuntimeException('User not authenticated', JsonResponse::HTTP_UNAUTHORIZED);
             }
-            return $this->json($this->userApplicationService->formatLoginResponse($user));
+            return $this->json($this->userPresenter->presentLoginResponse($this->userApplicationService->formatLoginResponse($user)));
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Login failed');
         }
@@ -42,7 +44,7 @@ class AuthController extends AbstractController
             if (!$user) {
                 throw new \RuntimeException('User not authenticated', JsonResponse::HTTP_UNAUTHORIZED);
             }
-            return $this->json($this->userApplicationService->getUserProfile($user));
+            return $this->json($this->userPresenter->presentProfile($this->userApplicationService->getUserProfile($user)));
         } catch (\Exception $e) {
             return $this->errorHandler->createJsonResponse($e, 'Authentication check failed');
         }
@@ -65,7 +67,7 @@ class AuthController extends AbstractController
             $user = $this->userApplicationService->registerUser($registrationDTO);
             
             return $this->json(
-                $this->userApplicationService->formatRegistrationResponse($user),
+                $this->userPresenter->presentRegistrationResponse($this->userApplicationService->formatRegistrationResponse($user)),
                 JsonResponse::HTTP_CREATED
             );
         } catch (\Exception $e) {
