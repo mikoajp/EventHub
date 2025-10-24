@@ -29,16 +29,10 @@ final readonly class CancelEventHandler
         }
         $event->setPreviousStatus($event->getStatus());
         $event->setStatus(\App\Entity\Event::STATUS_CANCELLED);
-        $event->setCancelledAt(new \DateTime());
+        $event->setCancelledAt(new \DateTimeImmutable());
         $this->eventRepository->persist($event);
     }
 }
-
-
-
-
-
-
 
 
 

@@ -87,7 +87,6 @@ final readonly class ProcessPaymentHandler
             $ticket->setStatus(Ticket::STATUS_CANCELLED);
             $this->entityManager->flush();
             throw $e;
-        } catch (ExceptionInterface $e) {
         }
     }
 }
