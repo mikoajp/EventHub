@@ -10,15 +10,12 @@ use Symfony\Component\Cache\Adapter\RedisAdapter;
 class CacheStatsService
 {
     private $redis;
-    private $cacheService;
     private $isEnabled;
 
     public function __construct(
-        CacheService $cacheService,
         string $redisUrl = 'redis://localhost:6379',
         bool $statsEnabled = true
     ) {
-        $this->cacheService = $cacheService;
         $this->isEnabled = $statsEnabled;
         
         if ($this->isEnabled) {
