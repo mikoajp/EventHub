@@ -58,4 +58,28 @@ final readonly class EventDomainService
                $event->getEventDate() &&
                $event->getVenue();
     }
+
+    public function canBeCancelled(Event $event): bool
+    {
+        return $event->canBeCancelled();
+    }
+
+    public function canBeUnpublished(Event $event): bool
+    {
+        return $event->canBeUnpublished();
+    }
+
+    public function cancelEvent(Event $event): void
+    {
+        $event->setStatus(Event::STATUS_CANCELLED);
+        $event->setCancelledAt(new \DateTimeImmutable());
+        $this->entityManager->flush();
+    }
+
+    public function unpublishEvent(Event $event): void
+    {
+        $event->setStatus(Event::STATUS_DRAFT);
+        $event->setPublishedAt(null);
+        $this->entityManager->flush();
+    }
 }
