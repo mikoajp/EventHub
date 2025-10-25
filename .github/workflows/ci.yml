@@ -16,11 +16,6 @@ jobs:
           tools: composer
           extensions: none
 
-      - name: Disable ext-amqp if present (Ubuntu)
-        run: |
-          if php -m | grep -qi '^amqp$'; then sudo phpdismod amqp || true; fi
-          sudo rm -f /etc/php/*/cli/conf.d/*amqp*.ini || true
-          php -m | grep -i amqp || true
 
       - name: Install dependencies
         run: cd backend && composer install --no-interaction --no-progress --prefer-dist
