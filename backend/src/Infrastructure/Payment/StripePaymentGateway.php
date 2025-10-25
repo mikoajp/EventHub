@@ -2,13 +2,12 @@
 
 namespace App\Infrastructure\Payment;
 
-use App\DTO\PaymentResult;
+use App\DTO\PaymentResultDTO;
 use Psr\Log\LoggerInterface;
 
 final readonly class StripePaymentGateway implements PaymentGatewayInterface
 {
     public function __construct(
-        private string $stripeSecretKey,
         private LoggerInterface $logger
     ) {}
 
@@ -17,7 +16,7 @@ final readonly class StripePaymentGateway implements PaymentGatewayInterface
         int $amount,
         string $currency = 'USD',
         array $metadata = []
-    ): PaymentResult {
+    ): PaymentResultDTO {
         try {
             $this->logger->info('Processing Stripe payment', [
                 'payment_method_id' => $paymentMethodId,
@@ -38,7 +37,7 @@ final readonly class StripePaymentGateway implements PaymentGatewayInterface
                     'amount' => $amount
                 ]);
                 
-                return new PaymentResult(
+                return new PaymentResultDTO(
                     success: true,
                     paymentId: $paymentId,
                     message: 'Payment processed successfully'
@@ -49,7 +48,7 @@ final readonly class StripePaymentGateway implements PaymentGatewayInterface
                     'reason' => 'insufficient_funds'
                 ]);
                 
-                return new PaymentResult(
+                return new PaymentResultDTO(
                     success: false,
                     paymentId: null,
                     message: 'Payment failed - insufficient funds'
@@ -62,7 +61,7 @@ final readonly class StripePaymentGateway implements PaymentGatewayInterface
                 'payment_method_id' => $paymentMethodId
             ]);
 
-            return new PaymentResult(
+            return new PaymentResultDTO(
                 success: false,
                 paymentId: null,
                 message: 'Payment processing error: ' . $e->getMessage()
@@ -70,7 +69,7 @@ final readonly class StripePaymentGateway implements PaymentGatewayInterface
         }
     }
 
-    public function refundPayment(string $paymentId, int $amount): PaymentResult
+    public function refundPayment(string $paymentId, int $amount): PaymentResultDTO
     {
         try {
             $this->logger->info('Processing Stripe refund', [
@@ -88,7 +87,7 @@ final readonly class StripePaymentGateway implements PaymentGatewayInterface
                 'amount' => $amount
             ]);
 
-            return new PaymentResult(
+            return new PaymentResultDTO(
                 success: true,
                 paymentId: $refundId,
                 message: 'Refund processed successfully'

@@ -5,7 +5,7 @@ namespace App\Presenter;
 use App\Contract\Presentation\EventPresenterInterface;
 use App\Domain\Event\Service\EventCalculationService;
 use App\Domain\Event\Service\EventDomainService;
-use App\DTO\EventOutput;
+use App\DTO\EventResponseDTO;
 use App\Entity\Event;
 use App\Domain\ValueObject\Money;
 use App\Domain\ValueObject\EventDate;
@@ -17,9 +17,9 @@ final readonly class EventPresenter implements EventPresenterInterface
         private EventDomainService $domainService
     ) {}
 
-    public function present(Event $event): EventOutput
+    public function present(Event $event): EventResponseDTO
     {
-        $out = new EventOutput();
+        $out = new EventResponseDTO();
         $out->id = $event->getId()?->toString();
         $out->name = $event->getName();
         $out->description = $event->getDescription();

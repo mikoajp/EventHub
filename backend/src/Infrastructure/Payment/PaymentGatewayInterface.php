@@ -2,7 +2,7 @@
 
 namespace App\Infrastructure\Payment;
 
-use App\DTO\PaymentResult;
+use App\DTO\PaymentResultDTO;
 
 interface PaymentGatewayInterface
 {
@@ -14,12 +14,12 @@ interface PaymentGatewayInterface
         int $amount,
         string $currency = 'USD',
         array $metadata = []
-    ): PaymentResult;
+    ): PaymentResultDTO;
 
     /**
      * Process a refund
      */
-    public function refundPayment(string $paymentId, int $amount): PaymentResult;
+    public function refundPayment(string $paymentId, int $amount): PaymentResultDTO;
 
     /**
      * Get payment status

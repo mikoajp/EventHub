@@ -4,14 +4,14 @@ namespace App\Presenter;
 
 use App\Contract\Presentation\UserPresenterInterface;
 
-use App\DTO\UserOutput;
+use App\DTO\UserResponseDTO;
 use App\Entity\User;
 
 final class UserPresenter implements \App\Contract\Presentation\UserPresenterInterface
 {
-    public function present(User $user): UserOutput
+    public function present(User $user): UserResponseDTO
     {
-        $out = new UserOutput();
+        $out = new UserResponseDTO();
         $out->id = $user->getId()->toRfc4122();
         $out->email = $user->getEmail();
         $out->fullName = $user->getFullName();
