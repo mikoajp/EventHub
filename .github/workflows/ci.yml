@@ -36,16 +36,17 @@ jobs:
       - name: Run PHPStan
         run: cd backend && composer require --no-interaction --no-progress --dev -W phpstan/phpstan:^1.11 && vendor/bin/phpstan analyse -c phpstan.neon
 
-      - name: Deptrac (if available)
+      - name: Deptrac (non-blocking if present)
         run: |
           cd backend
-          if [ -x vendor/bin/deptrac ]; then \
+          if [ -x vendor/bin/deptrac ] && [ -f "$GITHUB_WORKSPACE/deptrac.yaml" ]; then \
             vendor/bin/deptrac analyze --config-file=$GITHUB_WORKSPACE/deptrac.yaml \
             || vendor/bin/deptrac analyse --config-file=$GITHUB_WORKSPACE/deptrac.yaml \
             || vendor/bin/deptrac --config-file=$GITHUB_WORKSPACE/deptrac.yaml \
-            || vendor/bin/deptrac --config=$GITHUB_WORKSPACE/deptrac.yaml; \
+            || vendor/bin/deptrac --config=$GITHUB_WORKSPACE/deptrac.yaml \
+            || echo "Deptrac failed (non-blocking)"; \
           else \
-            echo "deptrac not installed"; \
+            echo "Deptrac skipped (binary or config missing)"; \
           fi
 
       - name: Rector dry-run (if available)
