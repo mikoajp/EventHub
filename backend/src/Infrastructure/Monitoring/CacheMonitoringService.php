@@ -27,12 +27,15 @@ final readonly class CacheMonitoringService
                 'connection' => 'active',
                 'memory_usage' => $info['used_memory_human'] ?? 'unknown',
                 'total_keys' => $info['db0']['keys'] ?? 0,
-                'hits' => $info['keyspace_hits'] ?? 0,
-                'misses' => $info['keyspace_misses'] ?? 0,
+                'hits' => (int)($info['keyspace_hits'] ?? 0),
+                'misses' => (int)($info['keyspace_misses'] ?? 0),
                 'hit_rate' => $this->calculateHitRate($info),
-                'uptime' => $info['uptime_in_seconds'] ?? 0,
-                'connected_clients' => $info['connected_clients'] ?? 0,
-                'version' => $info['redis_version'] ?? 'unknown'
+                'uptime' => (int)($info['uptime_in_seconds'] ?? 0),
+                'connected_clients' => (int)($info['connected_clients'] ?? 0),
+                'version' => (string)($info['redis_version'] ?? 'unknown'),
+                'memory_details' => $this->getMemoryDetails($redis),
+                'performance' => $this->getPerformanceMetrics($redis),
+                'top_patterns' => $this->analyzeKeyPatterns($redis),
             ];
         } catch (\Exception $e) {
             return [
@@ -55,8 +58,8 @@ final readonly class CacheMonitoringService
 
     private function calculateHitRate(array $info): float
     {
-        $hits = $info['keyspace_hits'] ?? 0;
-        $misses = $info['keyspace_misses'] ?? 0;
+        $hits = (int)($info['keyspace_hits'] ?? 0);
+        $misses = (int)($info['keyspace_misses'] ?? 0);
         $total = $hits + $misses;
         
         return $total > 0 ? round(($hits / $total) * 100, 2) : 0;

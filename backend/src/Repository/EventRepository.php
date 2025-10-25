@@ -38,8 +38,6 @@ class EventRepository extends ServiceEntityRepository
                 return null;
             }
         }
-
-        return null;
     }
 
     /**

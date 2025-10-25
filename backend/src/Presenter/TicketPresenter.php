@@ -74,7 +74,7 @@ final class TicketPresenter implements TicketPresenterInterface
                     'priceFormatted' => Money::fromInt($t->getPrice())->format(),
                     'status' => $t->getStatus(),
                     'purchasedAt' => $t->getPurchasedAt()?->format(DATE_ATOM),
-                    'createdAt' => $t->getCreatedAt()?->format(DATE_ATOM),
+                    'createdAt' => $t->getCreatedAt()->format(DATE_ATOM),
                     'qrCode' => $t->getQrCode(),
                 ];
             }

@@ -37,7 +37,7 @@ class JwtAuthenticator extends AbstractAuthenticator
     {
         $token = $this->tokenExtractor->extract($request);
         
-        if (null === $token) {
+        if (!is_string($token) || $token === '') {
             throw new CustomUserMessageAuthenticationException('No JWT token found');
         }
         
