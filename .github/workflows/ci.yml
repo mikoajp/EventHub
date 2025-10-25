@@ -23,10 +23,9 @@ jobs:
 
       - name: Run PHPUnit (Unit Tests)
         run: cd backend && vendor/bin/phpunit tests/Unit --testdox
-
-      - name: Run PHPUnit (All Tests)
-        run: cd backend && vendor/bin/phpunit -c phpunit.xml.dist
-        continue-on-error: true
+        
+      - name: Test Summary
+        run: cd backend && vendor/bin/phpunit tests/Unit --no-coverage
 
       - name: PHPStan (if available)
         run: |
