@@ -56,14 +56,19 @@ final readonly class PaymentDomainService
         ];
     }
 
-    public function isRefundable(PaymentResultDTO $paymentResult, \DateTimeImmutable $paymentDate): bool
+    public function isRefundable(PaymentResultDTO $paymentResult, \DateTimeInterface $paymentDate): bool
     {
         if (!$paymentResult->success) {
             return false;
         }
 
+        // Normalize to immutable for safe modification
+        $immutableDate = $paymentDate instanceof \DateTimeImmutable
+            ? $paymentDate
+            : \DateTimeImmutable::createFromMutable($paymentDate);
+
         // Allow refunds within 30 days
-        $refundDeadline = $paymentDate->modify('+30 days');
+        $refundDeadline = $immutableDate->modify('+30 days');
         
         return new \DateTimeImmutable() <= $refundDeadline;
     }

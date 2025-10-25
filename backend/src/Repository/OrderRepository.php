@@ -45,7 +45,7 @@ class OrderRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    public function findPendingOrders(\DateTimeInterface $olderThan = null): array
+    public function findPendingOrders(?\DateTimeInterface $olderThan = null): array
     {
         $qb = $this->createQueryBuilder('o')
             ->where('o.status = :status')

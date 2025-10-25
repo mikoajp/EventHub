@@ -37,7 +37,7 @@ final readonly class TicketDomainService
         $this->entityManager->flush();
     }
 
-    public function cancelTicket(Ticket $ticket, string $reason = null): void
+    public function cancelTicket(Ticket $ticket, ?string $reason = null): void
     {
         $ticket->setStatus(Ticket::STATUS_CANCELLED);
 
