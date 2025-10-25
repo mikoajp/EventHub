@@ -3,8 +3,6 @@
 /.env.local
 /.env.local.php
 /.env.*.local
-# .env committed for CI (no secrets)
-!/.env
 /config/secrets/prod/prod.decrypt.private.php
 /public/bundles/
 /var/
@@ -17,18 +15,25 @@
 ###< phpunit/phpunit ###
 
 ###> symfony/phpunit-bridge ###
-.phpunit.result.cache
+.phpunit
 /phpunit.xml
 ###< symfony/phpunit-bridge ###
-
-###> symfony/asset-mapper ###
-/public/assets/
-/assets/vendor/
-###< symfony/asset-mapper ###
 
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
 ###< lexik/jwt-authentication-bundle ###
 
-# Symfony Secrets (do not commit private decrypt keys)
-/config/secrets/*/*.decrypt.private.php
+# Test database
+/var/data_test.db
+/var/test.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

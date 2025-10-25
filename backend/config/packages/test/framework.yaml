@@ -1,0 +1,14 @@
+framework:
+    test: true
+    session:
+        storage_factory_id: session.storage.factory.mock_file
+    profiler:
+        collect: false
+    cache:
+        # Use array cache for tests (no Redis needed)
+        app: cache.adapter.array
+        system: cache.adapter.array
+    messenger:
+        # Use sync transport for tests
+        transports:
+            async: 'sync://'
