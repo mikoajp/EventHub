@@ -4,7 +4,13 @@ use Symfony\Component\Dotenv\Dotenv;
 
 require dirname(__DIR__).'/vendor/autoload.php';
 
-if (method_exists(Dotenv::class, 'bootEnv')) {
-     = dirname(__DIR__).'/.env';\n    if (file_exists()) { (new Dotenv())->bootEnv(); } else { \\['APP_ENV'] = \\['APP_ENV'] = \\['APP_ENV'] ?? 'test'; }
-}
+// Keep tests independent from CI .env; default to test when missing
+$_SERVER['APP_ENV'] = $_ENV['APP_ENV'] = $_ENV['APP_ENV'] ?? 'test';
+$_SERVER['APP_DEBUG'] = $_ENV['APP_DEBUG'] = $_ENV['APP_DEBUG'] ?? '0';
 
+if (class_exists(Dotenv::class)) {
+    $envPath = dirname(__DIR__).'/.env.test';
+    if (file_exists($envPath)) {
+        (new Dotenv())->bootEnv($envPath);
+    }
+}
