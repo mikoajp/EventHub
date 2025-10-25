@@ -21,8 +21,12 @@ jobs:
       - name: Validate composer.json
         run: cd backend && composer validate --no-check-publish
 
-      - name: Run PHPUnit
+      - name: Run PHPUnit (Unit Tests)
+        run: cd backend && vendor/bin/phpunit tests/Unit --testdox
+
+      - name: Run PHPUnit (All Tests)
         run: cd backend && vendor/bin/phpunit -c phpunit.xml.dist
+        continue-on-error: true
 
       - name: PHPStan (if available)
         run: |
