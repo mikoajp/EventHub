@@ -20,8 +20,6 @@ jobs:
       - name: Install dependencies
         run: cd backend && composer update --no-interaction --no-progress --prefer-dist
 
-      - name: Install PHPStan
-        run: cd backend && composer require --no-interaction --no-progress --dev -W phpstan/phpstan:^1.11
 
       - name: Validate composer.json
         run: cd backend && composer validate --no-check-publish
@@ -33,7 +31,7 @@ jobs:
         run: cd backend && vendor/bin/phpunit tests/Unit --no-coverage
 
       - name: Run PHPStan
-        run: cd backend && vendor/bin/phpstan analyse -c phpstan.neon
+        run: cd backend && composer require --no-interaction --no-progress --dev -W phpstan/phpstan:^1.11 && vendor/bin/phpstan analyse -c phpstan.neon
 
       - name: Deptrac (if available)
         run: |
