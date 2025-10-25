@@ -39,7 +39,14 @@ jobs:
       - name: Deptrac (if available)
         run: |
           cd backend
-          if [ -x vendor/bin/deptrac ]; then vendor/bin/deptrac analyse --config=$GITHUB_WORKSPACE/deptrac.yaml 2>/dev/null || vendor/bin/deptrac --config=$GITHUB_WORKSPACE/deptrac.yaml; else echo "deptrac not installed"; fi
+          if [ -x vendor/bin/deptrac ]; then \
+            vendor/bin/deptrac analyze --config-file=$GITHUB_WORKSPACE/deptrac.yaml \
+            || vendor/bin/deptrac analyse --config-file=$GITHUB_WORKSPACE/deptrac.yaml \
+            || vendor/bin/deptrac --config-file=$GITHUB_WORKSPACE/deptrac.yaml \
+            || vendor/bin/deptrac --config=$GITHUB_WORKSPACE/deptrac.yaml; \
+          else \
+            echo "deptrac not installed"; \
+          fi
 
       - name: Rector dry-run (if available)
         run: |
