@@ -18,7 +18,7 @@ jobs:
 
 
       - name: Install dependencies
-        run: cd backend && composer install --no-interaction --no-progress --prefer-dist
+        run: cd backend && composer update --no-interaction --no-progress --prefer-dist
 
       - name: Install PHPStan
         run: cd backend && composer require --no-interaction --no-progress --dev phpstan/phpstan:^1.11
