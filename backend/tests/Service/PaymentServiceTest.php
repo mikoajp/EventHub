@@ -11,30 +11,30 @@ final class PaymentServiceTest extends TestCase
 {
     public function testProcessPaymentReturnsDto(): void
     {
-         = new class implements PaymentGatewayInterface {
-            public function processPayment(string , int , string  = 'USD', array  = []): PaymentResultDTO
+        $gateway = new class implements PaymentGatewayInterface {
+            public function processPayment(string $paymentMethodId, int $amount, string $currency = 'USD', array $metadata = []): PaymentResultDTO
             {
                 return new PaymentResultDTO(true, 'pi_test', 'ok');
             }
-            public function refundPayment(string , int ): PaymentResultDTO
+            public function refundPayment(string $paymentId, int $amount): PaymentResultDTO
             {
                 return new PaymentResultDTO(true, 're_test', 'ok');
             }
-            public function getPaymentStatus(string ): array
+            public function getPaymentStatus(string $paymentId): array
             {
-                return ['id' => , 'status' => 'succeeded'];
+                return ['id' => $paymentId, 'status' => 'succeeded'];
             }
-            public function validatePaymentMethod(string ): bool
+            public function validatePaymentMethod(string $paymentMethodId): bool
             {
                 return true;
             }
         };
 
-         = new PaymentService();
-         = ->processPayment('pm_123', 1000, 'USD');
+        $service = new PaymentService($gateway);
+        $result = $service->processPayment('pm_123', 1000, 'USD');
 
-        ->assertInstanceOf(PaymentResultDTO::class, );
-        ->assertTrue(->success);
-        ->assertNotEmpty(->paymentId);
+        $this->assertInstanceOf(PaymentResultDTO::class, $result);
+        $this->assertTrue($result->success);
+        $this->assertNotEmpty($result->paymentId);
     }
 }
