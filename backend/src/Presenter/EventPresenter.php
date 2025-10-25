@@ -3,14 +3,24 @@
 namespace App\Presenter;
 
 use App\Contract\Presentation\EventPresenterInterface;
-
+use App\Domain\Event\Service\EventCalculationService;
+use App\Domain\Event\Service\EventDomainService;
 use App\DTO\EventOutput;
 use App\Entity\Event;
 use App\Domain\ValueObject\Money;
 use App\Domain\ValueObject\EventDate;
 
-final class EventPresenter implements \App\Contract\Presentation\EventPresenterInterface
+/**
+ * EventPresenter - Responsible for presentation logic and formatting.
+ * Moved from Event entity to comply with SRP.
+ */
+final readonly class EventPresenter implements EventPresenterInterface
 {
+    public function __construct(
+        private EventCalculationService $calculationService,
+        private EventDomainService $domainService
+    ) {}
+
     public function present(Event $event): EventOutput
     {
         $out = new EventOutput();
@@ -23,9 +33,11 @@ final class EventPresenter implements \App\Contract\Presentation\EventPresenterI
         $out->status = $event->getStatus();
         $out->publishedAt = $event->getPublishedAt()?->format('c');
         $out->createdAt = $event->getCreatedAt()?->format('c');
-        // Optional counters if available on entity
-        if (method_exists($event, 'getTicketsSold')) { $out->ticketsSold = $event->getTicketsSold(); }
-        if (method_exists($event, 'getAvailableTickets')) { $out->availableTickets = $event->getAvailableTickets(); }
+        
+        // Use calculation service instead of entity methods
+        $out->ticketsSold = $this->calculationService->calculateTicketsSold($event);
+        $out->availableTickets = $this->calculationService->calculateAvailableTickets($event);
+        
         return $out;
     }
 
@@ -36,11 +48,14 @@ final class EventPresenter implements \App\Contract\Presentation\EventPresenterI
             'name' => $event->getName(),
             'description' => $event->getDescription(),
             'eventDate' => EventDate::fromNative($event->getEventDate())->format(),
+            'eventDateFormatted' => $this->formatEventDate($event),
             'venue' => $event->getVenue(),
             'maxTickets' => $event->getMaxTickets(),
             'status' => $event->getStatus(),
+            'statusLabel' => $this->getStatusLabel($event),
             'publishedAt' => $event->getPublishedAt()?->format('c'),
             'createdAt' => $event->getCreatedAt()?->format('c'),
+            'createdAtFormatted' => $this->formatCreatedAt($event),
             'organizer' => [
                 'id' => $event->getOrganizer()?->getId()?->toString(),
                 'name' => $event->getOrganizer()?->getFullName(),
@@ -60,6 +75,51 @@ final class EventPresenter implements \App\Contract\Presentation\EventPresenterI
 
     public function presentDetails(Event $event): array
     {
-        return $this->presentListItem($event);
+        $listItem = $this->presentListItem($event);
+        
+        // Add detailed statistics and calculations
+        $ticketsSold = $this->calculationService->calculateTicketsSold($event);
+        
+        return array_merge($listItem, [
+            'ticketsSold' => $ticketsSold,
+            'availableTickets' => $this->calculationService->calculateAvailableTickets($event),
+            'totalRevenue' => $this->calculationService->calculateTotalRevenue($event),
+            'occupancyRate' => $this->calculationService->getOccupancyRate($event),
+            'attendeesCount' => $this->calculationService->getAttendeesCount($event),
+            'ordersCount' => $this->calculationService->getOrdersCount($event),
+            'daysUntilEvent' => $this->calculationService->getDaysUntilEvent($event),
+            'isUpcoming' => $this->domainService->isUpcoming($event),
+            'isPast' => $this->domainService->isPast($event),
+            'isSoldOut' => $this->domainService->isSoldOut($event, $ticketsSold),
+            'canBeModified' => $this->domainService->canBeModified($event, $ticketsSold),
+            'canBeCancelled' => $this->domainService->canBeCancelled($event),
+            'canBePublished' => $this->domainService->canBePublished($event),
+            'canBeCompleted' => $this->domainService->canBeCompleted($event),
+        ]);
+    }
+
+    // ==========================================
+    // Presentation Formatting Methods
+    // ==========================================
+
+    public function getStatusLabel(Event $event): string
+    {
+        return match($event->getStatus()) {
+            Event::STATUS_DRAFT => 'Draft',
+            Event::STATUS_PUBLISHED => 'Published',
+            Event::STATUS_CANCELLED => 'Cancelled',
+            Event::STATUS_COMPLETED => 'Completed',
+            default => 'Unknown'
+        };
+    }
+
+    public function formatEventDate(Event $event): string
+    {
+        return $event->getEventDate()?->format('M j, Y \a\t g:i A') ?? '';
+    }
+
+    public function formatCreatedAt(Event $event): string
+    {
+        return $event->getCreatedAt()?->format('M j, Y \a\t g:i A') ?? '';
     }
 }

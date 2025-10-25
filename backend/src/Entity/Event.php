@@ -409,59 +409,25 @@ class Event
         return $this;
     }
 
+    // ==========================================
+    // NOTE: Calculation methods moved to EventCalculationService
+    // to comply with Single Responsibility Principle.
+    // Use EventCalculationService or EventPresenter instead.
+    // ==========================================
 
-    #[Groups(['event:read'])]
-    public function getTicketsSold(): int
-    {
-        if ($this->orders->count() > 0) {
-            return $this->orders->reduce(function (int $total, Order $order) {
-                return $total + $order->getOrderItems()->reduce(function (int $itemTotal, $orderItem) {
-                        return $itemTotal + $orderItem->getQuantity();
-                    }, 0);
-            }, 0);
-        }
+    // ==========================================
+    // NOTE: Business logic, validation, and presentation methods 
+    // moved to appropriate services to comply with SRP:
+    // 
+    // - Status checks & business rules → EventDomainService
+    // - Calculations & aggregations → EventCalculationService  
+    // - Presentation & formatting → EventPresenter
+    // - Ticket type queries → EventCalculationService
+    // 
+    // Keep Entity focused on data modeling and persistence.
+    // ==========================================
 
-        return $this->tickets->filter(fn(Ticket $ticket) =>
-            $ticket->getStatus() === 'purchased'
-        )->count();
-    }
-
-    #[Groups(['event:read'])]
-    public function getAvailableTickets(): int
-    {
-        return $this->maxTickets - $this->getTicketsSold();
-    }
-
-    #[Groups(['event:read'])]
-    public function getTotalRevenue(): float
-    {
-        if ($this->orders->count() > 0) {
-            return $this->orders->reduce(function (float $total, Order $order) {
-                return $total + $order->getTotalAmount();
-            }, 0.0);
-        }
-
-        return $this->tickets
-            ->filter(fn(Ticket $ticket) => $ticket->getStatus() === 'purchased')
-            ->reduce(function (float $total, Ticket $ticket) {
-                return $total + $ticket->getPrice();
-            }, 0.0);
-    }
-
-    #[Groups(['event:read'])]
-    public function getAttendeesCount(): int
-    {
-        return $this->attendees->count();
-    }
-
-    #[Groups(['event:read'])]
-    public function getOrdersCount(): int
-    {
-        return $this->orders->count();
-    }
-
-    // Status check methods
-
+    // Basic status check methods (simple, no business logic)
     public function isPublished(): bool
     {
         return $this->status === self::STATUS_PUBLISHED;
@@ -480,139 +446,5 @@ class Event
     public function isCompleted(): bool
     {
         return $this->status === self::STATUS_COMPLETED;
-    }
-
-
-    public function canBeModified(): bool
-    {
-        return !$this->isCancelled() && !$this->isCompleted() &&
-            (!$this->isPublished() || $this->getTicketsSold() === 0);
-    }
-
-    public function canBeCancelled(): bool
-    {
-        return !$this->isCancelled() && !$this->isCompleted();
-    }
-
-    public function canBePublished(): bool
-    {
-        return $this->isDraft() && $this->eventDate > new \DateTime();
-    }
-
-    public function canBeUnpublished(): bool
-    {
-        return $this->isPublished() && $this->getTicketsSold() === 0;
-    }
-
-    public function canBeCompleted(): bool
-    {
-        return $this->isPublished() && $this->eventDate < new \DateTime();
-    }
-
-    public function hasTicketsSold(): bool
-    {
-        return $this->getTicketsSold() > 0;
-    }
-
-    public function isSoldOut(): bool
-    {
-        return $this->getAvailableTickets() <= 0;
-    }
-
-    public function isUpcoming(): bool
-    {
-        return $this->eventDate > new \DateTime();
-    }
-
-    public function isPast(): bool
-    {
-        return $this->eventDate < new \DateTime();
-    }
-
-    #[Groups(['event:read'])]
-    public function getDaysUntilEvent(): int
-    {
-        $now = new \DateTime();
-        $diff = $now->diff($this->eventDate);
-        return $this->eventDate > $now ? $diff->days : -$diff->days;
-    }
-
-    #[Groups(['event:read'])]
-    public function getStatusLabel(): string
-    {
-        return match($this->status) {
-            self::STATUS_DRAFT => 'Draft',
-            self::STATUS_PUBLISHED => 'Published',
-            self::STATUS_CANCELLED => 'Cancelled',
-            self::STATUS_COMPLETED => 'Completed',
-            default => 'Unknown'
-        };
-    }
-
-    #[Groups(['event:read'])]
-    public function getEventDateFormatted(): string
-    {
-        return $this->eventDate?->format('M j, Y \a\t g:i A') ?? '';
-    }
-
-    #[Groups(['event:read'])]
-    public function getCreatedAtFormatted(): string
-    {
-        return $this->createdAt?->format('M j, Y \a\t g:i A') ?? '';
-    }
-
-    // Ticket type management
-
-    public function getTicketTypeByName(string $name): ?TicketType
-    {
-        foreach ($this->ticketTypes as $ticketType) {
-            if ($ticketType->getName() === $name) {
-                return $ticketType;
-            }
-        }
-        return null;
-    }
-
-    public function hasAvailableTicketType(): bool
-    {
-        foreach ($this->ticketTypes as $ticketType) {
-            if ($ticketType->getAvailableQuantity() > 0) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    public function markAsCompleted(): static
-    {
-        if ($this->canBeCompleted()) {
-            $this->setStatus(self::STATUS_COMPLETED);
-        }
-        return $this;
-    }
-
-    public function calculateOccupancyRate(): float
-    {
-        if ($this->maxTickets === 0) {
-            return 0.0;
-        }
-        return ($this->getTicketsSold() / $this->maxTickets) * 100;
-    }
-
-    #[Groups(['event:read'])]
-    public function getOccupancyRate(): float
-    {
-        return round($this->calculateOccupancyRate(), 2);
-    }
-
-    public function addToWaitingList(User $user): bool
-    {
-        // Implementation for waiting list functionality
-        if ($this->isSoldOut() && !$this->attendees->contains($user)) {
-            // Add to waiting list (would need a separate WaitingList entity)
-            return true;
-        }
-        return false;
     }
 }

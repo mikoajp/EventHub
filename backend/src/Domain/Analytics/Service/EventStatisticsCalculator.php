@@ -2,6 +2,7 @@
 
 namespace App\Domain\Analytics\Service;
 
+use App\Domain\Event\Service\EventCalculationService;
 use App\Entity\Event;
 use App\Repository\EventRepository;
 use App\Repository\TicketRepository;
@@ -10,7 +11,8 @@ final readonly class EventStatisticsCalculator
 {
     public function __construct(
         private EventRepository $eventRepository,
-        private TicketRepository $ticketRepository
+        private TicketRepository $ticketRepository,
+        private EventCalculationService $calculationService
     ) {}
 
     public function calculateEventStatistics(Event $event): array
@@ -28,18 +30,19 @@ final readonly class EventStatisticsCalculator
     {
         return [
             'total_capacity' => $event->getMaxTickets(),
-            'tickets_sold' => $event->getTicketsSold(),
-            'tickets_available' => $event->getAvailableTickets(),
-            'occupancy_rate' => $this->calculateOccupancyRate($event),
-            'days_until_event' => $this->calculateDaysUntilEvent($event)
+            'tickets_sold' => $this->calculationService->calculateTicketsSold($event),
+            'tickets_available' => $this->calculationService->calculateAvailableTickets($event),
+            'occupancy_rate' => $this->calculationService->getOccupancyRate($event),
+            'days_until_event' => $this->calculationService->getDaysUntilEvent($event)
         ];
     }
 
     public function calculateRevenueStats(Event $event): array
     {
         $totalRevenue = $this->ticketRepository->getTotalRevenue($event);
-        $averageTicketPrice = $event->getTicketsSold() > 0
-            ? $totalRevenue / $event->getTicketsSold()
+        $ticketsSold = $this->calculationService->calculateTicketsSold($event);
+        $averageTicketPrice = $ticketsSold > 0
+            ? $totalRevenue / $ticketsSold
             : 0;
 
         return [
@@ -95,25 +98,11 @@ final readonly class EventStatisticsCalculator
         ];
     }
 
-    private function calculateOccupancyRate(Event $event): float
-    {
-        return $event->getMaxTickets() > 0
-            ? ($event->getTicketsSold() / $event->getMaxTickets()) * 100
-            : 0;
-    }
-
-    private function calculateDaysUntilEvent(Event $event): int
-    {
-        $now = new \DateTimeImmutable();
-        $eventDate = $event->getEventDate();
-        
-        return $now->diff($eventDate)->days;
-    }
 
     private function calculateProjectedRevenue(Event $event): float
     {
         $currentRevenue = $this->ticketRepository->getTotalRevenue($event);
-        $occupancyRate = $this->calculateOccupancyRate($event);
+        $occupancyRate = $this->calculationService->getOccupancyRate($event);
         
         if ($occupancyRate > 0) {
             return $currentRevenue / ($occupancyRate / 100);
@@ -126,7 +115,7 @@ final readonly class EventStatisticsCalculator
     {
         // This would typically come from analytics service
         $totalViews = 1000; // Placeholder
-        $totalSales = $event->getTicketsSold();
+        $totalSales = $this->calculationService->calculateTicketsSold($event);
         
         return $totalViews > 0 ? ($totalSales / $totalViews) * 100 : 0;
     }
@@ -140,8 +129,9 @@ final readonly class EventStatisticsCalculator
         }
 
         $daysSincePublished = $publishedAt->diff(new \DateTimeImmutable())->days;
+        $ticketsSold = $this->calculationService->calculateTicketsSold($event);
         
-        return $daysSincePublished > 0 ? $event->getTicketsSold() / $daysSincePublished : 0;
+        return $daysSincePublished > 0 ? $ticketsSold / $daysSincePublished : 0;
     }
 
     private function estimateTimeToSellOut(Event $event, float $salesVelocity): ?int
@@ -150,7 +140,7 @@ final readonly class EventStatisticsCalculator
             return null;
         }
 
-        $remainingTickets = $event->getAvailableTickets();
+        $remainingTickets = $this->calculationService->calculateAvailableTickets($event);
         
         return $remainingTickets > 0 ? (int)ceil($remainingTickets / $salesVelocity) : 0;
     }
@@ -178,7 +168,7 @@ final readonly class EventStatisticsCalculator
 
     private function calculatePerformanceScore(Event $event): float
     {
-        $occupancyRate = $this->calculateOccupancyRate($event);
+        $occupancyRate = $this->calculationService->getOccupancyRate($event);
         $conversionRate = $this->calculateConversionRate($event);
         $salesVelocity = $this->calculateSalesVelocity($event);
 
