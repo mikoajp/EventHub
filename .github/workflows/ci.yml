@@ -17,6 +17,9 @@ jobs:
           extensions: mbstring, iconv
 
 
+      - name: Sync dev tools lock (deptrac, rector)
+        run: cd backend && composer update --no-interaction --no-progress --prefer-dist -W qossmic/deptrac-shim rector/rector
+
       - name: Install dependencies
         run: cd backend && composer install --no-interaction --no-progress --prefer-dist
 
