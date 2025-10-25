@@ -122,7 +122,7 @@
         "symfony/stopwatch": "7.2.*",
         "symfony/web-profiler-bundle": "7.2.*",
         "zenstruck/foundry": "^2.5",
-        "qossmic/deptrac-shim": "^1.29",
+        "qossmic/deptrac-shim": "^1.0",
         "rector/rector": "^1.0"
     }
 }
