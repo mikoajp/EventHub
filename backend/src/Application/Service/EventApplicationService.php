@@ -56,20 +56,33 @@ final readonly class EventApplicationService
 
     public function cancelEvent(Event $event): void
     {
-        if (!$this->eventDomainService->canBeCancelled($event)) {
-            throw new \InvalidArgumentException('Event cannot be cancelled');
-        }
+        // Domain service now handles validation internally
         $this->eventDomainService->cancelEvent($event);
+        
+        // Invalidate cache
         $this->cache->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId()->toString());
         $this->cache->deletePattern('events.*');
     }
 
     public function unpublishEvent(Event $event): void
     {
-        if (!$this->eventDomainService->canBeUnpublished($event)) {
-            throw new \InvalidArgumentException('Event cannot be unpublished');
-        }
-        $this->eventDomainService->unpublishEvent($event);
+        // Get ticket count for validation
+        $ticketsSold = $this->eventRepository->getTicketSalesStatistics($event)['total'] ?? 0;
+        
+        // Domain service now handles validation internally
+        $this->eventDomainService->unpublishEvent($event, $ticketsSold);
+        
+        // Invalidate cache
+        $this->cache->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId()->toString());
+        $this->cache->deletePattern('events.*');
+    }
+
+    public function completeEvent(Event $event): void
+    {
+        // Domain service now handles validation internally
+        $this->eventDomainService->completeEvent($event);
+        
+        // Invalidate cache
         $this->cache->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId()->toString());
         $this->cache->deletePattern('events.*');
     }

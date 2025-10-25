@@ -2,6 +2,8 @@
 
 namespace App\Security\Voter;
 
+use App\Domain\Event\Service\EventCalculationService;
+use App\Domain\Event\Service\EventDomainService;
 use App\Entity\Event;
 use App\Entity\User;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
@@ -9,6 +11,11 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 class EventVoter extends Voter
 {
+    public function __construct(
+        private readonly EventDomainService $domainService,
+        private readonly EventCalculationService $calculationService
+    ) {}
+
     public const VIEW = 'EVENT_VIEW';
     public const EDIT = 'EVENT_EDIT';
     public const DELETE = 'EVENT_DELETE';
@@ -102,7 +109,8 @@ class EventVoter extends Voter
         }
 
         // Can only edit if event can be modified
-        return $event->canBeModified();
+        $ticketsSold = $this->calculationService->calculateTicketsSold($event);
+        return $this->domainService->canBeModified($event, $ticketsSold);
     }
 
     private function canDelete(Event $event, User $user): bool
@@ -118,7 +126,8 @@ class EventVoter extends Voter
         }
 
         // Can only delete if no tickets have been sold
-        return !$event->hasTicketsSold();
+        $ticketsSold = $this->calculationService->calculateTicketsSold($event);
+        return !$this->domainService->hasTicketsSold($ticketsSold);
     }
 
     private function canPublish(Event $event, User $user): bool
@@ -129,7 +138,7 @@ class EventVoter extends Voter
         }
 
         // Event must be in publishable state
-        return $event->canBePublished();
+        return $this->domainService->canBePublished($event);
     }
 
     private function canCancel(Event $event, User $user): bool
@@ -145,7 +154,7 @@ class EventVoter extends Voter
         }
 
         // Event must be cancellable
-        return $event->canBeCancelled();
+        return $this->domainService->canBeCancelled($event);
     }
 
     private function canUnpublish(Event $event, User $user): bool
@@ -161,7 +170,8 @@ class EventVoter extends Voter
         }
 
         // Event must be unpublishable
-        return $event->canBeUnpublished();
+        $ticketsSold = $this->calculationService->calculateTicketsSold($event);
+        return $this->domainService->canBeUnpublished($event, $ticketsSold);
     }
 
     private function canNotify(Event $event, User $user): bool

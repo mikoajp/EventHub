@@ -23,14 +23,9 @@ final readonly class CancelEventHandler
         if (!$event) {
             throw new \InvalidArgumentException('Event not found');
         }
-        // set status and cancelledAt via domain rules kept simple here
-        if (!$event->canBeCancelled()) {
-            throw new \DomainException('Event cannot be cancelled');
-        }
-        $event->setPreviousStatus($event->getStatus());
-        $event->setStatus(\App\Entity\Event::STATUS_CANCELLED);
-        $event->setCancelledAt(new \DateTimeImmutable());
-        $this->eventRepository->persist($event);
+        
+        // Use EventApplicationService which delegates to EventDomainService
+        $this->eventApplicationService->cancelEvent($event);
     }
 }
 

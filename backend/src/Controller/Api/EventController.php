@@ -29,6 +29,8 @@ class EventController extends AbstractController
         private readonly RequestValidatorInterface $requestValidator,
         private readonly EventPresenter $eventPresenter
     ) {}
+    
+    // NOTE: formatEventResponse() is deprecated - use EventPresenter instead
 
     #[Route('', name: 'api_events_list', methods: ['GET'])]
     public function list(Request $request): JsonResponse
@@ -89,32 +91,12 @@ class EventController extends AbstractController
         }
     }
 
+    /**
+     * @deprecated Use EventPresenter::presentDetails() instead
+     */
     private function formatEventResponse($event): array
     {
-        return [
-            'id' => $event->getId()->toString(),
-            'name' => $event->getName(),
-            'description' => $event->getDescription(),
-            'eventDate' => $event->getEventDate()->format('c'),
-            'venue' => $event->getVenue(),
-            'maxTickets' => $event->getMaxTickets(),
-            'ticketsSold' => $event->getTicketsSold(),
-            'availableTickets' => $event->getAvailableTickets(),
-            'status' => $event->getStatus(),
-            'publishedAt' => $event->getPublishedAt()?->format('c'),
-            'createdAt' => $event->getCreatedAt()->format('c'),
-            'organizer' => [
-                'id' => $event->getOrganizer()->getId()->toString(),
-                'name' => $event->getOrganizer()->getFullName()
-            ],
-            'ticketTypes' => array_map(fn($ticketType) => [
-                'id' => $ticketType->getId()->toString(),
-                'name' => $ticketType->getName(),
-                'price' => $ticketType->getPrice(),
-                'quantity' => $ticketType->getQuantity(),
-                'priceFormatted' => number_format($ticketType->getPrice() / 100, 2)
-            ], $event->getTicketTypes()->toArray())
-        ];
+        return $this->eventPresenter->presentDetails($event);
     }
 
     #[Route('/{id}', name: 'api_events_show', methods: ['GET'])]
