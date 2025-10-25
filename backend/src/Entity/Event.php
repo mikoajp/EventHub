@@ -408,26 +408,6 @@ class Event
         $this->attendees->removeElement($attendee);
         return $this;
     }
-
-    // ==========================================
-    // NOTE: Calculation methods moved to EventCalculationService
-    // to comply with Single Responsibility Principle.
-    // Use EventCalculationService or EventPresenter instead.
-    // ==========================================
-
-    // ==========================================
-    // NOTE: Business logic, validation, and presentation methods 
-    // moved to appropriate services to comply with SRP:
-    // 
-    // - Status checks & business rules → EventDomainService
-    // - Calculations & aggregations → EventCalculationService  
-    // - Presentation & formatting → EventPresenter
-    // - Ticket type queries → EventCalculationService
-    // 
-    // Keep Entity focused on data modeling and persistence.
-    // ==========================================
-
-    // Basic status check methods (simple, no business logic)
     public function isPublished(): bool
     {
         return $this->status === self::STATUS_PUBLISHED;

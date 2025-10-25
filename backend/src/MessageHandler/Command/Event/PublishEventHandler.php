@@ -7,7 +7,7 @@ use App\Message\Command\Event\PublishEventCommand;
 use App\Message\Event\EventPublishedEvent;
 use App\Repository\EventRepository;
 use App\Repository\UserRepository;
-use App\Application\Service\EventApplicationService;
+
 use App\Application\Service\NotificationApplicationService;
 use Doctrine\DBAL\Driver\PDO\PDOException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -24,7 +24,6 @@ final readonly class PublishEventHandler
         private UserRepository $userRepository,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $eventBus,
-        private EventApplicationService $eventApplicationService,
         private NotificationApplicationService $notificationApplicationService,
         private LoggerInterface $logger
     ) {}

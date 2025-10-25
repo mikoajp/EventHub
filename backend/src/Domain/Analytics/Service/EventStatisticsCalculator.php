@@ -4,13 +4,11 @@ namespace App\Domain\Analytics\Service;
 
 use App\Domain\Event\Service\EventCalculationService;
 use App\Entity\Event;
-use App\Repository\EventRepository;
 use App\Repository\TicketRepository;
 
 final readonly class EventStatisticsCalculator
 {
     public function __construct(
-        private EventRepository $eventRepository,
         private TicketRepository $ticketRepository,
         private EventCalculationService $calculationService
     ) {}

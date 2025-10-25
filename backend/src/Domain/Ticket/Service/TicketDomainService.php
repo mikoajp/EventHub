@@ -6,14 +6,12 @@ use App\Entity\Ticket;
 use App\Entity\TicketType;
 use App\Entity\User;
 use App\Entity\Event;
-use App\Repository\TicketRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class TicketDomainService
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private TicketRepository $ticketRepository
+        private EntityManagerInterface $entityManager
     ) {}
 
     public function createTicket(User $user, Event $event, TicketType $ticketType): Ticket

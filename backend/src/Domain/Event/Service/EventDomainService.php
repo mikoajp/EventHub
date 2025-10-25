@@ -5,13 +5,11 @@ namespace App\Domain\Event\Service;
 use App\Entity\Event;
 use App\Entity\User;
 use App\DTO\EventDTO;
-use App\Repository\EventRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class EventDomainService
 {
     public function __construct(
-        private EventRepository $eventRepository,
         private EntityManagerInterface $entityManager
     ) {}
 
