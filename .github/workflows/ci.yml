@@ -14,7 +14,7 @@ jobs:
           php-version: '8.2'
           coverage: none
           tools: composer
-          extensions: none
+          extensions: mbstring, iconv
 
 
       - name: Install dependencies
