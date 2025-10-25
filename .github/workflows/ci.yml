@@ -46,4 +46,6 @@ jobs:
           if [ -x vendor/bin/rector ]; then vendor/bin/rector process --dry-run -c ../rector.php; else echo "rector not installed"; fi
 
       - name: Bump PHPStan level to 5
-        run: cd backend && sed -i 's/level: 4/level: 5/' phpstan.neon || true
+        run: |
+          cd backend
+          sed -i 's/level: 4/level: 5/' phpstan.neon || true
