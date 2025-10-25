@@ -13,13 +13,21 @@ final class PaymentServiceTest extends TestCase
     {
          = new class implements PaymentGatewayInterface {
             public function processPayment(string , int , string  = 'USD', array  = []): PaymentResultDTO
-            { return new PaymentResultDTO(true, 'pi_test', 'ok'); }
+            {
+                return new PaymentResultDTO(true, 'pi_test', 'ok');
+            }
             public function refundPayment(string , int ): PaymentResultDTO
-            { return new PaymentResultDTO(true, 're_test', 'ok'); }
+            {
+                return new PaymentResultDTO(true, 're_test', 'ok');
+            }
             public function getPaymentStatus(string ): array
-            { return ['id' => , 'status' => 'succeeded']; }
+            {
+                return ['id' => , 'status' => 'succeeded'];
+            }
             public function validatePaymentMethod(string ): bool
-            { return true; }
+            {
+                return true;
+            }
         };
 
          = new PaymentService();
