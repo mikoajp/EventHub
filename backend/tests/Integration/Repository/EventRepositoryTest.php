@@ -8,6 +8,6 @@ final class EventRepositoryTest extends TestCase
 {
     public function testFindPublishedEvents(): void
     {
-        ->markTestSkipped('Integration DB test not implemented yet.');
+        $this->markTestSkipped('Integration DB test not implemented yet.');
     }
 }

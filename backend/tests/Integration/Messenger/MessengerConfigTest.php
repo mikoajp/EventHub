@@ -2,9 +2,8 @@
 
 namespace App\Tests\Integration\Messenger;
 
-use PHPUnit\Framework\TestCase;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final class MessengerConfigTest extends KernelTestCase
 {
