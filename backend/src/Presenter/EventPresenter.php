@@ -10,10 +10,6 @@ use App\Entity\Event;
 use App\Domain\ValueObject\Money;
 use App\Domain\ValueObject\EventDate;
 
-/**
- * EventPresenter - Responsible for presentation logic and formatting.
- * Moved from Event entity to comply with SRP.
- */
 final readonly class EventPresenter implements EventPresenterInterface
 {
     public function __construct(
@@ -33,8 +29,6 @@ final readonly class EventPresenter implements EventPresenterInterface
         $out->status = $event->getStatus();
         $out->publishedAt = $event->getPublishedAt()?->format('c');
         $out->createdAt = $event->getCreatedAt()?->format('c');
-        
-        // Use calculation service instead of entity methods
         $out->ticketsSold = $this->calculationService->calculateTicketsSold($event);
         $out->availableTickets = $this->calculationService->calculateAvailableTickets($event);
         
@@ -76,8 +70,6 @@ final readonly class EventPresenter implements EventPresenterInterface
     public function presentDetails(Event $event): array
     {
         $listItem = $this->presentListItem($event);
-        
-        // Add detailed statistics and calculations
         $ticketsSold = $this->calculationService->calculateTicketsSold($event);
         
         return array_merge($listItem, [
@@ -97,10 +89,6 @@ final readonly class EventPresenter implements EventPresenterInterface
             'canBeCompleted' => $this->domainService->canBeCompleted($event),
         ]);
     }
-
-    // ==========================================
-    // Presentation Formatting Methods
-    // ==========================================
 
     public function getStatusLabel(Event $event): string
     {

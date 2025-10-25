@@ -29,8 +29,6 @@ class EventController extends AbstractController
         private readonly RequestValidatorInterface $requestValidator,
         private readonly EventPresenter $eventPresenter
     ) {}
-    
-    // NOTE: formatEventResponse() is deprecated - use EventPresenter instead
 
     #[Route('', name: 'api_events_list', methods: ['GET'])]
     public function list(Request $request): JsonResponse
@@ -91,9 +89,6 @@ class EventController extends AbstractController
         }
     }
 
-    /**
-     * @deprecated Use EventPresenter::presentDetails() instead
-     */
     private function formatEventResponse($event): array
     {
         return $this->eventPresenter->presentDetails($event);

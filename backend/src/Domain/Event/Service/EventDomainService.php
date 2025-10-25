@@ -45,19 +45,11 @@ final readonly class EventDomainService
         return $event;
     }
 
-    // ==========================================
-    // Permission & Authorization Rules
-    // ==========================================
-
     public function canUserModifyEvent(Event $event, User $user): bool
     {
         return $event->getOrganizer() === $user || 
                in_array('ROLE_ADMIN', $user->getRoles());
     }
-
-    // ==========================================
-    // Business Rules - Event Status Transitions
-    // ==========================================
 
     public function canBeModified(Event $event, int $ticketsSold = 0): bool
     {
@@ -96,10 +88,6 @@ final readonly class EventDomainService
                $event->getVenue();
     }
 
-    // ==========================================
-    // Status Checks
-    // ==========================================
-
     public function isPublished(Event $event): bool
     {
         return $event->getStatus() === Event::STATUS_PUBLISHED;
@@ -130,10 +118,6 @@ final readonly class EventDomainService
         return $event->getEventDate() < new \DateTime();
     }
 
-    // ==========================================
-    // Ticket Availability Checks
-    // ==========================================
-
     public function isSoldOut(Event $event, int $ticketsSold): bool
     {
         return ($event->getMaxTickets() - $ticketsSold) <= 0;
@@ -148,10 +132,6 @@ final readonly class EventDomainService
     {
         return ($event->getMaxTickets() - $ticketsSold) > 0;
     }
-
-    // ==========================================
-    // State Transitions
-    // ==========================================
 
     public function cancelEvent(Event $event): void
     {
