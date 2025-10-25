@@ -4,7 +4,7 @@ namespace App\DTO;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-final class UserRegistrationDTO
+final readonly class UserRegistrationDTO
 {
     #[Assert\NotBlank]
     #[Assert\Email]
@@ -15,13 +15,22 @@ final class UserRegistrationDTO
     public string $password;
 
     #[Assert\NotBlank]
-    #[Assert\Length(min: 2, max: 255)]
-    public string $fullName;
+    #[Assert\Length(min: 2, max: 100)]
+    public string $firstName;
 
-    public function __construct(string $email, string $password, string $fullName)
+    #[Assert\NotBlank]
+    #[Assert\Length(min: 2, max: 100)]
+    public string $lastName;
+
+    #[Assert\Length(min: 7, max: 30)]
+    public ?string $phone;
+
+    public function __construct(string $email, string $password, string $firstName, string $lastName, ?string $phone = null)
     {
         $this->email = $email;
         $this->password = $password;
-        $this->fullName = $fullName;
+        $this->firstName = $firstName;
+        $this->lastName = $lastName;
+        $this->phone = $phone;
     }
 }

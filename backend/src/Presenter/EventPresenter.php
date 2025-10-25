@@ -73,12 +73,12 @@ final readonly class EventPresenter implements EventPresenterInterface
             createdAt: $event->getCreatedAt()?->format('c'),
             createdAtFormatted: $this->formatCreatedAt($event),
             organizer: [
-                'id' => $event->getOrganizer()?->getId()?->toString(),
+                'id' => $event->getOrganizer()?->getId()->toString(),
                 'name' => $event->getOrganizer()?->getFullName(),
             ],
             ticketTypes: array_map(
                 fn($tt) => [
-                    'id' => $tt->getId()?->toString(),
+                    'id' => $tt->getId()->toString(),
                     'name' => $tt->getName(),
                     'price' => $tt->getPrice(),
                     'quantity' => $tt->getQuantity(),

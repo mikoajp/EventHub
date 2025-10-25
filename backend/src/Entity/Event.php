@@ -350,7 +350,7 @@ class Event
     {
         if ($this->tickets->removeElement($ticket)) {
             if ($ticket->getEvent() === $this) {
-                $ticket->setEvent(null);
+                // keep relation; Ticket::event is non-nullable
             }
         }
 

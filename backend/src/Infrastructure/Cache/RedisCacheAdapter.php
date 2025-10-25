@@ -29,10 +29,15 @@ final class RedisCacheAdapter implements CacheInterface
         }
     }
 
+    /** @var \Symfony\Component\Cache\Adapter\RedisAdapter|null */
     private $cache;
+    /** @var \Redis|\Predis\ClientInterface|null */
     private $redis;
+    /** @var \Psr\Log\LoggerInterface|null */
     private $logger;
+    /** @var bool */
     private $isEnabled;
+    /** @var \Symfony\Component\Cache\Adapter\TagAwareAdapter|null */
     private $pool;
 
     public function __construct(
@@ -121,7 +126,7 @@ final class RedisCacheAdapter implements CacheInterface
                     if (!empty($keys)) {
                         $deleted += $this->redis->del($keys);
                     }
-                } while ($it !== 0 && $it !== null);
+                } while ($it !== 0);
             } elseif (class_exists('Predis\\Collection\\Iterator\\Keyspace') && $this->redis instanceof \Predis\ClientInterface) {
                 foreach (new \Predis\Collection\Iterator\Keyspace($this->redis, $pattern, 1000) as $key) {
                     $this->redis->del([$key]);

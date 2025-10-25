@@ -114,8 +114,12 @@ final readonly class EventStatisticsCalculator
         // This would typically come from analytics service
         $totalViews = 1000; // Placeholder
         $totalSales = $this->calculationService->calculateTicketsSold($event);
-        
-        return $totalViews > 0 ? ($totalSales / $totalViews) * 100 : 0;
+
+        if ($totalViews <= 0) {
+            return 0;
+        }
+
+        return ($totalSales / $totalViews) * 100;
     }
 
     private function calculateSalesVelocity(Event $event): float

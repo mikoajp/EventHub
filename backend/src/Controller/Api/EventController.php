@@ -89,10 +89,6 @@ class EventController extends AbstractController
         }
     }
 
-    private function formatEventResponse($event): array
-    {
-        return $this->eventPresenter->presentDetails($event);
-    }
 
     #[Route('/{id}', name: 'api_events_show', methods: ['GET'])]
     public function show(string $id): JsonResponse

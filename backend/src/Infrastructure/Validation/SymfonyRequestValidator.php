@@ -57,6 +57,11 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
         return [];
     }
 
+    public function validate(object $dto): array
+    {
+        return $this->validateDTO($dto);
+    }
+
     public function hasValidJson(Request $request): bool
     {
         $content = $request->getContent();

@@ -59,16 +59,16 @@ final class TicketPresenter implements TicketPresenterInterface
         $map = function ($t): array {
             if ($t instanceof Ticket) {
                 return [
-                    'id' => $t->getId()?->toRfc4122(),
+                    'id' => $t->getId()->toRfc4122(),
                     'event' => [
-                        'id' => $t->getEvent()?->getId()?->toRfc4122(),
-                        'name' => $t->getEvent()?->getName(),
-                        'eventDate' => $t->getEvent()?->getEventDate()?->format(DATE_ATOM),
-                        'venue' => $t->getEvent()?->getVenue(),
+                        'id' => $t->getEvent()->getId()->toRfc4122(),
+                        'name' => $t->getEvent()->getName(),
+                        'eventDate' => $t->getEvent()->getEventDate()?->format(DATE_ATOM),
+                        'venue' => $t->getEvent()->getVenue(),
                     ],
                     'ticketType' => [
-                        'id' => $t->getTicketType()?->getId()?->toRfc4122(),
-                        'name' => $t->getTicketType()?->getName(),
+                        'id' => $t->getTicketType()->getId()->toRfc4122(),
+                        'name' => $t->getTicketType()->getName(),
                     ],
                     'price' => $t->getPrice(),
                     'priceFormatted' => Money::fromInt($t->getPrice())->format(),

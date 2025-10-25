@@ -9,4 +9,14 @@ final readonly class PaymentResultDTO
         public ?string $paymentId = null,
         public ?string $message = null,
     ) {}
+
+    public function isSuccessful(): bool
+    {
+        return $this->success;
+    }
+
+    public function getPaymentId(): ?string
+    {
+        return $this->paymentId;
+    }
 }

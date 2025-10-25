@@ -194,6 +194,12 @@
             "./src/Kernel.php"
         ]
     },
+    "symfony/lock": {
+        "version": "7.2",
+        "recipe": {
+            "version": "5.2"
+        }
+    },
     "symfony/mailer": {
         "version": "7.2",
         "recipe": {

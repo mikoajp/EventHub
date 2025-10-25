@@ -56,7 +56,7 @@ final readonly class PaymentDomainService
         ];
     }
 
-    public function isRefundable(PaymentResultDTO $paymentResult, \DateTimeInterface $paymentDate): bool
+    public function isRefundable(PaymentResultDTO $paymentResult, \DateTimeImmutable $paymentDate): bool
     {
         if (!$paymentResult->success) {
             return false;

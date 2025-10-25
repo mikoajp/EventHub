@@ -177,7 +177,10 @@ class TicketVoter extends Voter
     {
         // Example: Can cancel up to 24 hours before event
         $event = $ticket->getEvent();
-        $eventDate = $event->getStartDate();
+        $eventDate = $event->getEventDate();
+        if (!$eventDate instanceof \DateTimeInterface) {
+            return false;
+        }
         $now = new \DateTimeImmutable();
         
         // Calculate hours until event
@@ -192,7 +195,10 @@ class TicketVoter extends Voter
     {
         // Example: Can transfer up to 1 hour before event
         $event = $ticket->getEvent();
-        $eventDate = $event->getStartDate();
+        $eventDate = $event->getEventDate();
+        if (!$eventDate instanceof \DateTimeInterface) {
+            return false;
+        }
         $now = new \DateTimeImmutable();
         
         // Calculate hours until event
