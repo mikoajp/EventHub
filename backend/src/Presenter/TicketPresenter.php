@@ -5,12 +5,26 @@ namespace App\Presenter;
 use App\Contract\Presentation\TicketPresenterInterface;
 use App\Domain\ValueObject\Money;
 use App\Entity\Ticket;
+use App\DTO\TicketAvailabilityDTO;
+use App\DTO\TicketPurchaseResultDTO;
+use App\DTO\UserTicketsDTO;
 
-final class TicketPresenter implements \App\Contract\Presentation\TicketPresenterInterface
+final class TicketPresenter implements TicketPresenterInterface
 {
     public function presentAvailability(array $availability): array
     {
         return $availability;
+    }
+
+    public function presentAvailabilityDto(array $availability): TicketAvailabilityDTO
+    {
+        return new TicketAvailabilityDTO(
+            eventId: (string)($availability['eventId'] ?? ''),
+            ticketTypeId: (string)($availability['ticketTypeId'] ?? ''),
+            requestedQuantity: (int)($availability['requestedQuantity'] ?? 0),
+            available: (bool)($availability['available'] ?? false),
+            availableQuantity: (int)($availability['availableQuantity'] ?? 0),
+        );
     }
 
     public function presentPurchase(array $result): array
@@ -23,6 +37,21 @@ final class TicketPresenter implements \App\Contract\Presentation\TicketPresente
             $result['totalFormatted'] = Money::fromInt($result['total'])->format();
         }
         return $result;
+    }
+
+    public function presentPurchaseDto(array $result): TicketPurchaseResultDTO
+    {
+        $total = (int)($result['total'] ?? 0);
+        $totalFormatted = Money::fromInt($total)->format();
+        /** @var array<int, array{id:string, ticketType:string, price:int}> $items */
+        $items = (array)($result['items'] ?? []);
+        return new TicketPurchaseResultDTO(
+            orderId: (string)($result['orderId'] ?? ''),
+            paymentId: (string)($result['paymentId'] ?? ''),
+            total: $total,
+            totalFormatted: $totalFormatted,
+            items: $items,
+        );
     }
 
     public function presentUserTickets(array $tickets): array
@@ -67,5 +96,11 @@ final class TicketPresenter implements \App\Contract\Presentation\TicketPresente
     public function presentCancel(?string $message = 'Ticket cancelled'): array
     {
         return ['message' => $message];
+    }
+
+    public function presentUserTicketsDto(array $tickets): UserTicketsDTO
+    {
+        $mapped = $this->presentUserTickets($tickets);
+        return new UserTicketsDTO(tickets: $mapped['tickets']);
     }
 }

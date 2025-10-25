@@ -6,6 +6,8 @@ use App\Contract\Presentation\EventPresenterInterface;
 use App\Domain\Event\Service\EventCalculationService;
 use App\Domain\Event\Service\EventDomainService;
 use App\DTO\EventResponseDTO;
+use App\DTO\EventListItemDTO;
+use App\DTO\EventDetailsDTO;
 use App\Entity\Event;
 use App\Domain\ValueObject\Money;
 use App\Domain\ValueObject\EventDate;
@@ -19,42 +21,62 @@ final readonly class EventPresenter implements EventPresenterInterface
 
     public function present(Event $event): EventResponseDTO
     {
-        $out = new EventResponseDTO();
-        $out->id = $event->getId()?->toString();
-        $out->name = $event->getName();
-        $out->description = $event->getDescription();
-        $out->eventDate = EventDate::fromNative($event->getEventDate())->format();
-        $out->venue = $event->getVenue();
-        $out->maxTickets = $event->getMaxTickets();
-        $out->status = $event->getStatus();
-        $out->publishedAt = $event->getPublishedAt()?->format('c');
-        $out->createdAt = $event->getCreatedAt()?->format('c');
-        $out->ticketsSold = $this->calculationService->calculateTicketsSold($event);
-        $out->availableTickets = $this->calculationService->calculateAvailableTickets($event);
-        
-        return $out;
+        return new EventResponseDTO(
+            id: $event->getId()?->toString(),
+            name: $event->getName(),
+            description: $event->getDescription(),
+            eventDate: EventDate::fromNative($event->getEventDate())->format(),
+            venue: $event->getVenue(),
+            maxTickets: $event->getMaxTickets(),
+            status: $event->getStatus(),
+            publishedAt: $event->getPublishedAt()?->format('c'),
+            createdAt: $event->getCreatedAt()?->format('c'),
+            ticketsSold: $this->calculationService->calculateTicketsSold($event),
+            availableTickets: $this->calculationService->calculateAvailableTickets($event),
+        );
     }
 
     public function presentListItem(Event $event): array
     {
+        $dto = $this->presentListItemDto($event);
         return [
-            'id' => $event->getId()?->toString(),
-            'name' => $event->getName(),
-            'description' => $event->getDescription(),
-            'eventDate' => EventDate::fromNative($event->getEventDate())->format(),
-            'eventDateFormatted' => $this->formatEventDate($event),
-            'venue' => $event->getVenue(),
-            'maxTickets' => $event->getMaxTickets(),
-            'status' => $event->getStatus(),
-            'statusLabel' => $this->getStatusLabel($event),
-            'publishedAt' => $event->getPublishedAt()?->format('c'),
-            'createdAt' => $event->getCreatedAt()?->format('c'),
-            'createdAtFormatted' => $this->formatCreatedAt($event),
-            'organizer' => [
+            'id' => $dto->id,
+            'name' => $dto->name,
+            'description' => $dto->description,
+            'eventDate' => $dto->eventDate,
+            'eventDateFormatted' => $dto->eventDateFormatted,
+            'venue' => $dto->venue,
+            'maxTickets' => $dto->maxTickets,
+            'status' => $dto->status,
+            'statusLabel' => $dto->statusLabel,
+            'publishedAt' => $dto->publishedAt,
+            'createdAt' => $dto->createdAt,
+            'createdAtFormatted' => $dto->createdAtFormatted,
+            'organizer' => $dto->organizer,
+            'ticketTypes' => $dto->ticketTypes,
+        ];
+    }
+
+    public function presentListItemDto(Event $event): EventListItemDTO
+    {
+        return new EventListItemDTO(
+            id: $event->getId()?->toString(),
+            name: $event->getName(),
+            description: $event->getDescription(),
+            eventDate: EventDate::fromNative($event->getEventDate())->format(),
+            eventDateFormatted: $this->formatEventDate($event),
+            venue: $event->getVenue(),
+            maxTickets: $event->getMaxTickets(),
+            status: $event->getStatus(),
+            statusLabel: $this->getStatusLabel($event),
+            publishedAt: $event->getPublishedAt()?->format('c'),
+            createdAt: $event->getCreatedAt()?->format('c'),
+            createdAtFormatted: $this->formatCreatedAt($event),
+            organizer: [
                 'id' => $event->getOrganizer()?->getId()?->toString(),
                 'name' => $event->getOrganizer()?->getFullName(),
             ],
-            'ticketTypes' => array_map(
+            ticketTypes: array_map(
                 fn($tt) => [
                     'id' => $tt->getId()?->toString(),
                     'name' => $tt->getName(),
@@ -64,30 +86,65 @@ final readonly class EventPresenter implements EventPresenterInterface
                 ],
                 $event->getTicketTypes()->toArray()
             ),
-        ];
+        );
     }
 
     public function presentDetails(Event $event): array
     {
-        $listItem = $this->presentListItem($event);
-        $ticketsSold = $this->calculationService->calculateTicketsSold($event);
-        
-        return array_merge($listItem, [
-            'ticketsSold' => $ticketsSold,
-            'availableTickets' => $this->calculationService->calculateAvailableTickets($event),
-            'totalRevenue' => $this->calculationService->calculateTotalRevenue($event),
-            'occupancyRate' => $this->calculationService->getOccupancyRate($event),
-            'attendeesCount' => $this->calculationService->getAttendeesCount($event),
-            'ordersCount' => $this->calculationService->getOrdersCount($event),
-            'daysUntilEvent' => $this->calculationService->getDaysUntilEvent($event),
-            'isUpcoming' => $this->domainService->isUpcoming($event),
-            'isPast' => $this->domainService->isPast($event),
-            'isSoldOut' => $this->domainService->isSoldOut($event, $ticketsSold),
-            'canBeModified' => $this->domainService->canBeModified($event, $ticketsSold),
-            'canBeCancelled' => $this->domainService->canBeCancelled($event),
-            'canBePublished' => $this->domainService->canBePublished($event),
-            'canBeCompleted' => $this->domainService->canBeCompleted($event),
+        $dto = $this->presentDetailsDto($event);
+        $base = $this->presentListItem($event);
+        return array_merge($base, [
+            'ticketsSold' => $dto->ticketsSold,
+            'availableTickets' => $dto->availableTickets,
+            'totalRevenue' => $dto->totalRevenue,
+            'occupancyRate' => $dto->occupancyRate,
+            'attendeesCount' => $dto->attendeesCount,
+            'ordersCount' => $dto->ordersCount,
+            'daysUntilEvent' => $dto->daysUntilEvent,
+            'isUpcoming' => $dto->isUpcoming,
+            'isPast' => $dto->isPast,
+            'isSoldOut' => $dto->isSoldOut,
+            'canBeModified' => $dto->canBeModified,
+            'canBeCancelled' => $dto->canBeCancelled,
+            'canBePublished' => $dto->canBePublished,
+            'canBeCompleted' => $dto->canBeCompleted,
         ]);
+    }
+
+    public function presentDetailsDto(Event $event): EventDetailsDTO
+    {
+        $ticketsSold = $this->calculationService->calculateTicketsSold($event);
+        $base = $this->presentListItemDto($event);
+        return new EventDetailsDTO(
+            id: $base->id,
+            name: $base->name,
+            description: $base->description,
+            eventDate: $base->eventDate,
+            eventDateFormatted: $base->eventDateFormatted,
+            venue: $base->venue,
+            maxTickets: $base->maxTickets,
+            status: $base->status,
+            statusLabel: $base->statusLabel,
+            publishedAt: $base->publishedAt,
+            createdAt: $base->createdAt,
+            createdAtFormatted: $base->createdAtFormatted,
+            organizer: $base->organizer,
+            ticketTypes: $base->ticketTypes,
+            ticketsSold: $ticketsSold,
+            availableTickets: $this->calculationService->calculateAvailableTickets($event),
+            totalRevenue: $this->calculationService->calculateTotalRevenue($event),
+            occupancyRate: $this->calculationService->getOccupancyRate($event),
+            attendeesCount: $this->calculationService->getAttendeesCount($event),
+            ordersCount: $this->calculationService->getOrdersCount($event),
+            daysUntilEvent: $this->calculationService->getDaysUntilEvent($event),
+            isUpcoming: $this->domainService->isUpcoming($event),
+            isPast: $this->domainService->isPast($event),
+            isSoldOut: $this->domainService->isSoldOut($event, $ticketsSold),
+            canBeModified: $this->domainService->canBeModified($event, $ticketsSold),
+            canBeCancelled: $this->domainService->canBeCancelled($event),
+            canBePublished: $this->domainService->canBePublished($event),
+            canBeCompleted: $this->domainService->canBeCompleted($event),
+        );
     }
 
     public function getStatusLabel(Event $event): string

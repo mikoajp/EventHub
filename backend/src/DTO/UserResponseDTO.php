@@ -2,10 +2,12 @@
 
 namespace App\DTO;
 
-final class UserResponseDTO
+final readonly class UserResponseDTO
 {
-    public string $id;
-    public string $email;
-    public string $fullName;
-    public string $createdAt;
+    public function __construct(
+        public string $id,
+        public string $email,
+        public string $fullName,
+        public string $createdAt,
+    ) {}
 }

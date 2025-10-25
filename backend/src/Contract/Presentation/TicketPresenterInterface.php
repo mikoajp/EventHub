@@ -8,4 +8,8 @@ interface TicketPresenterInterface
     public function presentPurchase(array $result): array;
     public function presentUserTickets(array $tickets): array;
     public function presentCancel(?string $message = 'Ticket cancelled'): array;
+
+    public function presentAvailabilityDto(array $availability): \App\DTO\TicketAvailabilityDTO;
+    public function presentPurchaseDto(array $result): \App\DTO\TicketPurchaseResultDTO;
+    public function presentUserTicketsDto(array $tickets): \App\DTO\UserTicketsDTO;
 }
