@@ -1,19 +1,39 @@
-# framework:
-#     rate_limiter:
+
+framework:
+
+    rate_limiter:
+
         # Login rate limiter - prevents brute force attacks
-        # login:
+
+        login:
+
             policy: 'sliding_window'
+
             limit: 5
+
             interval: '15 minutes'
+
             
+
         # API rate limiter - general API protection
-        # api:
+
+        api:
+
             policy: 'fixed_window'
+
             limit: 100
+
             interval: '1 minute'
+
             
+
         # Registration rate limiter - prevents spam registrations
-        # registration:
+
+        registration:
+
             policy: 'fixed_window'
+
             limit: 3
+
             interval: '1 hour'
+
