@@ -2,7 +2,7 @@
 
 namespace App\Domain\Payment\Service;
 
-use App\DTO\PaymentResult;
+use App\DTO\PaymentResultDTO;
 
 final readonly class PaymentDomainService
 {
@@ -56,7 +56,7 @@ final readonly class PaymentDomainService
         ];
     }
 
-    public function isRefundable(PaymentResult $paymentResult, \DateTimeInterface $paymentDate): bool
+    public function isRefundable(PaymentResultDTO $paymentResult, \DateTimeInterface $paymentDate): bool
     {
         if (!$paymentResult->success) {
             return false;

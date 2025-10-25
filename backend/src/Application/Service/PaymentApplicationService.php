@@ -4,6 +4,7 @@ namespace App\Application\Service;
 
 use App\Domain\Payment\Service\PaymentDomainService;
 use App\Infrastructure\Payment\PaymentGatewayInterface;
+use App\DTO\PaymentResultDTO;
 use App\DTO\PaymentResult;
 use Psr\Log\LoggerInterface;
 
@@ -20,7 +21,7 @@ final readonly class PaymentApplicationService
         int $amount,
         string $currency = 'USD',
         array $metadata = []
-    ): PaymentResult {
+    ): PaymentResultDTO {
         try {
             // Domain validation
             $this->paymentDomainService->validatePaymentAmount($amount);
@@ -71,7 +72,7 @@ final readonly class PaymentApplicationService
                 'amount' => $amount
             ]);
 
-            return new PaymentResult(
+            return new PaymentResultDTO(
                 success: false,
                 paymentId: null,
                 message: 'Payment processing failed: ' . $e->getMessage()
@@ -83,13 +84,13 @@ final readonly class PaymentApplicationService
         string $paymentId,
         int $amount,
         \DateTimeInterface $originalPaymentDate
-    ): PaymentResult {
+    ): PaymentResultDTO {
         try {
             // Domain validation
             $this->paymentDomainService->validatePaymentAmount($amount);
 
             // Check if refund is allowed
-            $originalPaymentResult = new PaymentResult(true, $paymentId, 'Original payment');
+            $originalPaymentResult = new PaymentResultDTO(true, $paymentId, 'Original payment');
             if (!$this->paymentDomainService->isRefundable($originalPaymentResult, $originalPaymentDate)) {
                 throw new \DomainException('Payment is not refundable (refund period expired)');
             }
@@ -120,7 +121,7 @@ final readonly class PaymentApplicationService
                 'amount' => $amount
             ]);
 
-            return new PaymentResult(
+            return new PaymentResultDTO(
                 success: false,
                 paymentId: null,
                 message: 'Refund processing failed: ' . $e->getMessage()

@@ -99,7 +99,7 @@ final readonly class StripePaymentGateway implements PaymentGatewayInterface
                 'payment_id' => $paymentId
             ]);
 
-            return new PaymentResult(
+            return new PaymentResultDTO(
                 success: false,
                 paymentId: null,
                 message: 'Refund processing error: ' . $e->getMessage()
