@@ -65,11 +65,31 @@ abstract class BaseWebTestCase extends WebTestCase
      */
     protected function generateJwtToken(string $email, array $roles = []): string
     {
-        // Simple test token generation
-        // In production, use proper JWT service
+        try {
+            $container = static::getContainer();
+            $em = $container->get('doctrine')->getManager();
+            $repo = $em->getRepository(\App\Entity\User::class);
+            $user = $repo->findOneBy(['email' => $email]);
+            if (!$user) {
+                $user = (new \App\Entity\User())
+                    ->setEmail($email)
+                    ->setFirstName('Test')
+                    ->setLastName('User')
+                    ->setRoles($roles ?: ['ROLE_USER'])
+                    ->setPassword(password_hash('password', PASSWORD_BCRYPT));
+                $em->persist($user);
+                $em->flush();
+            }
+            if ($container->has('lexik_jwt_authentication.jwt_manager')) {
+                $jwtManager = $container->get('lexik_jwt_authentication.jwt_manager');
+                return $jwtManager->create($user);
+            }
+        } catch (\Throwable $e) {
+            // fall through to simple token
+        }
         return base64_encode(json_encode([
             'email' => $email,
-            'roles' => $roles,
+            'roles' => $roles ?: ['ROLE_USER'],
             'exp' => time() + 3600
         ]));
     }

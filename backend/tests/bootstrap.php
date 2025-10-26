@@ -18,7 +18,9 @@ if (class_exists(Dotenv::class)) {
 
 // Force a persistent sqlite DB for test to keep schema across multiple kernels
 if (($_ENV['APP_ENV'] ?? 'test') === 'test') {
-    $dbPath = dirname(__DIR__).'/var/test.db';
+    $dbDir = dirname(__DIR__).'/var';
+    if (!is_dir($dbDir)) { @mkdir($dbDir, 0777, true); }
+    $dbPath = $dbDir.'/test.db';
     $_ENV['DATABASE_URL'] = $_SERVER['DATABASE_URL'] = 'sqlite:///'.$dbPath;
 }
 
@@ -36,6 +38,30 @@ try {
                 $tool = new \Doctrine\ORM\Tools\SchemaTool($em);
                 $tool->dropDatabase();
                 $tool->createSchema($metadata);
+            }
+            // Seed test user for JWT auth
+            try {
+                $repo = $em->getRepository(\App\Entity\User::class);
+                $user = $repo->findOneBy(['email' => 'test@example.com']);
+                if (!$user) {
+                    $user = (new \App\Entity\User())
+                        ->setEmail('test@example.com')
+                        ->setFirstName('Test')
+                        ->setLastName('User')
+                        ->setRoles(['ROLE_USER']);
+                    // Hash password if service available
+                    $password = 'password';
+                    try {
+                        $hasher = $container->get('security.user_password_hasher');
+                        $user->setPassword($hasher->hashPassword($user, $password));
+                    } catch (\Throwable $e) {
+                        $user->setPassword(password_hash($password, PASSWORD_BCRYPT));
+                    }
+                    $em->persist($user);
+                    $em->flush();
+                }
+            } catch (\Throwable $e) {
+                // ignore seeding failures
             }
         }
         $kernel->shutdown();
