@@ -17,7 +17,7 @@ if (class_exists(Dotenv::class)) {
 }
 
 // Force a persistent sqlite DB for test to keep schema across multiple kernels
-if (($_ENV['APP_ENV'] ?? 'test') === 'test' && empty($_ENV['DATABASE_URL'])) {
+if (($_ENV['APP_ENV'] ?? 'test') === 'test') {
     $dbPath = dirname(__DIR__).'/var/test.db';
     $_ENV['DATABASE_URL'] = $_SERVER['DATABASE_URL'] = 'sqlite:///'.$dbPath;
 }
@@ -32,6 +32,7 @@ try {
             $em = $container->get('doctrine')->getManager();
             $metadata = $em->getMetadataFactory()->getAllMetadata();
             if (!empty($metadata)) {
+                // Create or update schema for all managers
                 $tool = new \Doctrine\ORM\Tools\SchemaTool($em);
                 $tool->dropDatabase();
                 $tool->createSchema($metadata);

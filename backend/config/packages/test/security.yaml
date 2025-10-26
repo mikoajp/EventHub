@@ -1,9 +1,15 @@
 security:
-    enable_authenticator_manager: true
     firewalls:
-        main:
-            lazy: true
-            stateless: false
+        dev:
             security: false
-    access_control:
-        - { path: ^/, roles: PUBLIC_ACCESS }
+        api_login:
+            security: false
+        api_token_refresh:
+            security: false
+        admin:
+            security: false
+        api:
+            security: false
+        main:
+            security: false
+    access_control: []
