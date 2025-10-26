@@ -13,7 +13,6 @@ use App\Message\Query\Event\GetEventByIdQuery;
 use App\Message\Query\Event\GetEventStatisticsQuery;
 use App\Message\Query\Event\GetEventsWithFiltersQuery;
 use App\Message\Query\Event\GetFilterOptionsQuery;
-use App\Application\Service\EventApplicationService;
 use App\Application\Service\NotificationApplicationService;
 use App\Presenter\EventPresenter;
 use App\Infrastructure\Validation\RequestValidatorInterface;
@@ -35,7 +34,6 @@ class EventController extends AbstractController
     public function __construct(
         #[Autowire(service: 'messenger.bus.command')] private readonly MessageBusInterface $commandBus,
         #[Autowire(service: 'messenger.bus.query')] private readonly MessageBusInterface $queryBus,
-        private readonly EventApplicationService $eventApplicationService,
         private readonly NotificationApplicationService $notificationApplicationService,
         private readonly RequestValidatorInterface $requestValidator,
         private readonly EventPresenter $eventPresenter
