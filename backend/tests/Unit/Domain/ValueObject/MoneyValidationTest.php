@@ -10,16 +10,12 @@ use PHPUnit\Framework\TestCase;
  */
 final class MoneyValidationTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        $this->markTestSkipped('Money VO API differs from test expectations; skipping for now.');
-    }
     public function testMoneyCannotBeNegative(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Amount cannot be negative');
 
-        new Money(-100, 'USD');
+        Money::fromInt(-100, 'USD');
     }
 
     public function testMoneyRequiresValidCurrency(): void
@@ -27,14 +23,14 @@ final class MoneyValidationTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid currency code');
 
-        new Money(1000, 'INVALID');
+        Money::fromInt(1000, 'INVALID');
     }
 
     public function testMoneyAcceptsValidCurrencies(): void
     {
-        $usd = new Money(1000, 'USD');
-        $eur = new Money(2000, 'EUR');
-        $gbp = new Money(3000, 'GBP');
+        $usd = Money::fromInt(1000, 'USD');
+        $eur = Money::fromInt(2000, 'EUR');
+        $gbp = Money::fromInt(3000, 'GBP');
 
         $this->assertSame(1000, $usd->getAmount());
         $this->assertSame('USD', $usd->getCurrency());
@@ -46,7 +42,7 @@ final class MoneyValidationTest extends TestCase
 
     public function testMoneyFormatsCorrectly(): void
     {
-        $money = new Money(12345, 'USD'); // $123.45
+        $money = Money::fromInt(12345, 'USD'); // $123.45
 
         $this->assertSame('123.45', $money->getFormatted());
         $this->assertSame('$123.45', $money->getFormattedWithSymbol());
@@ -54,7 +50,7 @@ final class MoneyValidationTest extends TestCase
 
     public function testMoneyHandlesZeroAmount(): void
     {
-        $money = new Money(0, 'USD');
+        $money = Money::fromInt(0, 'USD');
 
         $this->assertSame(0, $money->getAmount());
         $this->assertSame('0.00', $money->getFormatted());
@@ -62,8 +58,8 @@ final class MoneyValidationTest extends TestCase
 
     public function testMoneyCannotMixCurrencies(): void
     {
-        $usd = new Money(1000, 'USD');
-        $eur = new Money(1000, 'EUR');
+        $usd = Money::fromInt(1000, 'USD');
+        $eur = Money::fromInt(1000, 'EUR');
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Cannot add money with different currencies');
@@ -73,8 +69,8 @@ final class MoneyValidationTest extends TestCase
 
     public function testMoneyAdditionWorks(): void
     {
-        $money1 = new Money(1000, 'USD');
-        $money2 = new Money(500, 'USD');
+        $money1 = Money::fromInt(1000, 'USD');
+        $money2 = Money::fromInt(500, 'USD');
 
         $result = $money1->add($money2);
 
@@ -84,8 +80,8 @@ final class MoneyValidationTest extends TestCase
 
     public function testMoneySubtractionWorks(): void
     {
-        $money1 = new Money(1000, 'USD');
-        $money2 = new Money(300, 'USD');
+        $money1 = Money::fromInt(1000, 'USD');
+        $money2 = Money::fromInt(300, 'USD');
 
         $result = $money1->subtract($money2);
 
@@ -94,8 +90,8 @@ final class MoneyValidationTest extends TestCase
 
     public function testMoneySubtractionCannotResultInNegative(): void
     {
-        $money1 = new Money(500, 'USD');
-        $money2 = new Money(1000, 'USD');
+        $money1 = Money::fromInt(500, 'USD');
+        $money2 = Money::fromInt(1000, 'USD');
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Result cannot be negative');
@@ -105,7 +101,7 @@ final class MoneyValidationTest extends TestCase
 
     public function testMoneyMultiplication(): void
     {
-        $money = new Money(1000, 'USD');
+        $money = Money::fromInt(1000, 'USD');
 
         $result = $money->multiply(3);
 
@@ -114,8 +110,8 @@ final class MoneyValidationTest extends TestCase
 
     public function testMoneyIsImmutable(): void
     {
-        $original = new Money(1000, 'USD');
-        $added = $original->add(new Money(500, 'USD'));
+        $original = Money::fromInt(1000, 'USD');
+        $added = $original->add(Money::fromInt(500, 'USD'));
 
         // Original should not change
         $this->assertSame(1000, $original->getAmount());
@@ -125,9 +121,9 @@ final class MoneyValidationTest extends TestCase
 
     public function testMoneyComparison(): void
     {
-        $money1 = new Money(1000, 'USD');
-        $money2 = new Money(1000, 'USD');
-        $money3 = new Money(2000, 'USD');
+        $money1 = Money::fromInt(1000, 'USD');
+        $money2 = Money::fromInt(1000, 'USD');
+        $money3 = Money::fromInt(2000, 'USD');
 
         $this->assertTrue($money1->equals($money2));
         $this->assertFalse($money1->equals($money3));

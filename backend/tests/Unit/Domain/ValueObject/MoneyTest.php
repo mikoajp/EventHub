@@ -86,9 +86,9 @@ final class MoneyTest extends TestCase
 
     public function testNegativeAmount(): void
     {
-        $money = Money::fromInt(-5000, 'USD');
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Amount cannot be negative');
         
-        $this->assertSame(-5000, $money->amount());
-        $this->assertSame(-50.0, $money->toFloat());
+        Money::fromInt(-5000, 'USD');
     }
 }
