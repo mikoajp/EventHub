@@ -7,10 +7,10 @@ use App\Entity\TicketType;
 use App\Entity\Event;
 use App\Repository\TicketRepository;
 
-final readonly class TicketAvailabilityChecker
+class TicketAvailabilityChecker
 {
     public function __construct(
-        private TicketRepository $ticketRepository
+        private readonly TicketRepository $ticketRepository
     ) {}
 
     public function isAvailable(TicketType $ticketType, int $requestedQuantity): bool

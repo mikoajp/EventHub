@@ -6,10 +6,10 @@ use App\Entity\Event;
 use App\Entity\TicketType;
 use App\Repository\EventRepository;
 
-final readonly class EventCalculationService
+class EventCalculationService
 {
     public function __construct(
-        private EventRepository $eventRepository
+        private readonly EventRepository $eventRepository
     ) {}
 
     public function calculateTicketsSold(Event $event): int

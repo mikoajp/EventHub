@@ -10,12 +10,12 @@ use Psr\Log\LoggerInterface;
 /**
  * Service for handling command idempotency
  */
-final readonly class IdempotencyService
+class IdempotencyService
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private IdempotencyKeyRepository $repository,
-        private LoggerInterface $logger
+        private readonly EntityManagerInterface $entityManager,
+        private readonly IdempotencyKeyRepository $repository,
+        private readonly LoggerInterface $logger
     ) {}
 
     /**

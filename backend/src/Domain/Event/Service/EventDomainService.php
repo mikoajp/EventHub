@@ -7,10 +7,10 @@ use App\Entity\User;
 use App\DTO\EventDTO;
 use Doctrine\ORM\EntityManagerInterface;
 
-final readonly class EventDomainService
+class EventDomainService
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private readonly EntityManagerInterface $entityManager
     ) {}
 
     public function createEvent(EventDTO $eventDTO, User $organizer): Event

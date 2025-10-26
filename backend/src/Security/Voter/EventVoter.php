@@ -53,14 +53,13 @@ class EventVoter extends Voter
     {
         $user = $token->getUser();
 
-        // User must be logged in for most operations
-        if (!$user instanceof User) {
-            // Only VIEW is allowed for anonymous users
-            return $attribute === self::VIEW;
-        }
-
         /** @var Event $event */
         $event = $subject;
+
+        // For anonymous users, only VIEW is potentially allowed
+        if (!$user instanceof User) {
+            return $attribute === self::VIEW && $this->canView($event, null);
+        }
 
         return match($attribute) {
             self::VIEW => $this->canView($event, $user),
