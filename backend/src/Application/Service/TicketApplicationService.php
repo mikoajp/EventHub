@@ -19,14 +19,15 @@ final readonly class TicketApplicationService
     private const CACHE_KEY_USER_TICKETS_PREFIX = 'user.tickets.';
 
     public function __construct(
-        private TicketDomainService $ticketDomainService,
-        private TicketAvailabilityChecker $ticketAvailabilityChecker,
         private TicketRepository $ticketRepository,
-        private EventRepository $eventRepository,
-        private TicketTypeRepository $ticketTypeRepository,
         private CacheInterface $cache
     ) {}
 
+    /**
+     * @deprecated Use CheckTicketAvailabilityQuery with query bus instead
+     * This method is kept for backward compatibility.
+     * Will be removed in next major version.
+     */
     public function checkTicketAvailability(string $eventId, string $ticketTypeId, int $quantity = 1): array
     {
         $cacheKey = self::CACHE_KEY_AVAILABILITY_PREFIX . "{$eventId}.{$ticketTypeId}.{$quantity}";
@@ -36,64 +37,60 @@ final readonly class TicketApplicationService
         }, self::CACHE_TTL_AVAILABILITY);
     }
 
+    /**
+     * @deprecated Use CheckTicketAvailabilityQuery for event availability
+     * This method is kept for backward compatibility.
+     * Will be removed in next major version.
+     */
     public function getEventAvailability(Event $event): array
     {
-        $cacheKey = self::CACHE_KEY_AVAILABILITY_PREFIX . 'event.' . $event->getId()->toString();
-
-        return $this->cache->get($cacheKey, function() use ($event) {
-            return $this->ticketAvailabilityChecker->checkEventAvailability($event);
-        }, self::CACHE_TTL_AVAILABILITY);
+        throw new \LogicException(
+            'This method is deprecated. Use CheckTicketAvailabilityQuery with query bus instead.'
+        );
     }
 
+    /**
+     * @deprecated Use PurchaseTicketCommand with command bus instead
+     * This method is kept for backward compatibility only.
+     * Will be removed in next major version.
+     */
     public function purchaseTicket(User $user, Event $event, TicketType $ticketType): array
     {
-        // Check availability
-        if (!$this->ticketAvailabilityChecker->isAvailable($ticketType, 1)) {
-            throw new \DomainException('Ticket is not available');
-        }
-
-        // Create ticket
-        $ticket = $this->ticketDomainService->createTicket($user, $event, $ticketType);
-
-        // Invalidate cache
-        $this->invalidateAvailabilityCache($event);
-        $this->invalidateUserTicketsCache($user);
-
-        return [
-            'ticket_id' => $ticket->getId()->toString(),
-            'status' => $ticket->getStatus(),
-            'price' => $ticket->getPrice(),
-            'event' => $event->getName(),
-            'ticket_type' => $ticketType->getName()
-        ];
+        throw new \LogicException(
+            'This method is deprecated. Use PurchaseTicketCommand with command bus instead. ' .
+            'Example: $this->commandBus->dispatch(new PurchaseTicketCommand(...))'
+        );
     }
 
+    /**
+     * @deprecated Use PurchaseTicketCommand with command bus instead
+     * This method is kept for backward compatibility only.
+     * Will be removed in next major version.
+     */
     public function purchaseTicketByIds(User $user, string $eventId, string $ticketTypeId): array
     {
-        $event = $this->eventRepository->findByUuid($eventId) ?? $this->eventRepository->find($eventId);
-        if (!$event) {
-            throw new \InvalidArgumentException('Event not found');
-        }
-        $ticketType = $this->ticketTypeRepository->find($ticketTypeId);
-        if (!$ticketType) {
-            throw new \InvalidArgumentException('Ticket type not found');
-        }
-        return $this->purchaseTicket($user, $event, $ticketType);
+        throw new \LogicException(
+            'This method is deprecated. Use PurchaseTicketCommand with command bus instead. ' .
+            'Example: $this->commandBus->dispatch(new PurchaseTicketCommand(...))'
+        );
     }
 
+    /**
+     * @deprecated Consider creating ConfirmTicketPurchaseCommand
+     * This method is kept for backward compatibility only.
+     */
     public function confirmTicketPurchase(string $ticketId, string $paymentId): void
     {
-        $ticket = $this->ticketRepository->find($ticketId);
-        if (!$ticket) {
-            throw new \InvalidArgumentException('Ticket not found');
-        }
-
-        $this->ticketDomainService->confirmTicketPurchase($ticket, $paymentId);
-
-        // Invalidate cache
-        $this->invalidateUserTicketsCache($ticket->getUser());
+        throw new \LogicException(
+            'This method is deprecated. Consider creating ConfirmTicketPurchaseCommand.'
+        );
     }
 
+    /**
+     * @deprecated Use GetUserTicketsQuery with query bus instead
+     * This method is kept for backward compatibility.
+     * Will be removed in next major version.
+     */
     public function getUserTickets(User $user): array
     {
         $cacheKey = self::CACHE_KEY_USER_TICKETS_PREFIX . $user->getId()->toString();
@@ -115,32 +112,16 @@ final readonly class TicketApplicationService
         }, 1800); // 30 minutes
     }
 
-    public function cancelTicket(string $ticketId, User $user, string $reason = null): void
+    /**
+     * @deprecated Use CancelTicketCommand with command bus instead
+     * This method is kept for backward compatibility only.
+     * Will be removed in next major version.
+     */
+    public function cancelTicket(string $ticketId, User $user, ?string $reason = null): void
     {
-        $ticket = $this->ticketRepository->find($ticketId);
-        if (!$ticket) {
-            throw new \InvalidArgumentException('Ticket not found');
-        }
-
-        if ($ticket->getUser() !== $user) {
-            throw new \InvalidArgumentException('You can only cancel your own tickets');
-        }
-
-        $this->ticketDomainService->cancelTicket($ticket, $reason);
-
-        // Invalidate cache
-        $this->invalidateAvailabilityCache($ticket->getEvent());
-        $this->invalidateUserTicketsCache($user);
-    }
-
-    private function invalidateAvailabilityCache(Event $event): void
-    {
-        $this->cache->deletePattern(self::CACHE_KEY_AVAILABILITY_PREFIX . $event->getId()->toString() . '*');
-        $this->cache->delete(self::CACHE_KEY_AVAILABILITY_PREFIX . 'event.' . $event->getId()->toString());
-    }
-
-    private function invalidateUserTicketsCache(User $user): void
-    {
-        $this->cache->delete(self::CACHE_KEY_USER_TICKETS_PREFIX . $user->getId()->toString());
+        throw new \LogicException(
+            'This method is deprecated. Use CancelTicketCommand with command bus instead. ' .
+            'Example: $this->commandBus->dispatch(new CancelTicketCommand(...))'
+        );
     }
 }

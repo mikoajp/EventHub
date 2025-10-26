@@ -25,6 +25,11 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
+    # Message Bus Aliases for explicit autowiring
+    messenger.bus.command: '@command.bus'
+    messenger.bus.query: '@query.bus'
+    messenger.bus.event: '@event.bus'
+
     # Infrastructure Services
     App\Infrastructure\Cache\CacheInterface:
         alias: App\Infrastructure\Cache\RedisCacheAdapter

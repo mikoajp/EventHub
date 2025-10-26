@@ -19,71 +19,78 @@ final readonly class EventApplicationService
     private const CACHE_KEY_EVENT_PREFIX = 'event.';
 
     public function __construct(
-        private EventDomainService $eventDomainService,
-        private EventPublishingService $eventPublishingService,
         private EventRepository $eventRepository,
-        private CacheInterface $cache,
-        private NotificationApplicationService $notificationApplicationService
+        private CacheInterface $cache
     ) {}
 
+    /**
+     * @deprecated Use CreateEventCommand with command bus instead
+     * This method is kept for backward compatibility only.
+     * Will be removed in next major version.
+     */
     public function createEvent(EventDTO $eventDTO, User $organizer): Event
     {
-        $event = $this->eventDomainService->createEvent($eventDTO, $organizer);
-        
-        // Invalidate cache
-        $this->cache->deletePattern('events.*');
-        
-        return $event;
+        throw new \LogicException(
+            'This method is deprecated. Use CreateEventCommand with command bus instead. ' .
+            'Example: $this->commandBus->dispatch(new CreateEventCommand(...))'
+        );
     }
 
+    /**
+     * @deprecated Use UpdateEventCommand with command bus instead
+     * This method is kept for backward compatibility only.
+     * Will be removed in next major version.
+     */
     public function updateEvent(Event $event, EventDTO $eventDTO, User $user): Event
     {
-        if (!$this->eventDomainService->canUserModifyEvent($event, $user)) {
-            throw new \InvalidArgumentException('User has no permission to modify this event');
-        }
-
-        $updatedEvent = $this->eventDomainService->updateEvent($event, $eventDTO);
-        
-        // Invalidate cache
-        $this->cache->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId()->toString());
-        $this->cache->deletePattern('events.*');
-        
-        return $updatedEvent;
+        throw new \LogicException(
+            'This method is deprecated. Use UpdateEventCommand with command bus instead. ' .
+            'Example: $this->commandBus->dispatch(new UpdateEventCommand(...))'
+        );
     }
 
+    /**
+     * @deprecated Use CancelEventCommand with command bus instead
+     * This method is kept for backward compatibility only.
+     * Will be removed in next major version.
+     */
     public function cancelEvent(Event $event): void
     {
-        // Domain service now handles validation internally
-        $this->eventDomainService->cancelEvent($event);
-        
-        // Invalidate cache
-        $this->cache->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId()->toString());
-        $this->cache->deletePattern('events.*');
+        throw new \LogicException(
+            'This method is deprecated. Use CancelEventCommand with command bus instead. ' .
+            'Example: $this->commandBus->dispatch(new CancelEventCommand(...))'
+        );
     }
 
+    /**
+     * @deprecated Use UnpublishEventCommand with command bus instead
+     * This method is kept for backward compatibility only.
+     * Will be removed in next major version.
+     */
     public function unpublishEvent(Event $event): void
     {
-        // Get ticket count for validation
-        $ticketsSold = $this->eventRepository->getTicketSalesStatistics($event)['total'] ?? 0;
-        
-        // Domain service now handles validation internally
-        $this->eventDomainService->unpublishEvent($event, $ticketsSold);
-        
-        // Invalidate cache
-        $this->cache->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId()->toString());
-        $this->cache->deletePattern('events.*');
+        throw new \LogicException(
+            'This method is deprecated. Use UnpublishEventCommand with command bus instead. ' .
+            'Example: $this->commandBus->dispatch(new UnpublishEventCommand(...))'
+        );
     }
 
+    /**
+     * @deprecated Consider creating CompleteEventCommand
+     * This method is kept for backward compatibility only.
+     */
     public function completeEvent(Event $event): void
     {
-        // Domain service now handles validation internally
-        $this->eventDomainService->completeEvent($event);
-        
-        // Invalidate cache
-        $this->cache->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId()->toString());
-        $this->cache->deletePattern('events.*');
+        throw new \LogicException(
+            'This method is deprecated. Consider creating CompleteEventCommand.'
+        );
     }
 
+    /**
+     * @deprecated Use GetEventStatisticsQuery with query bus instead
+     * This method is kept for backward compatibility only.
+     * Will be removed in next major version.
+     */
     public function getEventStatistics(string $eventId, ?string $from = null, ?string $to = null): array
     {
         $event = $this->getEventById($eventId);
@@ -95,22 +102,24 @@ final readonly class EventApplicationService
         return $this->eventRepository->getEventStatistics($event, $fromDt, $toDt);
     }
 
+    /**
+     * @deprecated Use PublishEventCommand with command bus instead
+     * This method is kept for backward compatibility only.
+     * Will be removed in next major version.
+     */
     public function publishEvent(Event $event, User $publisher): void
     {
-        if (!$this->eventDomainService->isEventPublishable($event)) {
-            throw new \InvalidArgumentException('Event is not publishable');
-        }
-
-        $publishedAt = $this->eventPublishingService->publishEvent($event, $publisher);
-
-        // Send notifications via NotificationApplicationService
-        $this->notificationApplicationService->sendEventPublishedNotifications($event);
-
-        // Invalidate cache
-        $this->cache->deletePattern('events.*');
-        $this->cache->delete(self::CACHE_KEY_EVENT_PREFIX . $event->getId()->toString());
+        throw new \LogicException(
+            'This method is deprecated. Use PublishEventCommand with command bus instead. ' .
+            'Example: $this->commandBus->dispatch(new PublishEventCommand(...))'
+        );
     }
 
+    /**
+     * @deprecated Use GetEventsWithFiltersQuery for published events
+     * This method is kept for backward compatibility.
+     * Will be removed in next major version.
+     */
     public function getPublishedEvents(): array
     {
         return $this->cache->get(
@@ -120,6 +129,11 @@ final readonly class EventApplicationService
         );
     }
 
+    /**
+     * @deprecated Use GetEventByIdQuery with query bus instead
+     * This method is kept for backward compatibility.
+     * Will be removed in next major version.
+     */
     public function getEventById(string $eventId): ?Event
     {
         return $this->cache->get(
@@ -129,6 +143,11 @@ final readonly class EventApplicationService
         );
     }
 
+    /**
+     * @deprecated Use GetEventsWithFiltersQuery with query bus instead
+     * This method is kept for backward compatibility.
+     * Will be removed in next major version.
+     */
     public function getEventsWithFilters(array $filters = [], array $sorting = [], int $page = 1, int $limit = 20): array
     {
         // Create cache key based on filters
@@ -141,6 +160,11 @@ final readonly class EventApplicationService
         );
     }
 
+    /**
+     * @deprecated Use GetFilterOptionsQuery with query bus instead
+     * This method is kept for backward compatibility.
+     * Will be removed in next major version.
+     */
     public function getFilterOptions(): array
     {
         return $this->cache->get(

@@ -12,6 +12,7 @@ use App\Service\IdempotencyService;
 use App\Service\PaymentService;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Uid\Uuid;
@@ -23,7 +24,7 @@ final readonly class ProcessPaymentHandler
         private TicketRepository $ticketRepository,
         private PaymentService $paymentService,
         private EntityManagerInterface $entityManager,
-        private MessageBusInterface $eventBus,
+        #[Autowire(service: 'messenger.bus.event')] private MessageBusInterface $eventBus,
         private IdempotencyService $idempotencyService,
         private LoggerInterface $logger
     ) {}

@@ -11,6 +11,7 @@ use App\Repository\UserRepository;
 use App\Application\Service\NotificationApplicationService;
 use Doctrine\DBAL\Driver\PDO\PDOException;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Uid\Uuid;
@@ -23,7 +24,7 @@ final readonly class PublishEventHandler
         private EventRepository $eventRepository,
         private UserRepository $userRepository,
         private EntityManagerInterface $entityManager,
-        private MessageBusInterface $eventBus,
+        #[Autowire(service: 'messenger.bus.event')] private MessageBusInterface $eventBus,
         private NotificationApplicationService $notificationApplicationService,
         private LoggerInterface $logger
     ) {}

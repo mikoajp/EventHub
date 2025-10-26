@@ -3,14 +3,19 @@
 namespace App\Controller\Api;
 
 use App\Application\Service\TicketApplicationService;
-
 use App\Entity\User;
-
+use App\Message\Command\Ticket\CancelTicketCommand;
+use App\Message\Command\Ticket\PurchaseTicketCommand;
+use App\Message\Query\Ticket\CheckTicketAvailabilityQuery;
+use App\Message\Query\Ticket\GetUserTicketsQuery;
 use App\Presenter\TicketPresenter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\HandledStamp;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -19,8 +24,9 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 class TicketController extends AbstractController
 {
     public function __construct(
+        #[Autowire(service: 'messenger.bus.command')] private readonly MessageBusInterface $commandBus,
+        #[Autowire(service: 'messenger.bus.query')] private readonly MessageBusInterface $queryBus,
         private readonly TicketApplicationService $ticketApplicationService,
-        
         private readonly TicketPresenter $ticketPresenter,
     ) {}
 
@@ -42,7 +48,9 @@ class TicketController extends AbstractController
                 return $this->json(['error' => 'quantity must be between 1 and 10'], Response::HTTP_BAD_REQUEST);
             }
 
-            $availability = $this->ticketApplicationService->checkTicketAvailability($eventId, $ticketTypeId, $quantity);
+            $envelope = $this->queryBus->dispatch(new CheckTicketAvailabilityQuery($eventId, $ticketTypeId, $quantity));
+            $availability = $envelope->last(HandledStamp::class)->getResult();
+            
             return $this->json($this->ticketPresenter->presentAvailability($availability));
         } catch (\Exception $e) {
             $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
@@ -64,7 +72,27 @@ class TicketController extends AbstractController
             if (!$eventId || !$ticketTypeId) {
                 return $this->json(['error' => 'eventId and ticketTypeId are required'], Response::HTTP_BAD_REQUEST);
             }
-            $result = $this->ticketApplicationService->purchaseTicketByIds($user, $eventId, $ticketTypeId);
+            // Generate idempotency key from request or use default
+            $idempotencyKey = $data['idempotencyKey'] ?? uniqid('ticket_purchase_', true);
+            $paymentMethodId = $data['paymentMethodId'] ?? 'pm_test_card';
+            $quantity = $data['quantity'] ?? 1;
+
+            $envelope = $this->commandBus->dispatch(new PurchaseTicketCommand(
+                $eventId,
+                $ticketTypeId,
+                $user->getId()->toString(),
+                $paymentMethodId,
+                $quantity,
+                $idempotencyKey
+            ));
+            $ticketIds = $envelope->last(HandledStamp::class)->getResult();
+            
+            $result = [
+                'ticket_ids' => $ticketIds,
+                'status' => 'reserved',
+                'message' => 'Ticket purchase initiated'
+            ];
+            
             return $this->json($this->ticketPresenter->presentPurchase($result), Response::HTTP_CREATED);
         } catch (\Exception $e) {
             $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
@@ -80,7 +108,9 @@ class TicketController extends AbstractController
             if (!$user) {
                 return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
             }
-            $tickets = $this->ticketApplicationService->getUserTickets($user);
+            $envelope = $this->queryBus->dispatch(new GetUserTicketsQuery($user->getId()->toString()));
+            $tickets = $envelope->last(HandledStamp::class)->getResult();
+            
             return $this->json($this->ticketPresenter->presentUserTickets($tickets));
         } catch (\Exception $e) {
             $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
@@ -98,7 +128,9 @@ class TicketController extends AbstractController
             }
             $data = json_decode($request->getContent(), true) ?? [];
             $reason = $data['reason'] ?? null;
-            $this->ticketApplicationService->cancelTicket($id, $user, $reason);
+            
+            $this->commandBus->dispatch(new CancelTicketCommand($id, $user->getId()->toString(), $reason));
+            
             return $this->json($this->ticketPresenter->presentCancel());
         } catch (\Exception $e) {
             $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;

@@ -8,6 +8,7 @@ use App\Message\Command\Event\CreateEventCommand;
 use App\Message\Event\EventCreatedEvent;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -19,7 +20,7 @@ final readonly class CreateEventHandler
     public function __construct(
         private EntityManagerInterface $entityManager,
         private UserRepository $userRepository,
-        private MessageBusInterface $eventBus
+        #[Autowire(service: 'messenger.bus.event')] private MessageBusInterface $eventBus
     ) {}
 
     /**

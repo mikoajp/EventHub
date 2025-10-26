@@ -13,6 +13,7 @@ use App\Service\IdempotencyService;
 use Doctrine\DBAL\LockMode;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Uid\Uuid;
@@ -25,8 +26,8 @@ final readonly class PurchaseTicketHandler
         private EventRepository $eventRepository,
         private UserRepository $userRepository,
         private TicketAvailabilityChecker $availabilityChecker,
-        private MessageBusInterface $commandBus,
-        private MessageBusInterface $eventBus,
+        #[Autowire(service: 'messenger.bus.command')] private MessageBusInterface $commandBus,
+        #[Autowire(service: 'messenger.bus.event')] private MessageBusInterface $eventBus,
         private IdempotencyService $idempotencyService,
         private LoggerInterface $logger
     ) {}

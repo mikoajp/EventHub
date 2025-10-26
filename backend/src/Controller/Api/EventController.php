@@ -4,16 +4,26 @@ namespace App\Controller\Api;
 
 use App\Entity\Event;
 use App\Entity\User;
+use App\Message\Command\Event\CancelEventCommand;
+use App\Message\Command\Event\CreateEventCommand;
 use App\Message\Command\Event\PublishEventCommand;
+use App\Message\Command\Event\UnpublishEventCommand;
+use App\Message\Command\Event\UpdateEventCommand;
+use App\Message\Query\Event\GetEventByIdQuery;
+use App\Message\Query\Event\GetEventStatisticsQuery;
+use App\Message\Query\Event\GetEventsWithFiltersQuery;
+use App\Message\Query\Event\GetFilterOptionsQuery;
 use App\Application\Service\EventApplicationService;
 use App\Application\Service\NotificationApplicationService;
 use App\Presenter\EventPresenter;
 use App\Infrastructure\Validation\RequestValidatorInterface;
 use App\DTO\EventFiltersDTO;
+use Symfony\Component\Messenger\Stamp\HandledStamp;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -23,7 +33,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class EventController extends AbstractController
 {
     public function __construct(
-        private readonly MessageBusInterface $commandBus,
+        #[Autowire(service: 'messenger.bus.command')] private readonly MessageBusInterface $commandBus,
+        #[Autowire(service: 'messenger.bus.query')] private readonly MessageBusInterface $queryBus,
         private readonly EventApplicationService $eventApplicationService,
         private readonly NotificationApplicationService $notificationApplicationService,
         private readonly RequestValidatorInterface $requestValidator,
@@ -55,12 +66,13 @@ class EventController extends AbstractController
                 return $this->json(['errors' => $violations], Response::HTTP_BAD_REQUEST);
             }
 
-            $result = $this->eventApplicationService->getEventsWithFilters(
+            $envelope = $this->queryBus->dispatch(new GetEventsWithFiltersQuery(
                 $filtersDTO->toArray(),
                 $filtersDTO->getSorting(),
                 $filtersDTO->page,
                 $filtersDTO->limit
-            );
+            ));
+            $result = $envelope->last(HandledStamp::class)->getResult();
 
             return $this->json([
                 'events' => array_map(fn($event) => $this->eventPresenter->presentListItem($event), $result['events']),
@@ -81,7 +93,8 @@ class EventController extends AbstractController
     public function getFilterOptions(): JsonResponse
     {
         try {
-            $options = $this->eventApplicationService->getFilterOptions();
+            $envelope = $this->queryBus->dispatch(new GetFilterOptionsQuery());
+            $options = $envelope->last(HandledStamp::class)->getResult();
             return $this->json($options);
         } catch (\Exception $e) {
             $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
@@ -94,7 +107,9 @@ class EventController extends AbstractController
     public function show(string $id): JsonResponse
     {
         try {
-            $event = $this->eventApplicationService->getEventById($id);
+            $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
+            $event = $envelope->last(HandledStamp::class)->getResult();
+            
             if (!$event) {
                 throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
             }
@@ -118,23 +133,33 @@ class EventController extends AbstractController
             }
 
             $eventDTO = $this->requestValidator->validateAndCreateEventDTO($request);
-            $event = $this->eventApplicationService->createEvent($eventDTO, $user);
+            
+            $envelope = $this->commandBus->dispatch(new CreateEventCommand(
+                $eventDTO->name,
+                $eventDTO->description,
+                $eventDTO->eventDate,
+                $eventDTO->venue,
+                $eventDTO->maxTickets,
+                $user->getId()->toString(),
+                $eventDTO->ticketTypes
+            ));
+            $eventId = $envelope->last(HandledStamp::class)->getResult();
 
             $this->notificationApplicationService->sendGlobalNotification([
                 'title' => 'Draft Event Created',
-                'message' => "Draft event '{$event->getName()}' created by {$user->getEmail()}",
+                'message' => "Draft event '{$eventDTO->name}' created by {$user->getEmail()}",
                 'type' => 'info',
-                'event_id' => $event->getId()->toString(),
+                'event_id' => $eventId,
                 'timestamp' => (new \DateTime())->format('c')
             ]);
 
             return $this->json([
                 'message' => 'Event created successfully',
                 'event' => [
-                    'id' => $event->getId()->toString(),
-                    'name' => $event->getName(),
-                    'status' => $event->getStatus(),
-                    'createdAt' => $event->getCreatedAt()->format('c')
+                    'id' => $eventId,
+                    'name' => $eventDTO->name,
+                    'status' => Event::STATUS_DRAFT,
+                    'createdAt' => (new \DateTimeImmutable())->format('c')
                 ]
             ], Response::HTTP_CREATED
             );
@@ -153,7 +178,9 @@ class EventController extends AbstractController
                 throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
             }
 
-            $event = $this->eventApplicationService->getEventById($id);
+            $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
+            $event = $envelope->last(HandledStamp::class)->getResult();
+            
             if (!$event) {
                 throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
             }
@@ -196,7 +223,9 @@ class EventController extends AbstractController
                 throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
             }
 
-            $event = $this->eventApplicationService->getEventById($id);
+            $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
+            $event = $envelope->last(HandledStamp::class)->getResult();
+            
             if (!$event) {
                 throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
             }
@@ -207,26 +236,27 @@ class EventController extends AbstractController
             }
 
             $eventDTO = $this->requestValidator->validateAndCreateEventDTO($request);
-            $updatedEvent = $this->eventApplicationService->updateEvent($event, $eventDTO, $user);
+            
+            $this->commandBus->dispatch(new UpdateEventCommand($id, $user->getId()->toString(), $eventDTO));
 
             $this->notificationApplicationService->sendGlobalNotification([
                 'title' => 'Event Updated',
-                'message' => "Event '{$updatedEvent->getName()}' has been updated",
+                'message' => "Event '{$eventDTO->name}' has been updated",
                 'type' => 'info',
-                'event_id' => $updatedEvent->getId()->toString(),
+                'event_id' => $id,
                 'timestamp' => (new \DateTime())->format('c')
             ]);
 
             return $this->json([
                 'message' => 'Event updated successfully',
                 'event' => [
-                    'id' => $updatedEvent->getId()->toString(),
-                    'name' => $updatedEvent->getName(),
-                    'description' => $updatedEvent->getDescription(),
-                    'eventDate' => $updatedEvent->getEventDate()->format('c'),
-                    'venue' => $updatedEvent->getVenue(),
-                    'maxTickets' => $updatedEvent->getMaxTickets(),
-                    'status' => $updatedEvent->getStatus()
+                    'id' => $id,
+                    'name' => $eventDTO->name,
+                    'description' => $eventDTO->description,
+                    'eventDate' => $eventDTO->eventDate->format('c'),
+                    'venue' => $eventDTO->venue,
+                    'maxTickets' => $eventDTO->maxTickets,
+                    'status' => $event->getStatus()
                 ]
             ]);
         } catch (\Exception $e) {
@@ -242,14 +272,16 @@ class EventController extends AbstractController
         try {
             if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
 
-            $event = $this->eventApplicationService->getEventById($id);
+            $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
+            $event = $envelope->last(HandledStamp::class)->getResult();
+            
             if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
                 throw new \RuntimeException('You can only cancel your own events', Response::HTTP_FORBIDDEN);
             }
 
-            $this->eventApplicationService->cancelEvent($event);
+            $this->commandBus->dispatch(new CancelEventCommand($id));
 
             $this->notificationApplicationService->sendGlobalNotification([
                 'title' => 'Event Cancelled',
@@ -273,14 +305,16 @@ class EventController extends AbstractController
         try {
             if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
 
-            $event = $this->eventApplicationService->getEventById($id);
+            $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
+            $event = $envelope->last(HandledStamp::class)->getResult();
+            
             if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
                 throw new \RuntimeException('You can only unpublish your own events', Response::HTTP_FORBIDDEN);
             }
 
-            $this->eventApplicationService->unpublishEvent($event);
+            $this->commandBus->dispatch(new UnpublishEventCommand($id, $user->getId()->toString()));
 
             $this->notificationApplicationService->sendGlobalNotification([
                 'title' => 'Event Unpublished',
@@ -307,7 +341,9 @@ class EventController extends AbstractController
         try {
             if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
 
-            $event = $this->eventApplicationService->getEventById($id);
+            $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
+            $event = $envelope->last(HandledStamp::class)->getResult();
+            
             if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
@@ -316,8 +352,12 @@ class EventController extends AbstractController
 
             $from = $request->query->get('from');
             $to = $request->query->get('to');
+            
+            $fromDt = $from ? new \DateTimeImmutable($from) : null;
+            $toDt = $to ? new \DateTimeImmutable($to) : null;
 
-            $statistics = $this->eventApplicationService->getEventStatistics($id, $from, $to);
+            $envelope = $this->queryBus->dispatch(new GetEventStatisticsQuery($id, $fromDt, $toDt));
+            $statistics = $envelope->last(HandledStamp::class)->getResult();
 
             return $this->json($statistics);
         } catch (\Exception $e) {
@@ -336,7 +376,9 @@ class EventController extends AbstractController
         try {
             if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
 
-            $event = $this->eventApplicationService->getEventById($id);
+            $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
+            $event = $envelope->last(HandledStamp::class)->getResult();
+            
             if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
