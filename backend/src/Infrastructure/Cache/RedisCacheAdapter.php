@@ -5,6 +5,7 @@ namespace App\Infrastructure\Cache;
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Cache\Adapter\TagAwareAdapter;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Contracts\Cache\ItemInterface;
 use Psr\Log\LoggerInterface;
 
@@ -50,8 +51,12 @@ final class RedisCacheAdapter implements CacheInterface
 
         if ($this->isEnabled) {
             try {
-                $this->redis = RedisAdapter::createConnection($redisUrl);
-                $this->cache = new RedisAdapter($this->redis);
+                if ($redisUrl === 'array://') {
+                    $this->cache = new ArrayAdapter();
+                } else {
+                    $this->redis = RedisAdapter::createConnection($redisUrl);
+                    $this->cache = new RedisAdapter($this->redis);
+                }
                 $this->pool = new TagAwareAdapter($this->cache);
             } catch (\Exception $e) {
                 $this->isEnabled = false;

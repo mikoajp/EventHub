@@ -180,6 +180,8 @@ final class ConcurrentTicketPurchaseTest extends KernelTestCase
         $organizer = new User();
         $organizer->setEmail('organizer@test.com');
         $organizer->setPassword('password');
+        $organizer->setFirstName('Test');
+        $organizer->setLastName('Organizer');
         $organizer->setRoles(['ROLE_ORGANIZER']);
         $this->entityManager->persist($organizer);
 
@@ -211,6 +213,8 @@ final class ConcurrentTicketPurchaseTest extends KernelTestCase
         $user = new User();
         $user->setEmail($email);
         $user->setPassword('password');
+        $user->setFirstName('Test');
+        $user->setLastName('User');
         $user->setRoles(['ROLE_USER']);
 
         return $user;

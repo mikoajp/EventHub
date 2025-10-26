@@ -146,8 +146,8 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $user1 = $this->createUser('concurrent1@test.com');
         $user2 = $this->createUser('concurrent2@test.com');
 
-        $token1 = $this->generateJwtToken($user1);
-        $token2 = $this->generateJwtToken($user2);
+        $token1 = $this->generateJwtToken($user1->getEmail(), $user1->getRoles());
+        $token2 = $this->generateJwtToken($user2->getEmail(), $user2->getRoles());
 
         // Both users try to buy the last ticket
         $client1 = static::createClient();
@@ -202,7 +202,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $client = $this->client;
 
         $user = $this->createUser('payment-fail@test.com');
-        $token = $this->generateJwtToken($user);
+        $token = $this->generateJwtToken($user->getEmail(), $user->getRoles());
 
         $organizer = $this->createOrganizer();
         $event = $this->createPublishedEvent($organizer);
@@ -257,6 +257,8 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $organizer = new User();
         $organizer->setEmail('organizer-' . uniqid() . '@test.com');
         $organizer->setPassword('$2y$13$hashedpassword');
+        $organizer->setFirstName('Test');
+        $organizer->setLastName('Organizer');
         $organizer->setRoles(['ROLE_ORGANIZER']);
 
         $this->entityManager->persist($organizer);

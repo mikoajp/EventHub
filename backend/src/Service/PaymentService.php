@@ -13,4 +13,9 @@ final class PaymentService
     {
         return $this->gateway->processPayment($paymentMethodId, $amount, $currency, $metadata);
     }
+
+    public function validatePaymentMethod(string $paymentMethodId): bool
+    {
+        return $this->gateway->validatePaymentMethod($paymentMethodId);
+    }
 }

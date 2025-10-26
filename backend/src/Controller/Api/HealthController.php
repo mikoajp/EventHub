@@ -12,4 +12,10 @@ class HealthController
     {
         return new JsonResponse(['status' => 'ok'], 200);
     }
+
+    #[Route('/api/health', name: 'api_health_check', methods: ['GET'])]
+    public function apiHealth(): JsonResponse
+    {
+        return new JsonResponse(['status' => 'ok'], 200);
+    }
 }
