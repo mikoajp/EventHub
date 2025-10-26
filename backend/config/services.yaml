@@ -37,8 +37,8 @@ services:
     # Mercure Real-time Messaging
     App\Infrastructure\Cache\RedisCacheAdapter:
         arguments:
-            $redisUrl: '%env(default:redis://localhost:6379:REDIS_URL)%'
-            $cacheEnabled: '%env(default:1:bool:REDIS_CACHE_ENABLED)%'
+            $redisUrl: '%env(REDIS_URL)%'
+            $cacheEnabled: '%env(bool:REDIS_CACHE_ENABLED)%'
 
 
     App\Infrastructure\Email\EmailServiceInterface:
