@@ -26,51 +26,39 @@ class AuthController extends AbstractController
     #[Route('/login', name: 'api_login', methods: ['POST'])]
     public function login(#[CurrentUser] ?User $user): JsonResponse
     {
-        try {
-            if (!$user) {
-                throw new UserNotAuthenticatedException();
-            }
-            return $this->json($this->userPresenter->presentLoginResponse($this->userApplicationService->formatLoginResponse($user)));
-        } catch (\Exception $e) {
-            throw $e;
+        if (!$user) {
+            throw new UserNotAuthenticatedException();
         }
+        return $this->json($this->userPresenter->presentLoginResponse($this->userApplicationService->formatLoginResponse($user)));
     }
 
     #[Route('/me', name: 'api_me', methods: ['GET'])]
     public function me(#[CurrentUser] ?User $user): JsonResponse
     {
-        try {
-            if (!$user) {
-                throw new UserNotAuthenticatedException();
-            }
-            return $this->json($this->userPresenter->presentProfile($this->userApplicationService->getUserProfile($user)));
-        } catch (\Exception $e) {
-            throw $e;
+        if (!$user) {
+            throw new UserNotAuthenticatedException();
         }
+        return $this->json($this->userPresenter->presentProfile($this->userApplicationService->getUserProfile($user)));
     }
 
     #[Route('/register', name: 'api_register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
-        try {
-            $data = $this->requestValidator->extractJsonData($request);
-            
-            $registrationDTO = new UserRegistrationDTO(
-                $data['email'] ?? '',
-                $data['password'] ?? '',
-                $data['firstName'] ?? '',
-                $data['lastName'] ?? '',
-                $data['phone'] ?? null
-            );
+        $data = $this->requestValidator->extractJsonData($request);
+        
+        $registrationDTO = new UserRegistrationDTO(
+            $data['email'] ?? '',
+            $data['password'] ?? '',
+            $data['firstName'] ?? '',
+            $data['lastName'] ?? '',
+            $data['phone'] ?? null
+        );
 
-            $user = $this->userApplicationService->registerUser($registrationDTO);
-            
-            return $this->json(
-                $this->userPresenter->presentRegistrationResponse($this->userApplicationService->formatRegistrationResponse($user)),
-                JsonResponse::HTTP_CREATED
-            );
-        } catch (\Exception $e) {
-            throw $e;
-        }
+        $user = $this->userApplicationService->registerUser($registrationDTO);
+        
+        return $this->json(
+            $this->userPresenter->presentRegistrationResponse($this->userApplicationService->formatRegistrationResponse($user)),
+            JsonResponse::HTTP_CREATED
+        );
     }
 }
