@@ -1,3 +1,14 @@
 framework:
     messenger:
-        enabled: false
+        failure_transport: failed
+        transports:
+            sync: 'sync://'
+            async: 'in-memory://'
+            high_priority: 'in-memory://'
+            notifications: 'in-memory://'
+            failed: 'in-memory://'
+        routing:
+            'App\Message\Command\Payment\*': high_priority
+            'App\Message\Command\*': async
+            'App\Message\Query\*': sync
+            'App\Message\Event\*': notifications
