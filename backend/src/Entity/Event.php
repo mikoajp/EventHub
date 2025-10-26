@@ -116,7 +116,7 @@ class Event
     #[Groups(['event:read'])]
     private ?string $previousStatus = null;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'organizedEvents')]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'organizedEvents', cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['event:read'])]
     private ?User $organizer = null;

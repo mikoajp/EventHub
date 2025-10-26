@@ -150,6 +150,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $token2 = $this->generateJwtToken($user2->getEmail(), $user2->getRoles());
 
         // Both users try to buy the last ticket
+        self::ensureKernelShutdown();
         $client1 = static::createClient();
         $client2 = static::createClient(); // ok to create separate clients for concurrency simulation
 

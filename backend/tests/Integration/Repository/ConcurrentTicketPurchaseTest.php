@@ -53,6 +53,10 @@ final class ConcurrentTicketPurchaseTest extends KernelTestCase
         $this->entityManager->clear();
 
         // Simulate concurrent purchase attempts
+        // Reattach references after clear
+        $eventRef = $this->entityManager->getReference(Event::class, $event->getId());
+        $user1Ref = $this->entityManager->getReference(User::class, $user1->getId());
+
         // Lock the ticket type for user1
         $lockedTicketType = $this->entityManager->find(
             TicketType::class,
@@ -74,9 +78,9 @@ final class ConcurrentTicketPurchaseTest extends KernelTestCase
         // Create tickets for user1 (requesting 10 tickets)
         for ($i = 0; $i < 10; $i++) {
             $ticket = new Ticket();
-            $ticket->setEvent($event)
+            $ticket->setEvent($eventRef)
                 ->setTicketType($lockedTicketType)
-                ->setUser($user1)
+                ->setUser($user1Ref)
                 ->setPrice($lockedTicketType->getPrice())
                 ->setStatus(Ticket::STATUS_RESERVED);
             
