@@ -30,6 +30,9 @@ abstract class BaseWebTestCase extends WebTestCase
             ->get('doctrine')
             ->getManager();
 
+        // Ensure DB schema exists once per process
+        BaseTestCase::ensureSchema($this->entityManager);
+
         // Begin transaction for test isolation
         $this->entityManager->beginTransaction();
     }
@@ -41,10 +44,7 @@ abstract class BaseWebTestCase extends WebTestCase
             $this->entityManager->rollback();
         }
 
-        $this->entityManager->close();
-        $this->entityManager = null;
         $this->client = null;
-
         parent::tearDown();
     }
 
@@ -68,6 +68,8 @@ abstract class BaseWebTestCase extends WebTestCase
         try {
             $container = static::getContainer();
             $em = $container->get('doctrine')->getManager();
+            // Ensure schema exists for functional tests too
+            BaseTestCase::ensureSchema($em);
             $repo = $em->getRepository(\App\Entity\User::class);
             $user = $repo->findOneBy(['email' => $email]);
             if (!$user) {

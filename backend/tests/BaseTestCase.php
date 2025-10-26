@@ -27,6 +27,9 @@ abstract class BaseTestCase extends KernelTestCase
             ->get('doctrine')
             ->getManager();
 
+        // Ensure DB schema exists once per process
+        self::ensureSchema($this->entityManager);
+
         // Begin transaction for test isolation
         $this->entityManager->beginTransaction();
     }
@@ -37,9 +40,6 @@ abstract class BaseTestCase extends KernelTestCase
         if ($this->entityManager && $this->entityManager->getConnection()->isTransactionActive()) {
             $this->entityManager->rollback();
         }
-
-        $this->entityManager->close();
-        $this->entityManager = null;
 
         parent::tearDown();
     }
@@ -59,5 +59,20 @@ abstract class BaseTestCase extends KernelTestCase
     protected function clearEntityManager(): void
     {
         $this->entityManager->clear();
+    }
+
+    private static bool $schemaEnsured = false;
+
+    private static function ensureSchema(\Doctrine\ORM\EntityManagerInterface $em): void
+    {
+        if (self::$schemaEnsured) {
+            return;
+        }
+        $metadata = $em->getMetadataFactory()->getAllMetadata();
+        if (!empty($metadata)) {
+            $tool = new \Doctrine\ORM\Tools\SchemaTool($em);
+            $tool->updateSchema($metadata, true);
+        }
+        self::$schemaEnsured = true;
     }
 }
