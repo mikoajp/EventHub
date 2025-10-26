@@ -11,6 +11,7 @@ use Symfony\Component\Uid\Uuid;
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'idempotency_keys')]
+#[ORM\UniqueConstraint(name: 'uniq_idem_key_context', columns: ['idempotency_key', 'command_class'])]
 #[ORM\Index(columns: ['idempotency_key'], name: 'idx_idempotency_key')]
 #[ORM\Index(columns: ['created_at'], name: 'idx_created_at')]
 class IdempotencyKey
@@ -19,10 +20,10 @@ class IdempotencyKey
     #[ORM\Column(type: 'uuid', unique: true)]
     private Uuid $id;
 
-    #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
+    #[ORM\Column(name: 'idempotency_key', type: Types::STRING, length: 255, unique: false)]
     private string $idempotencyKey;
 
-    #[ORM\Column(type: Types::STRING, length: 255)]
+    #[ORM\Column(name: 'command_class', type: Types::STRING, length: 255)]
     private string $commandClass;
 
     #[ORM\Column(type: Types::JSON)]

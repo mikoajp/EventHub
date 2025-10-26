@@ -22,8 +22,9 @@ final readonly class PurchaseTicketCommand
             return $this->idempotencyKey;
         }
 
-        // Generate deterministic key based on command data
-        return hash('sha256', implode('|', [
+        // Prefer client-provided key. If missing, generate deterministic fallback with stable prefix.
+        // NOTE: server-generated keys risk collisions across different clients; treat as best-effort.
+        return 'srv_' . hash('sha256', implode('|', [
             $this->eventId,
             $this->ticketTypeId,
             $this->quantity,
