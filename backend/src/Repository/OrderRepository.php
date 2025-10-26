@@ -18,9 +18,13 @@ class OrderRepository extends ServiceEntityRepository
     public function findByUser(User $user): array
     {
         return $this->createQueryBuilder('o')
+            ->leftJoin('o.user', 'u')->addSelect('u')
+            ->leftJoin('o.event', 'e')->addSelect('e')
+            ->leftJoin('o.orderItems', 'oi')->addSelect('oi')
             ->where('o.user = :user')
             ->setParameter('user', $user)
             ->orderBy('o.createdAt', 'DESC')
+            ->distinct()
             ->getQuery()
             ->getResult();
     }
@@ -28,9 +32,13 @@ class OrderRepository extends ServiceEntityRepository
     public function findByEvent(Event $event): array
     {
         return $this->createQueryBuilder('o')
+            ->leftJoin('o.user', 'u')->addSelect('u')
+            ->leftJoin('o.event', 'e')->addSelect('e')
+            ->leftJoin('o.orderItems', 'oi')->addSelect('oi')
             ->where('o.event = :event')
             ->setParameter('event', $event)
             ->orderBy('o.createdAt', 'DESC')
+            ->distinct()
             ->getQuery()
             ->getResult();
     }
@@ -56,7 +64,11 @@ class OrderRepository extends ServiceEntityRepository
                 ->setParameter('olderThan', $olderThan);
         }
 
-        return $qb->orderBy('o.createdAt', 'ASC')
+        return $qb->leftJoin('o.user', 'u')->addSelect('u')
+            ->leftJoin('o.event', 'e')->addSelect('e')
+            ->leftJoin('o.orderItems', 'oi')->addSelect('oi')
+            ->orderBy('o.createdAt', 'ASC')
+            ->distinct()
             ->getQuery()
             ->getResult();
     }
