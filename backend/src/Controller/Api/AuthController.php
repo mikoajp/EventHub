@@ -32,8 +32,7 @@ class AuthController extends AbstractController
             }
             return $this->json($this->userPresenter->presentLoginResponse($this->userApplicationService->formatLoginResponse($user)));
         } catch (\Exception $e) {
-            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
-            return $this->json(['error' => 'Login failed', 'message' => $e->getMessage()], $status);
+            throw $e;
         }
     }
 
@@ -46,8 +45,7 @@ class AuthController extends AbstractController
             }
             return $this->json($this->userPresenter->presentProfile($this->userApplicationService->getUserProfile($user)));
         } catch (\Exception $e) {
-            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 401;
-            return $this->json(['error' => 'Authentication check failed', 'message' => $e->getMessage()], $status);
+            throw $e;
         }
     }
 
@@ -72,8 +70,7 @@ class AuthController extends AbstractController
                 JsonResponse::HTTP_CREATED
             );
         } catch (\Exception $e) {
-            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
-            return $this->json(['error' => 'Registration failed', 'message' => $e->getMessage()], $status);
+            throw $e;
         }
     }
 }

@@ -36,23 +36,18 @@ class TicketController extends AbstractController
             $ticketTypeId = $request->query->get('ticketTypeId');
             $quantity = (int) $request->query->get('quantity', 1);
 
-            if (!$eventId) {
-                return $this->json(['error' => 'eventId parameter is required'], Response::HTTP_BAD_REQUEST);
-            }
-            if (!$ticketTypeId) {
-                return $this->json(['error' => 'ticketTypeId parameter is required'], Response::HTTP_BAD_REQUEST);
-            }
-            if ($quantity < 1 || $quantity > 10) {
-                return $this->json(['error' => 'quantity must be between 1 and 10'], Response::HTTP_BAD_REQUEST);
-            }
+            $violations = [];
+            if (!$eventId) { $violations['eventId'] = 'eventId is required'; }
+            if (!$ticketTypeId) { $violations['ticketTypeId'] = 'ticketTypeId is required'; }
+            if ($quantity < 1 || $quantity > 10) { $violations['quantity'] = 'quantity must be between 1 and 10'; }
+            if ($violations) { throw new \App\Exception\Validation\ValidationException($violations); }
 
             $envelope = $this->queryBus->dispatch(new CheckTicketAvailabilityQuery($eventId, $ticketTypeId, $quantity));
             $availability = $envelope->last(HandledStamp::class)->getResult();
             
             return $this->json($this->ticketPresenter->presentAvailability($availability));
         } catch (\Exception $e) {
-            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
-            return $this->json(['error' => 'Failed to check ticket availability', 'message' => $e->getMessage()], $status);
+            throw $e;
         }
     }
 
@@ -93,8 +88,7 @@ class TicketController extends AbstractController
             
             return $this->json($this->ticketPresenter->presentPurchase($result), Response::HTTP_CREATED);
         } catch (\Exception $e) {
-            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
-            return $this->json(['error' => 'Failed to purchase ticket', 'message' => $e->getMessage()], $status);
+            throw $e;
         }
     }
 
@@ -111,8 +105,7 @@ class TicketController extends AbstractController
             
             return $this->json($this->ticketPresenter->presentUserTickets($tickets));
         } catch (\Exception $e) {
-            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
-            return $this->json(['error' => 'Failed to fetch user tickets', 'message' => $e->getMessage()], $status);
+            throw $e;
         }
     }
 
@@ -131,8 +124,7 @@ class TicketController extends AbstractController
             
             return $this->json($this->ticketPresenter->presentCancel());
         } catch (\Exception $e) {
-            $status = ($e->getCode() >= 400 && $e->getCode() <= 599) ? $e->getCode() : 400;
-            return $this->json(['error' => 'Failed to cancel ticket', 'message' => $e->getMessage()], $status);
+            throw $e;
         }
     }
 }
