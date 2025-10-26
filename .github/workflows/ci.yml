@@ -5,6 +5,23 @@ on: [push, pull_request]
 jobs:
   php:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: eventhub_test
+          POSTGRES_USER: eventhub
+          POSTGRES_PASSWORD: secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U eventhub"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql://eventhub:secret@localhost:5432/eventhub_test
     steps:
       - uses: actions/checkout@v4
 
@@ -22,8 +39,6 @@ jobs:
         run: composer config -g github-oauth.github.com "$GITHUB_TOKEN"
 
 
-      - name: Sync dev tools lock (deptrac, rector, lcobucci/clock)
-        run: cd backend && composer update --no-interaction --no-progress --prefer-dist -W qossmic/deptrac-shim rector/rector lcobucci/clock
 
       - name: Install dependencies
         run: cd backend && composer install --no-interaction --no-progress --prefer-dist
@@ -32,14 +47,18 @@ jobs:
       - name: Validate composer.json
         run: cd backend && composer validate --no-check-publish
 
-      - name: Run PHPUnit (Unit Tests)
-        run: cd backend && SYMFONY_DEPRECATIONS_HELPER=weak vendor/bin/phpunit tests/Unit --testdox
+      - name: Prepare test database
+        run: |
+          cd backend
+          php bin/console doctrine:database:create --if-not-exists --env=test
+          php bin/console doctrine:schema:update --force --env=test
+
+      - name: Run PHPUnit (All Tests)
+        run: cd backend && SYMFONY_DEPRECATIONS_HELPER=weak vendor/bin/phpunit
         
-      - name: Test Summary
-        run: cd backend && SYMFONY_DEPRECATIONS_HELPER=weak vendor/bin/phpunit tests/Unit --no-coverage
 
       - name: Run PHPStan
-        run: cd backend && composer require --no-interaction --no-progress --dev -W phpstan/phpstan:^1.11 && vendor/bin/phpstan analyse -c phpstan.neon
+        run: cd backend && vendor/bin/phpstan analyse -c phpstan.neon
 
       - name: Deptrac (non-blocking if present)
         run: |
@@ -59,7 +78,3 @@ jobs:
           cd backend
           if [ -x vendor/bin/rector ]; then vendor/bin/rector process --dry-run -c ../rector.php; else echo "rector not installed"; fi
 
-      - name: Bump PHPStan level to 5
-        run: |
-          cd backend
-          sed -i 's/level: 4/level: 5/' phpstan.neon || true
