@@ -48,6 +48,7 @@ class Ticket
     public const STATUS_PURCHASED = 'purchased';
     public const STATUS_CANCELLED = 'cancelled';
     public const STATUS_REFUNDED = 'refunded';
+    public const STATUS_USED = 'used';
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]

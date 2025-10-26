@@ -2,13 +2,14 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Mercure\Authorization;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
-use App\Entity\User;
 
 #[Route('/api/mercure')]
 class MercureController extends AbstractController
@@ -18,38 +19,31 @@ class MercureController extends AbstractController
      */
     #[Route('/token', name: 'api_mercure_token', methods: ['GET'])]
     public function getToken(
+        Request $request,
         Authorization $authorization,
         #[CurrentUser] ?User $user
     ): JsonResponse {
-        try {
-            // Topics the user can subscribe to
-            $topics = ['notifications']; // Public notifications
-            
-            if ($user) {
-                // Add private user-specific topics
-                $topics[] = "notifications/user/" . (string) $user->getId();
-                $topics[] = 'events'; // Authenticated users can see event updates
-            }
+        $topics = ['notifications'];
 
-            // Generate JWT cookie and expose token string
-            $cookie = $authorization->createCookie(
-                subscribes: $topics,
-                publishes: [] // Users cannot publish, only subscribe
-            );
-
-            return $this->json([
-                'token' => $cookie->getValue(),
-                'cookie' => (string) $cookie,
-                'cookie_name' => $cookie->getName(),
-                'topics' => $topics,
-                'mercure_url' => $_ENV['MERCURE_PUBLIC_URL'] ?? 'http://localhost/.well-known/mercure'
-            ]);
-        } catch (\Exception $e) {
-            return $this->json([
-                'error' => 'Failed to generate Mercure token',
-                'message' => $e->getMessage()
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        if ($user) {
+            // Add private user-specific topics
+            $topics[] = sprintf('notifications/user/%s', $user->getId());
+            $topics[] = 'events';
         }
+
+        // Generate JWT cookie
+        $cookie = $authorization->createCookie(
+            request: $request,
+            subscribe: $topics,
+            publish: [] // Users can only subscribe, not publish
+        );
+
+        return $this->json([
+            'token' => $cookie->getValue(),
+            'cookie_name' => $cookie->getName(),
+            'topics' => $topics,
+            'mercure_url' => $this->getParameter('mercure.default_hub')
+        ]);
     }
 
     /**
@@ -58,26 +52,18 @@ class MercureController extends AbstractController
     #[Route('/health', name: 'api_mercure_health', methods: ['GET'])]
     public function health(): JsonResponse
     {
-        try {
-            $mercureUrl = $_ENV['MERCURE_URL'] ?? null;
-            
-            if (!$mercureUrl) {
-                return $this->json([
-                    'status' => 'error',
-                    'message' => 'Mercure URL not configured'
-                ], Response::HTTP_SERVICE_UNAVAILABLE);
-            }
+        $mercureUrl = $this->getParameter('mercure.default_hub');
 
-            return $this->json([
-                'status' => 'ok',
-                'mercure_url' => $mercureUrl,
-                'public_url' => $_ENV['MERCURE_PUBLIC_URL'] ?? null
-            ]);
-        } catch (\Exception $e) {
+        if (!$mercureUrl) {
             return $this->json([
                 'status' => 'error',
-                'message' => $e->getMessage()
+                'message' => 'Mercure URL not configured'
             ], Response::HTTP_SERVICE_UNAVAILABLE);
         }
+
+        return $this->json([
+            'status' => 'ok',
+            'mercure_url' => $mercureUrl,
+        ]);
     }
 }

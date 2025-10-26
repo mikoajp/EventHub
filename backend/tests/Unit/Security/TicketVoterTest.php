@@ -90,10 +90,18 @@ final class TicketVoterTest extends TestCase
 
     public function testUserCannotCancelAlreadyCancelledTicket(): void
     {
-        $this->markTestSkipped('Skipping due to voter behavior assumptions.');
         $user = $this->createUser('user@test.com');
-        $ticket = $this->createTicket($user);
+        
+        // Create ticket with cancelled status directly
+        $event = $this->createMock(Event::class);
+        $event->method('getOrganizer')->willReturn($this->createUser('default-organizer@test.com'));
+        $event->method('getEventDate')->willReturn(new \DateTime('+30 days'));
+        
+        $ticket = $this->createMock(Ticket::class);
+        $ticket->method('getUser')->willReturn($user);
+        $ticket->method('getEvent')->willReturn($event);
         $ticket->method('getStatus')->willReturn('cancelled');
+        
         $token = $this->createToken($user);
 
         $result = $this->voter->vote($token, $ticket, [TicketVoter::CANCEL]);
@@ -138,10 +146,18 @@ final class TicketVoterTest extends TestCase
 
     public function testUserCannotTransferUsedTicket(): void
     {
-        $this->markTestSkipped('Skipping due to voter behavior assumptions.');
         $user = $this->createUser('user@test.com');
-        $ticket = $this->createTicket($user);
+        
+        // Create ticket with used status directly
+        $event = $this->createMock(Event::class);
+        $event->method('getOrganizer')->willReturn($this->createUser('default-organizer@test.com'));
+        $event->method('getEventDate')->willReturn(new \DateTime('+30 days'));
+        
+        $ticket = $this->createMock(Ticket::class);
+        $ticket->method('getUser')->willReturn($user);
+        $ticket->method('getEvent')->willReturn($event);
         $ticket->method('getStatus')->willReturn('used');
+        
         $token = $this->createToken($user);
 
         $result = $this->voter->vote($token, $ticket, [TicketVoter::TRANSFER]);

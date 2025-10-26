@@ -53,8 +53,13 @@ final readonly class TicketDomainService
 
     public function isTicketTransferable(Ticket $ticket): bool
     {
-        return $ticket->getStatus() === Ticket::STATUS_PURCHASED &&
-               $ticket->getEvent()->getEventDate() > new \DateTimeImmutable();
+        // Ticket must be purchased (not reserved, cancelled, refunded, or used)
+        if ($ticket->getStatus() !== Ticket::STATUS_PURCHASED) {
+            return false;
+        }
+        
+        // Event must be in the future
+        return $ticket->getEvent()->getEventDate() > new \DateTimeImmutable();
     }
 
     public function transferTicket(Ticket $ticket, User $newOwner): void
