@@ -73,7 +73,7 @@ final readonly class MercureMessageBus implements MessageBusInterface
     {
         try {
             $update = new Update(
-                topic: $channel,
+                topics: $channel,
                 data: json_encode([
                     'type' => $type,
                     'data' => $payload
@@ -98,7 +98,7 @@ final readonly class MercureMessageBus implements MessageBusInterface
     {
         try {
             $update = new Update(
-                topic: 'social',
+                topics: 'social',
                 data: json_encode([
                     'type' => 'social.share',
                     'data' => $socialData
