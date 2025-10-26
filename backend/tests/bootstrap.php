@@ -41,6 +41,7 @@ try {
             }
             // Seed test user for JWT auth
             try {
+                // minimal fixtures
                 $repo = $em->getRepository(\App\Entity\User::class);
                 $user = $repo->findOneBy(['email' => 'test@example.com']);
                 if (!$user) {
@@ -49,7 +50,6 @@ try {
                         ->setFirstName('Test')
                         ->setLastName('User')
                         ->setRoles(['ROLE_USER']);
-                    // Hash password if service available
                     $password = 'password';
                     try {
                         $hasher = $container->get('security.user_password_hasher');
@@ -58,8 +58,25 @@ try {
                         $user->setPassword(password_hash($password, PASSWORD_BCRYPT));
                     }
                     $em->persist($user);
-                    $em->flush();
                 }
+                // ensure at least one published event exists if entity available
+                try {
+                    if (class_exists(\App\Entity\Event::class)) {
+                        $erepo = $em->getRepository(\App\Entity\Event::class);
+                        if (!$erepo->findOneBy([])) {
+                            $event = new \App\Entity\Event();
+                            if (method_exists($event, 'setTitle')) { $event->setTitle('Test Event'); }
+                            if (method_exists($event, 'setDescription')) { $event->setDescription('Desc'); }
+                            if (method_exists($event, 'setLocation')) { $event->setLocation('Online'); }
+                            if (method_exists($event, 'setStartAt')) { $event->setStartAt(new \DateTimeImmutable('+1 day')); }
+                            if (method_exists($event, 'setEndAt')) { $event->setEndAt(new \DateTimeImmutable('+2 days')); }
+                            if (method_exists($event, 'setPublished')) { $event->setPublished(true); }
+                            if (method_exists($event, 'setOrganizer') && isset($user)) { $event->setOrganizer($user); }
+                            $em->persist($event);
+                        }
+                    }
+                } catch (\Throwable $e) {}
+                $em->flush();
             } catch (\Throwable $e) {
                 // ignore seeding failures
             }
