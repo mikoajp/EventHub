@@ -60,20 +60,24 @@ final class RedisCacheAdapter implements CacheInterface
         }
     }
 
-    public function get(string $key, callable $callback, int $ttl = 3600): mixed
+    public function get(string $key, ?callable $callback = null, int $ttl = 3600): mixed
     {
         if (!$this->isEnabled) {
-            return $callback();
+            return $callback ? $callback() : null;
         }
 
         try {
-            return $this->pool->get($key, function (ItemInterface $item) use ($callback, $ttl) {
-                $item->expiresAfter($ttl);
-                return $callback();
-            });
+            if ($callback) {
+                return $this->pool->get($key, function (ItemInterface $item) use ($callback, $ttl) {
+                    $item->expiresAfter($ttl);
+                    return $callback();
+                });
+            }
+            $item = $this->pool->getItem($key);
+            return $item->isHit() ? $item->get() : null;
         } catch (\Exception $e) {
             $this->logger?->error('Cache error: ' . $e->getMessage());
-            return $callback();
+            return $callback ? $callback() : null;
         }
     }
 
@@ -150,6 +154,19 @@ final class RedisCacheAdapter implements CacheInterface
             return $this->pool->clear();
         } catch (\Exception $e) {
             $this->logger?->error('Cache clear error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function has(string $key): bool
+    {
+        if (!$this->isEnabled) {
+            return false;
+        }
+        try {
+            return $this->pool->hasItem($key);
+        } catch (\Exception $e) {
+            $this->logger?->error('Cache has error: ' . $e->getMessage());
             return false;
         }
     }

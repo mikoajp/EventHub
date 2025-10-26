@@ -7,7 +7,7 @@ interface CacheInterface
     /**
      * Get an item from cache
      */
-    public function get(string $key, callable $callback, int $ttl = 3600): mixed;
+    public function get(string $key, ?callable $callback = null, int $ttl = 3600): mixed;
 
     /**
      * Set an item in cache (optionally with tags)
@@ -18,6 +18,11 @@ interface CacheInterface
      * Delete an item from cache
      */
     public function delete(string $key): bool;
+
+    /**
+     * Check if a cache item exists
+     */
+    public function has(string $key): bool;
 
     /**
      * Delete multiple items by pattern

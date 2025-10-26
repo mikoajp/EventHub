@@ -23,7 +23,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
 
     public function testCompleteTicketPurchaseFlow(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         // Step 1: Register new user
         $client->request('POST', '/api/auth/register', [], [], [
@@ -84,7 +84,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
 
     public function testDoubleSubmitPrevention(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         $user = $this->createUser('buyer2@test.com');
         $token = $this->generateJwtToken($user->getEmail(), $user->getRoles());
@@ -151,7 +151,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
 
         // Both users try to buy the last ticket
         $client1 = static::createClient();
-        $client2 = static::createClient();
+        $client2 = static::createClient(); // ok to create separate clients for concurrency simulation
 
         $client1->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -199,7 +199,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
 
     public function testPaymentFailureTriggersCompensation(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         $user = $this->createUser('payment-fail@test.com');
         $token = $this->generateJwtToken($user);
@@ -242,6 +242,8 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $user = new User();
         $user->setEmail($email);
         $user->setPassword('$2y$13$hashedpassword');
+        $user->setFirstName('Test');
+        $user->setLastName('User');
         $user->setRoles(['ROLE_USER']);
 
         $this->entityManager->persist($user);

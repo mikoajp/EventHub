@@ -28,7 +28,14 @@ final class TicketRepositoryTest extends KernelTestCase
     public function testFindByUser(): void
     {
         // This is a smoke test to ensure the repository method exists
-        $user = $this->createMock(User::class);
+        $user = (new User())
+            ->setEmail('repo-user-'.uniqid().'@test.com')
+            ->setPassword('password')
+            ->setFirstName('Repo')
+            ->setLastName('User');
+        $em = static::getContainer()->get('doctrine')->getManager();
+        $em->persist($user);
+        $em->flush();
         
         $result = $this->repository->findBy(['user' => $user]);
         
@@ -37,7 +44,29 @@ final class TicketRepositoryTest extends KernelTestCase
 
     public function testCountByTicketTypeAndStatus(): void
     {
-        $ticketType = $this->createMock(TicketType::class);
+        $em = static::getContainer()->get('doctrine')->getManager();
+        $organizer = (new User())
+            ->setEmail('repo-org-'.uniqid().'@test.com')
+            ->setPassword('password')
+            ->setFirstName('Org')
+            ->setLastName('User');
+        $em->persist($organizer);
+        $event = (new Event())
+            ->setName('Repo Event')
+            ->setDescription('Test')
+            ->setVenue('V')
+            ->setEventDate(new \DateTime('+1 day'))
+            ->setMaxTickets(10)
+            ->setStatus(Event::STATUS_PUBLISHED)
+            ->setOrganizer($organizer);
+        $em->persist($event);
+        $ticketType = (new TicketType())
+            ->setName('GA')
+            ->setPrice(1000)
+            ->setQuantity(10)
+            ->setEvent($event);
+        $em->persist($ticketType);
+        $em->flush();
         
         $count = $this->repository->count([
             'ticketType' => $ticketType,
