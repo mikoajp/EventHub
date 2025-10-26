@@ -56,7 +56,8 @@ final readonly class ReserveTicketHandler
         if (!$this->availabilityChecker->isAvailable($ticketType, 1)) {
             throw new \App\Exception\Ticket\TicketNotAvailableException(
                 $command->ticketTypeId,
-                'Ticket is not available for reservation'
+                1,
+                $ticketType->getAvailableQuantity()
             );
         }
 

@@ -93,7 +93,8 @@ final readonly class PurchaseTicketHandler
             if (!$this->availabilityChecker->isAvailable($ticketType, $command->quantity)) {
                 throw new \App\Exception\Ticket\TicketNotAvailableException(
                     $command->ticketTypeId,
-                    'Not enough tickets available. Requested: ' . $command->quantity
+                    $command->quantity,
+                    $ticketType->getAvailableQuantity()
                 );
             }
 

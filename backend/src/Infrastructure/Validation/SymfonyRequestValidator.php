@@ -112,9 +112,7 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
 
         $validationErrors = $this->validateDTO($eventDTO);
         if (!empty($validationErrors)) {
-            throw new \App\Exception\Validation\ValidationException(
-                'Validation failed: ' . json_encode(['errors' => $validationErrors])
-            );
+            throw new \App\Exception\Validation\ValidationException($validationErrors);
         }
 
         return $eventDTO;

@@ -17,7 +17,7 @@ final readonly class MercureMessageBus implements MessageBusInterface
     {
         try {
             $update = new Update(
-                topic: 'events',
+                topics: 'events',
                 data: json_encode([
                     'type' => 'event.published',
                     'data' => $eventData
@@ -46,7 +46,7 @@ final readonly class MercureMessageBus implements MessageBusInterface
                 : 'notifications';
 
             $update = new Update(
-                topic: $topic,
+                topics: $topic,
                 data: json_encode([
                     'type' => 'notification',
                     'data' => $notificationData,

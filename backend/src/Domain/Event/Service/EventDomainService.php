@@ -151,7 +151,7 @@ class EventDomainService
         if (!$this->canBeUnpublished($event, $ticketsSold)) {
             throw new \App\Exception\Event\EventCannotBeUnpublishedException(
                 $event->getId()->toString(),
-                'Event cannot be unpublished - tickets already sold: ' . $ticketsSold
+                $ticketsSold
             );
         }
 
