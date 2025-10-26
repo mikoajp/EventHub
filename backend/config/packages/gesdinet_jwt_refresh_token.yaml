@@ -8,20 +8,8 @@ gesdinet_jwt_refresh_token:
     # Update TTL on token refresh (extends expiration on each use)
     ttl_update: true
     
-    # Firewall name
-    firewall: api
-    
-    # User provider
-    user_provider: app_user_provider
-    
-    # User identity field (what identifies the user in JWT)
-    user_identity_field: email
-    
     # Single use tokens (more secure - token can only be used once)
     single_use: true
     
     # Token parameter name in request body
     token_parameter_name: refresh_token
-    
-    # Enable doctrine mappings
-    doctrine_mappings: true
