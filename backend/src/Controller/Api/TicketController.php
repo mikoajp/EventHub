@@ -70,8 +70,8 @@ class TicketController extends AbstractController
             if (!$eventId || !$ticketTypeId) {
                 return $this->json(['error' => 'eventId and ticketTypeId are required'], Response::HTTP_BAD_REQUEST);
             }
-            // Generate idempotency key from request or use default
-            $idempotencyKey = $data['idempotencyKey'] ?? uniqid('ticket_purchase_', true);
+            // Prefer header X-Idempotency-Key, then payload, else fallback
+            $idempotencyKey = $request->headers->get('X-Idempotency-Key') ?? ($data['idempotencyKey'] ?? uniqid('ticket_purchase_', true));
             $paymentMethodId = $data['paymentMethodId'] ?? 'pm_test_card';
             $quantity = $data['quantity'] ?? 1;
 
