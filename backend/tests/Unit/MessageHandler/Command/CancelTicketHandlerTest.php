@@ -91,8 +91,7 @@ class CancelTicketHandlerTest extends TestCase
             ->method('find')
             ->willReturn(null);
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Ticket not found');
+        $this->expectException(\App\Exception\Ticket\TicketNotFoundException::class);
 
         $command = new CancelTicketCommand(
             Uuid::v4()->toString(),
@@ -114,8 +113,7 @@ class CancelTicketHandlerTest extends TestCase
         $this->ticketRepository->method('find')->willReturn($ticket);
         $this->userRepository->method('find')->willReturn($requestingUser);
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('You can only cancel your own tickets');
+        $this->expectException(\App\Exception\Authorization\InsufficientPermissionsException::class);
 
         $command = new CancelTicketCommand(
             Uuid::v4()->toString(),

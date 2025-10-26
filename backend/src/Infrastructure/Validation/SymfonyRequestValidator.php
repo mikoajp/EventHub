@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Validation;
 
 use App\DTO\EventDTO;
+use App\Exception\Validation\InvalidRequestDataException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -21,9 +22,8 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
             $missingFields = array_diff($rules['required'], array_keys(array_filter($data)));
             
             if (!empty($missingFields)) {
-                throw new \InvalidArgumentException(
-                    sprintf('Missing required fields: %s', implode(', ', $missingFields)),
-                    Response::HTTP_BAD_REQUEST
+                throw new InvalidRequestDataException(
+                    sprintf('Missing required fields: %s', implode(', ', $missingFields))
                 );
             }
         }
@@ -31,9 +31,8 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
         if (isset($rules['types'])) {
             foreach ($rules['types'] as $field => $expectedType) {
                 if (isset($data[$field]) && !$this->validateFieldType($data[$field], $expectedType)) {
-                    throw new \InvalidArgumentException(
-                        sprintf('Field "%s" must be of type %s', $field, $expectedType),
-                        Response::HTTP_BAD_REQUEST
+                    throw new InvalidRequestDataException(
+                        sprintf('Field "%s" must be of type %s', $field, $expectedType)
                     );
                 }
             }
@@ -76,7 +75,7 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
     public function extractJsonData(Request $request): array
     {
         if (!$this->hasValidJson($request)) {
-            throw new \InvalidArgumentException('Invalid JSON', Response::HTTP_BAD_REQUEST);
+            throw new \App\Exception\Validation\InvalidJsonException('Invalid JSON payload');
         }
 
         return json_decode($request->getContent(), true) ?? [];
@@ -98,9 +97,8 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
         try {
             $eventDate = new \DateTimeImmutable($data['eventDate']);
         } catch (\Exception $e) {
-            throw new \InvalidArgumentException(
-                'Invalid date format. Please provide eventDate in ISO 8601 format (e.g., 2025-07-17T15:30:00Z)',
-                Response::HTTP_BAD_REQUEST
+            throw new InvalidRequestDataException(
+                'Invalid date format. Please provide eventDate in ISO 8601 format (e.g., 2025-07-17T15:30:00Z)'
             );
         }
 
@@ -114,9 +112,8 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
 
         $validationErrors = $this->validateDTO($eventDTO);
         if (!empty($validationErrors)) {
-            throw new \InvalidArgumentException(
-                json_encode(['errors' => $validationErrors]),
-                Response::HTTP_BAD_REQUEST
+            throw new \App\Exception\Validation\ValidationException(
+                'Validation failed: ' . json_encode(['errors' => $validationErrors])
             );
         }
 

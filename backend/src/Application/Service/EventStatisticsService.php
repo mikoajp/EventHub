@@ -3,6 +3,7 @@
 namespace App\Application\Service;
 
 use App\Domain\Analytics\Service\EventStatisticsCalculator;
+use App\Exception\Event\EventNotFoundException;
 use App\Infrastructure\Cache\CacheInterface;
 use App\Repository\EventRepository;
 
@@ -58,7 +59,7 @@ final readonly class EventStatisticsService
             ?? $this->eventRepository->find($eventId);
 
         if (!$event) {
-            throw new \InvalidArgumentException('Event not found');
+            throw new EventNotFoundException($eventId);
         }
 
         return $this->calculator->calculateEventStatistics($event);

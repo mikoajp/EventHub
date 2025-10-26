@@ -5,6 +5,7 @@ namespace App\Controller\Api;
 use App\Entity\User;
 use App\Application\Service\UserApplicationService;
 use App\DTO\UserRegistrationDTO;
+use App\Exception\User\UserNotAuthenticatedException;
 use App\Infrastructure\Validation\RequestValidatorInterface;
 use App\Presenter\UserPresenter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -27,7 +28,7 @@ class AuthController extends AbstractController
     {
         try {
             if (!$user) {
-                throw new \RuntimeException('User not authenticated', JsonResponse::HTTP_UNAUTHORIZED);
+                throw new UserNotAuthenticatedException();
             }
             return $this->json($this->userPresenter->presentLoginResponse($this->userApplicationService->formatLoginResponse($user)));
         } catch (\Exception $e) {
@@ -41,7 +42,7 @@ class AuthController extends AbstractController
     {
         try {
             if (!$user) {
-                throw new \RuntimeException('User not authenticated', JsonResponse::HTTP_UNAUTHORIZED);
+                throw new UserNotAuthenticatedException();
             }
             return $this->json($this->userPresenter->presentProfile($this->userApplicationService->getUserProfile($user)));
         } catch (\Exception $e) {

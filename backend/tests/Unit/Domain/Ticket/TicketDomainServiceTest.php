@@ -153,8 +153,7 @@ final class TicketDomainServiceTest extends TestCase
         $event->method('getEventDate')->willReturn($futureDate);
         $ticket->setEvent($event);
 
-        $this->expectException(\DomainException::class);
-        $this->expectExceptionMessage('Ticket cannot be transferred');
+        $this->expectException(\App\Exception\Ticket\TicketNotTransferableException::class);
 
         $this->service->transferTicket($ticket, $newUser);
     }

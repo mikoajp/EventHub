@@ -6,6 +6,7 @@ use App\Domain\Payment\Service\PaymentDomainService;
 use App\Infrastructure\Payment\PaymentGatewayInterface;
 use App\DTO\PaymentResultDTO;
 use App\DTO\PaymentResult;
+use App\Exception\Payment\InvalidPaymentMethodException;
 use Psr\Log\LoggerInterface;
 
 final readonly class PaymentApplicationService
@@ -29,7 +30,7 @@ final readonly class PaymentApplicationService
 
             // Validate payment method
             if (!$this->paymentGateway->validatePaymentMethod($paymentMethodId)) {
-                throw new \InvalidArgumentException('Invalid payment method');
+                throw new InvalidPaymentMethodException($paymentMethodId);
             }
 
             // Calculate fees
@@ -92,7 +93,7 @@ final readonly class PaymentApplicationService
             // Check if refund is allowed
             $originalPaymentResult = new PaymentResultDTO(true, $paymentId, 'Original payment');
             if (!$this->paymentDomainService->isRefundable($originalPaymentResult, $originalPaymentDate)) {
-                throw new \DomainException('Payment is not refundable (refund period expired)');
+                throw new \App\Exception\Payment\PaymentNotRefundableException($paymentId, 'Refund period expired');
             }
 
             // Process refund through gateway

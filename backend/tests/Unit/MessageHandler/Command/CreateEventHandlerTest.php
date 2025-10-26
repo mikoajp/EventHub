@@ -97,8 +97,7 @@ class CreateEventHandlerTest extends TestCase
             ->method('find')
             ->willReturn(null);
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Organizer not found');
+        $this->expectException(\App\Exception\User\OrganizerNotFoundException::class);
 
         $command = new CreateEventCommand(
             'Test Event',

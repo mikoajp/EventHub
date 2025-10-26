@@ -68,8 +68,7 @@ final class IdempotencyServiceTest extends TestCase
             ->with('test-key')
             ->willReturn($key);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('Command is already being processed');
+        $this->expectException(\App\Exception\Idempotency\CommandAlreadyProcessingException::class);
 
         $this->service->checkIdempotency('test-key', 'TestCommand');
     }

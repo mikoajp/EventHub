@@ -33,17 +33,17 @@ final readonly class UnpublishEventHandler
 
         $event = $this->eventRepository->find(Uuid::fromString($command->eventId));
         if (!$event) {
-            throw new \InvalidArgumentException('Event not found');
+            throw new \App\Exception\Event\EventNotFoundException($command->eventId);
         }
 
         $user = $this->userRepository->find(Uuid::fromString($command->userId));
         if (!$user) {
-            throw new \InvalidArgumentException('User not found');
+            throw new \App\Exception\User\UserNotFoundException($command->userId);
         }
 
         // Check permissions
         if (!$this->eventDomainService->canUserModifyEvent($event, $user)) {
-            throw new \InvalidArgumentException('User has no permission to modify this event');
+            throw new \App\Exception\Authorization\InsufficientPermissionsException('modify this event');
         }
 
         // Get ticket count for validation

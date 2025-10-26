@@ -7,6 +7,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Event;
 use App\Entity\User;
+use App\Exception\Authorization\AuthenticationRequiredException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -26,7 +27,7 @@ class EventStateProcessor implements ProcessorInterface
             if ($currentUser instanceof User) {
                 $data->setOrganizer($currentUser);
             } else {
-                throw new \LogicException('User must be authenticated to create events');
+                throw new AuthenticationRequiredException('create events');
             }
 
             $data->setUpdatedAt(new \DateTimeImmutable());

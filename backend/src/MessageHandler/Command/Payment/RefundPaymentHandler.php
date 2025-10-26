@@ -34,14 +34,17 @@ final readonly class RefundPaymentHandler
             $ticket = $this->ticketRepository->find(Uuid::fromString($command->ticketId));
 
             if (!$ticket) {
-                throw new \InvalidArgumentException('Ticket not found');
+                throw new \App\Exception\Ticket\TicketNotFoundException($command->ticketId);
             }
 
             // Process refund through payment gateway
             $result = $this->paymentGateway->refundPayment($command->paymentId, $command->amount);
 
             if (!$result->success) {
-                throw new \RuntimeException('Refund failed: ' . $result->message);
+                throw new \App\Exception\Payment\PaymentFailedException(
+                    $command->paymentId,
+                    'Refund failed: ' . $result->message
+                );
             }
 
             // Update ticket status

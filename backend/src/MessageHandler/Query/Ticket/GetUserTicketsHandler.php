@@ -27,7 +27,7 @@ final readonly class GetUserTicketsHandler
         return $this->cache->get($cacheKey, function() use ($query) {
             $user = $this->userRepository->find(Uuid::fromString($query->userId));
             if (!$user) {
-                throw new \InvalidArgumentException('User not found');
+                throw new \App\Exception\User\UserNotFoundException($query->userId);
             }
 
             $tickets = $this->ticketRepository->findBy(['user' => $user]);

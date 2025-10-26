@@ -60,7 +60,13 @@ final readonly class TicketDomainService
     public function transferTicket(Ticket $ticket, User $newOwner): void
     {
         if (!$this->isTicketTransferable($ticket)) {
-            throw new \DomainException('Ticket cannot be transferred');
+            $reason = $ticket->getStatus() !== Ticket::STATUS_PURCHASED 
+                ? 'Ticket must be purchased' 
+                : 'Event has already occurred';
+            throw new \App\Exception\Ticket\TicketNotTransferableException(
+                $ticket->getId()->toString(),
+                $reason
+            );
         }
 
         $ticket->setUser($newOwner);

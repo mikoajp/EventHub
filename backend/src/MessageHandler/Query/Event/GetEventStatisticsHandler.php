@@ -23,7 +23,7 @@ final readonly class GetEventStatisticsHandler
         $event = $this->eventRepository->find(Uuid::fromString($query->eventId));
         
         if (!$event) {
-            throw new \InvalidArgumentException('Event not found');
+            throw new \App\Exception\Event\EventNotFoundException($query->eventId);
         }
 
         $statistics = $this->ticketRepository->getEventStatistics(

@@ -172,7 +172,6 @@
       <path value="$PROJECT_DIR$/backend/vendor/gesdinet/jwt-refresh-token-bundle" />
       <path value="$PROJECT_DIR$/backend/vendor/symfony/rate-limiter" />
       <path value="$PROJECT_DIR$/backend/vendor/symfony/lock" />
-      <path value="$PROJECT_DIR$/backend/vendor/phpstan/phpstan" />
       <path value="$PROJECT_DIR$/backend/vendor/qossmic/deptrac-shim" />
       <path value="$PROJECT_DIR$/backend/vendor/rector/rector" />
     </include_path>

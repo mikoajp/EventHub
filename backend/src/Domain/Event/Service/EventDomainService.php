@@ -134,7 +134,10 @@ class EventDomainService
     public function cancelEvent(Event $event): void
     {
         if (!$this->canBeCancelled($event)) {
-            throw new \DomainException('Event cannot be cancelled in current state');
+            throw new \App\Exception\Event\EventCannotBeCancelledException(
+                $event->getId()->toString(),
+                'Event cannot be cancelled in current state: ' . $event->getStatus()
+            );
         }
 
         $event->setPreviousStatus($event->getStatus());
@@ -146,7 +149,10 @@ class EventDomainService
     public function unpublishEvent(Event $event, int $ticketsSold = 0): void
     {
         if (!$this->canBeUnpublished($event, $ticketsSold)) {
-            throw new \DomainException('Event cannot be unpublished - tickets already sold');
+            throw new \App\Exception\Event\EventCannotBeUnpublishedException(
+                $event->getId()->toString(),
+                'Event cannot be unpublished - tickets already sold: ' . $ticketsSold
+            );
         }
 
         $event->setPreviousStatus($event->getStatus());
@@ -158,7 +164,10 @@ class EventDomainService
     public function completeEvent(Event $event): void
     {
         if (!$this->canBeCompleted($event)) {
-            throw new \DomainException('Event cannot be completed - must be published and past');
+            throw new \App\Exception\Event\EventNotPublishableException(
+                $event->getId()->toString(),
+                'Event cannot be completed - must be published and past. Current status: ' . $event->getStatus()
+            );
         }
 
         $event->setPreviousStatus($event->getStatus());

@@ -31,7 +31,7 @@ final readonly class CreateEventHandler
         $organizer = $this->userRepository->find(Uuid::fromString($command->organizerId));
         
         if (!$organizer) {
-            throw new \InvalidArgumentException('Organizer not found');
+            throw new \App\Exception\User\OrganizerNotFoundException($command->organizerId);
         }
 
         $event = new Event();

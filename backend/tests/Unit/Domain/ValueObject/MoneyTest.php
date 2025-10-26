@@ -62,8 +62,7 @@ final class MoneyTest extends TestCase
 
     public function testEmptyCurrencyThrowsException(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Currency required');
+        $this->expectException(\App\Exception\ValueObject\InvalidCurrencyException::class);
         
         Money::fromInt(10000, '');
     }

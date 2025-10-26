@@ -39,22 +39,25 @@ final readonly class ReserveTicketHandler
 
         $event = $this->eventRepository->findByUuid($command->eventId) ?? $this->eventRepository->find($command->eventId);
         if (!$event) {
-            throw new \InvalidArgumentException('Event not found');
+            throw new \App\Exception\Event\EventNotFoundException($command->eventId);
         }
 
         $ticketType = $this->ticketTypeRepository->find($command->ticketTypeId);
         if (!$ticketType) {
-            throw new \InvalidArgumentException('Ticket type not found');
+            throw new \App\Exception\Ticket\TicketTypeNotFoundException($command->ticketTypeId);
         }
 
         $user = $this->userRepository->find($command->userId);
         if (!$user) {
-            throw new \InvalidArgumentException('User not found');
+            throw new \App\Exception\User\UserNotFoundException($command->userId);
         }
 
         // Check availability
         if (!$this->availabilityChecker->isAvailable($ticketType, 1)) {
-            throw new \DomainException('Ticket is not available');
+            throw new \App\Exception\Ticket\TicketNotAvailableException(
+                $command->ticketTypeId,
+                'Ticket is not available for reservation'
+            );
         }
 
         // Create ticket

@@ -49,9 +49,9 @@ final readonly class PurchaseTicketHandler
                 ]);
                 return $cachedResult;
             }
-        } catch (\RuntimeException $e) {
+        } catch (\App\Exception\Idempotency\CommandAlreadyProcessingException $e) {
             // Command is already being processed concurrently
-            throw new \RuntimeException('Duplicate ticket purchase request detected. Please wait.', 0, $e);
+            throw new \App\Exception\Idempotency\DuplicateRequestException('Duplicate ticket purchase request detected. Please wait.');
         }
 
         // Start tracking this command execution
@@ -66,12 +66,16 @@ final readonly class PurchaseTicketHandler
             $event = $this->eventRepository->find(Uuid::fromString($command->eventId));
             $user = $this->userRepository->find(Uuid::fromString($command->userId));
 
-            if (!$event || !$user) {
-                throw new \InvalidArgumentException('Invalid event or user');
+            if (!$event) {
+                throw new \App\Exception\Event\EventNotFoundException($command->eventId);
+            }
+            
+            if (!$user) {
+                throw new \App\Exception\User\UserNotFoundException($command->userId);
             }
 
             if (!$event->isPublished()) {
-                throw new \InvalidArgumentException('Event is not published');
+                throw new \App\Exception\Event\EventNotPublishedException($event->getId()->toString());
             }
 
             // Use pessimistic locking to prevent race conditions
@@ -82,12 +86,15 @@ final readonly class PurchaseTicketHandler
             );
 
             if (!$ticketType) {
-                throw new \InvalidArgumentException('Invalid ticket type');
+                throw new \App\Exception\Ticket\TicketTypeNotFoundException($command->ticketTypeId);
             }
 
             // Check availability with lock held
             if (!$this->availabilityChecker->isAvailable($ticketType, $command->quantity)) {
-                throw new \InvalidArgumentException('Not enough tickets available');
+                throw new \App\Exception\Ticket\TicketNotAvailableException(
+                    $command->ticketTypeId,
+                    'Not enough tickets available. Requested: ' . $command->quantity
+                );
             }
 
             $tickets = [];

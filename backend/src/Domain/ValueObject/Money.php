@@ -2,6 +2,8 @@
 
 namespace App\Domain\ValueObject;
 
+use App\Exception\ValueObject\InvalidCurrencyException;
+
 final class Money
 {
     private int $amount; // minor units (e.g. cents)
@@ -16,7 +18,7 @@ final class Money
     public static function fromInt(int $amount, string $currency = 'PLN'): self
     {
         if ($currency === '') {
-            throw new \InvalidArgumentException('Currency required');
+            throw new InvalidCurrencyException($currency);
         }
         return new self($amount, $currency);
     }

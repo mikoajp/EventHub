@@ -17,6 +17,10 @@ use App\Application\Service\NotificationApplicationService;
 use App\Presenter\EventPresenter;
 use App\Infrastructure\Validation\RequestValidatorInterface;
 use App\DTO\EventFiltersDTO;
+use App\Exception\Event\EventNotFoundException;
+use App\Exception\Event\EventNotPublishableException;
+use App\Exception\Authorization\InsufficientPermissionsException;
+use App\Exception\Validation\InvalidRequestDataException;
 use Symfony\Component\Messenger\Stamp\HandledStamp;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -109,7 +113,7 @@ class EventController extends AbstractController
             $event = $envelope->last(HandledStamp::class)->getResult();
             
             if (!$event) {
-                throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
+                throw new EventNotFoundException($id);
             }
             
             return $this->json($this->eventPresenter->presentDetails($event));
@@ -127,7 +131,7 @@ class EventController extends AbstractController
     ): JsonResponse {
         try {
             if (!$user) {
-                throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
+                throw new \App\Exception\User\UserNotAuthenticatedException();
             }
 
             $eventDTO = $this->requestValidator->validateAndCreateEventDTO($request);
@@ -173,23 +177,23 @@ class EventController extends AbstractController
     {
         try {
             if (!$user) {
-                throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
+                throw new InsufficientPermissionsException('publish events');
             }
 
             $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
             $event = $envelope->last(HandledStamp::class)->getResult();
             
             if (!$event) {
-                throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
+                throw new EventNotFoundException($id);
             }
 
             // Check ownership
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('You can only publish your own events', Response::HTTP_FORBIDDEN);
+                throw new InsufficientPermissionsException('publish', 'event');
             }
 
             if ($event->getStatus() !== Event::STATUS_DRAFT) {
-                throw new \InvalidArgumentException('Only draft events can be published');
+                throw new EventNotPublishableException($id, 'Only draft events can be published');
             }
 
             $this->commandBus->dispatch(new PublishEventCommand(
@@ -218,19 +222,19 @@ class EventController extends AbstractController
     ): JsonResponse {
         try {
             if (!$user) {
-                throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED);
+                throw new InsufficientPermissionsException('update events');
             }
 
             $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
             $event = $envelope->last(HandledStamp::class)->getResult();
             
             if (!$event) {
-                throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND);
+                throw new EventNotFoundException($id);
             }
 
             // Check ownership
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('You can only edit your own events', Response::HTTP_FORBIDDEN);
+                throw new \App\Exception\Authorization\InsufficientPermissionsException('edit this event');
             }
 
             $eventDTO = $this->requestValidator->validateAndCreateEventDTO($request);
@@ -268,15 +272,15 @@ class EventController extends AbstractController
     public function cancel(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         try {
-            if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
+            if (!$user) { throw new InsufficientPermissionsException('cancel events'); }
 
             $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
             $event = $envelope->last(HandledStamp::class)->getResult();
             
-            if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
+            if (!$event) { throw new EventNotFoundException($id); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('You can only cancel your own events', Response::HTTP_FORBIDDEN);
+                throw new InsufficientPermissionsException('cancel', 'event');
             }
 
             $this->commandBus->dispatch(new CancelEventCommand($id));
@@ -301,15 +305,15 @@ class EventController extends AbstractController
     public function unpublish(string $id, #[CurrentUser] ?User $user): JsonResponse
     {
         try {
-            if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
+            if (!$user) { throw new InsufficientPermissionsException('unpublish events'); }
 
             $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
             $event = $envelope->last(HandledStamp::class)->getResult();
             
-            if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
+            if (!$event) { throw new EventNotFoundException($id); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('You can only unpublish your own events', Response::HTTP_FORBIDDEN);
+                throw new InsufficientPermissionsException('unpublish', 'event');
             }
 
             $this->commandBus->dispatch(new UnpublishEventCommand($id, $user->getId()->toString()));
@@ -342,10 +346,10 @@ class EventController extends AbstractController
             $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
             $event = $envelope->last(HandledStamp::class)->getResult();
             
-            if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
+            if (!$event) { throw new \App\Exception\Event\EventNotFoundException($request->get('id')); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('You can only view statistics for your own events', Response::HTTP_FORBIDDEN);
+                throw new \App\Exception\Authorization\InsufficientPermissionsException('view statistics for this event');
             }
 
             $from = $request->query->get('from');
@@ -372,21 +376,21 @@ class EventController extends AbstractController
         #[CurrentUser] ?User $user
     ): JsonResponse {
         try {
-            if (!$user) { throw new \RuntimeException('User not authenticated', Response::HTTP_UNAUTHORIZED); }
+            if (!$user) { throw new InsufficientPermissionsException('send notifications'); }
 
             $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
             $event = $envelope->last(HandledStamp::class)->getResult();
             
-            if (!$event) { throw new \InvalidArgumentException('Event not found', Response::HTTP_NOT_FOUND); }
+            if (!$event) { throw new EventNotFoundException($id); }
 
             if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                throw new \RuntimeException('You can only send notifications for your own events', Response::HTTP_FORBIDDEN);
+                throw new InsufficientPermissionsException('send notifications', 'event');
             }
 
             $data = json_decode($request->getContent(), true);
 
             if (!isset($data['message'])) {
-                throw new \InvalidArgumentException('Message is required');
+                throw new InvalidRequestDataException('Message is required');
             }
 
             $attendees = $event->getAttendees();

@@ -47,7 +47,7 @@ final readonly class ProcessPaymentHandler
                 ]);
                 return;
             }
-        } catch (\RuntimeException $e) {
+        } catch (\App\Exception\Idempotency\CommandAlreadyProcessingException $e) {
             $this->logger->warning('Payment is being processed concurrently', [
                 'ticket_id' => $command->ticketId,
                 'idempotency_key' => $idempotencyKey
@@ -64,7 +64,7 @@ final readonly class ProcessPaymentHandler
         
         if (!$ticket) {
             $this->idempotencyService->markFailed($idempotencyRecord, 'Ticket not found');
-            throw new \InvalidArgumentException('Ticket not found');
+            throw new \App\Exception\Ticket\TicketNotFoundException($command->ticketId);
         }
 
         // Idempotency check: if ticket already purchased, consider success
@@ -78,7 +78,11 @@ final readonly class ProcessPaymentHandler
 
         if ($ticket->getStatus() !== Ticket::STATUS_RESERVED) {
             $this->idempotencyService->markFailed($idempotencyRecord, 'Ticket is not in reserved status');
-            throw new \InvalidArgumentException('Ticket is not in reserved status');
+            throw new \App\Exception\Ticket\InvalidTicketStatusException(
+                $command->ticketId,
+                Ticket::STATUS_RESERVED,
+                $ticket->getStatus()
+            );
         }
 
         try {

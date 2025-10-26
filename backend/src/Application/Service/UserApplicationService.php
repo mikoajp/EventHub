@@ -5,6 +5,7 @@ namespace App\Application\Service;
 use App\Domain\User\Service\UserDomainService;
 use App\Entity\User;
 use App\DTO\UserRegistrationDTO;
+use App\Exception\Validation\ValidationException;
 use App\Infrastructure\Cache\CacheInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -23,13 +24,11 @@ final readonly class UserApplicationService
     {
         $errors = $this->validator->validate($registrationDTO);
         if (count($errors) > 0) {
-            $errorMessages = [];
+            $violations = [];
             foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
+                $violations[$error->getPropertyPath()] = $error->getMessage();
             }
-            throw new \InvalidArgumentException(
-                json_encode(['errors' => $errorMessages])
-            );
+            throw new ValidationException($violations);
         }
 
         $user = $this->userDomainService->createUser($registrationDTO);

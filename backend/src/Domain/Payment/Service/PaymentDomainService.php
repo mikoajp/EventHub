@@ -3,17 +3,19 @@
 namespace App\Domain\Payment\Service;
 
 use App\DTO\PaymentResultDTO;
+use App\Exception\Payment\InvalidPaymentAmountException;
+use App\Exception\Payment\UnsupportedCurrencyException;
 
 final readonly class PaymentDomainService
 {
     public function validatePaymentAmount(int $amount): void
     {
         if ($amount <= 0) {
-            throw new \DomainException('Payment amount must be greater than zero');
+            throw new InvalidPaymentAmountException($amount, 'Payment amount must be greater than zero');
         }
 
         if ($amount > 1000000) { // $10,000 limit
-            throw new \DomainException('Payment amount exceeds maximum limit');
+            throw new InvalidPaymentAmountException($amount, 'Payment amount exceeds maximum limit');
         }
     }
 
@@ -22,7 +24,7 @@ final readonly class PaymentDomainService
         $allowedCurrencies = ['USD', 'EUR', 'GBP', 'PLN'];
         
         if (!in_array($currency, $allowedCurrencies)) {
-            throw new \DomainException('Unsupported currency: ' . $currency);
+            throw new UnsupportedCurrencyException($currency);
         }
     }
 

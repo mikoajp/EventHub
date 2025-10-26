@@ -109,8 +109,7 @@ class UpdateEventHandlerTest extends TestCase
             ->method('find')
             ->willReturn(null);
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Event not found');
+        $this->expectException(\App\Exception\Event\EventNotFoundException::class);
 
         $eventDTO = new EventDTO(
             'Updated Event',
@@ -142,8 +141,7 @@ class UpdateEventHandlerTest extends TestCase
             ->method('canUserModifyEvent')
             ->willReturn(false);
 
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('User has no permission to modify this event');
+        $this->expectException(\App\Exception\Authorization\InsufficientPermissionsException::class);
 
         $eventDTO = new EventDTO(
             'Updated Event',

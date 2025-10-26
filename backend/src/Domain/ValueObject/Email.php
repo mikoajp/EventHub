@@ -2,6 +2,8 @@
 
 namespace App\Domain\ValueObject;
 
+use App\Exception\Validation\InvalidEmailException;
+
 final class Email
 {
     private string $value;
@@ -15,7 +17,7 @@ final class Email
     {
         $email = trim($email);
         if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw new \InvalidArgumentException('Invalid email');
+            throw new InvalidEmailException($email);
         }
         return new self(strtolower($email));
     }

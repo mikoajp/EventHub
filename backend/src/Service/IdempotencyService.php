@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\IdempotencyKey;
+use App\Exception\Idempotency\CommandAlreadyProcessingException;
 use App\Repository\IdempotencyKeyRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -36,7 +37,7 @@ class IdempotencyService
                 'idempotency_key' => $idempotencyKey,
                 'command_class' => $commandClass
             ]);
-            throw new \RuntimeException('Command is already being processed');
+            throw new CommandAlreadyProcessingException($idempotencyKey, $commandClass);
         }
 
         // If completed, return cached result

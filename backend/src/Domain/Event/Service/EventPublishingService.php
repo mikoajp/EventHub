@@ -4,6 +4,9 @@ namespace App\Domain\Event\Service;
 
 use App\Entity\Event;
 use App\Entity\User;
+use App\Exception\Authorization\InsufficientPermissionsException;
+use App\Exception\Event\EventAlreadyPublishedException;
+use App\Exception\Event\EventNotPublishableException;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -17,15 +20,18 @@ final readonly class EventPublishingService
     public function publishEvent(Event $event, User $publisher): \DateTimeImmutable
     {
         if ($event->getStatus() === Event::STATUS_PUBLISHED) {
-            throw new \InvalidArgumentException('Event is already published');
+            throw new EventAlreadyPublishedException($event->getId()->toString());
         }
 
         if ($event->getStatus() !== Event::STATUS_DRAFT) {
-            throw new \InvalidArgumentException('Only draft events can be published');
+            throw new EventNotPublishableException(
+                $event->getId()->toString(),
+                'Only draft events can be published. Current status: ' . $event->getStatus()
+            );
         }
 
         if (!$this->canUserPublishEvent($event, $publisher)) {
-            throw new \InvalidArgumentException('User has no permission to publish this event');
+            throw new InsufficientPermissionsException('publish this event');
         }
 
         $publishedAt = new \DateTimeImmutable();
@@ -54,7 +60,7 @@ final readonly class EventPublishingService
     public function cancelEvent(Event $event, User $canceller, string $reason): void
     {
         if (!$this->canUserPublishEvent($event, $canceller)) {
-            throw new \InvalidArgumentException('User has no permission to cancel this event');
+            throw new InsufficientPermissionsException('cancel this event');
         }
 
         $event->setStatus(Event::STATUS_CANCELLED);

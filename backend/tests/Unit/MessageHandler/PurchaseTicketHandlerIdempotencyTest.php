@@ -96,9 +96,9 @@ final class PurchaseTicketHandlerIdempotencyTest extends TestCase
         $this->idempotencyService->expects($this->once())
             ->method('checkIdempotency')
             ->with('processing-key-456', PurchaseTicketCommand::class)
-            ->willThrowException(new \RuntimeException('Command is already being processed'));
+            ->willThrowException(new \App\Exception\Idempotency\CommandAlreadyProcessingException('processing-key-456', PurchaseTicketCommand::class));
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(\App\Exception\Idempotency\DuplicateRequestException::class);
         $this->expectExceptionMessage('Duplicate ticket purchase request detected');
 
         ($this->handler)($command);

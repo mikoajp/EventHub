@@ -34,17 +34,17 @@ final readonly class CancelTicketHandler
 
         $ticket = $this->ticketRepository->find(Uuid::fromString($command->ticketId));
         if (!$ticket) {
-            throw new \InvalidArgumentException('Ticket not found');
+            throw new \App\Exception\Ticket\TicketNotFoundException($command->ticketId);
         }
 
         $user = $this->userRepository->find(Uuid::fromString($command->userId));
         if (!$user) {
-            throw new \InvalidArgumentException('User not found');
+            throw new \App\Exception\User\UserNotFoundException($command->userId);
         }
 
         // Check ownership
         if ($ticket->getUser() !== $user) {
-            throw new \InvalidArgumentException('You can only cancel your own tickets');
+            throw new \App\Exception\Authorization\InsufficientPermissionsException('cancel this ticket');
         }
 
         // Cancel the ticket

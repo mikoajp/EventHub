@@ -53,8 +53,7 @@ final class EmailTest extends TestCase
      */
     public function testInvalidEmailThrowsException(string $invalidEmail): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid email');
+        $this->expectException(\App\Exception\Validation\InvalidEmailException::class);
         
         Email::fromString($invalidEmail);
     }
