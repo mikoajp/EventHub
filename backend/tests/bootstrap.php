@@ -15,3 +15,24 @@ if (class_exists(Dotenv::class)) {
         (new Dotenv())->bootEnv($envPath);
     }
 }
+
+// Auto initialize test database schema to avoid "no such table" errors
+try {
+    if (($_ENV['APP_ENV'] ?? 'test') === 'test') {
+        $kernel = new \App\Kernel('test', false);
+        $kernel->boot();
+        $container = $kernel->getContainer();
+        if ($container->has('doctrine')) {
+            $em = $container->get('doctrine')->getManager();
+            $metadata = $em->getMetadataFactory()->getAllMetadata();
+            if (!empty($metadata)) {
+                $tool = new \Doctrine\ORM\Tools\SchemaTool($em);
+                $tool->dropDatabase();
+                $tool->createSchema($metadata);
+            }
+        }
+        $kernel->shutdown();
+    }
+} catch (\Throwable $e) {
+    // swallow on purpose; some suites don't need DB
+}

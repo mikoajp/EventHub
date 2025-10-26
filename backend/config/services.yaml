@@ -35,12 +35,6 @@ services:
         alias: App\Infrastructure\Cache\RedisCacheAdapter
 
     # Mercure Real-time Messaging
-    App\Infrastructure\Messaging\MessageBusInterface:
-        class: App\Infrastructure\Messaging\MercureMessageBus
-        arguments:
-            $hub: '@mercure.hub.default'
-            $logger: '@logger'
-
     App\Infrastructure\Cache\RedisCacheAdapter:
         arguments:
             $redisUrl: '%env(REDIS_URL)%'
