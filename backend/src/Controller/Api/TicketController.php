@@ -31,100 +31,74 @@ class TicketController extends AbstractController
     #[Route('/availability', name: 'api_tickets_availability', methods: ['GET'])]
     public function getAvailability(Request $request): JsonResponse
     {
-        try {
-            $eventId = $request->query->get('eventId');
-            $ticketTypeId = $request->query->get('ticketTypeId');
-            $quantity = (int) $request->query->get('quantity', 1);
+        $eventId = $request->query->get('eventId');
+        $ticketTypeId = $request->query->get('ticketTypeId');
+        $quantity = (int) $request->query->get('quantity', 1);
 
-            $violations = [];
-            if (!$eventId) { $violations['eventId'] = 'eventId is required'; }
-            if (!$ticketTypeId) { $violations['ticketTypeId'] = 'ticketTypeId is required'; }
-            if ($quantity < 1 || $quantity > 10) { $violations['quantity'] = 'quantity must be between 1 and 10'; }
-            if ($violations) { throw new \App\Exception\Validation\ValidationException($violations); }
+        $violations = [];
+        if (!$eventId) { $violations['eventId'] = 'eventId is required'; }
+        if (!$ticketTypeId) { $violations['ticketTypeId'] = 'ticketTypeId is required'; }
+        if ($quantity < 1 || $quantity > 10) { $violations['quantity'] = 'quantity must be between 1 and 10'; }
+        if ($violations) { throw new \App\Exception\Validation\ValidationException($violations); }
 
-            $envelope = $this->queryBus->dispatch(new CheckTicketAvailabilityQuery($eventId, $ticketTypeId, $quantity));
-            $availability = $envelope->last(HandledStamp::class)->getResult();
-            
-            return $this->json($this->ticketPresenter->presentAvailability($availability));
-        } catch (\Exception $e) {
-            throw $e;
-        }
+        $envelope = $this->queryBus->dispatch(new CheckTicketAvailabilityQuery($eventId, $ticketTypeId, $quantity));
+        $availability = $envelope->last(HandledStamp::class)->getResult();
+        
+        return $this->json($this->ticketPresenter->presentAvailability($availability));
     }
 
     #[Route('/purchase', name: 'api_tickets_purchase', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function purchase(Request $request, #[CurrentUser] ?User $user): JsonResponse
+    public function purchase(Request $request, #[CurrentUser] User $user): JsonResponse
     {
-        try {
-            if (!$user) {
-                return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
-            }
-            $data = json_decode($request->getContent(), true) ?? [];
-            $eventId = $data['eventId'] ?? null;
-            $ticketTypeId = $data['ticketTypeId'] ?? null;
-            if (!$eventId || !$ticketTypeId) {
-                return $this->json(['error' => 'eventId and ticketTypeId are required'], Response::HTTP_BAD_REQUEST);
-            }
-            // Prefer header X-Idempotency-Key, then payload, else fallback
-            $idempotencyKey = $request->headers->get('X-Idempotency-Key') ?? ($data['idempotencyKey'] ?? uniqid('ticket_purchase_', true));
-            $paymentMethodId = $data['paymentMethodId'] ?? 'pm_test_card';
-            $quantity = $data['quantity'] ?? 1;
-
-            $envelope = $this->commandBus->dispatch(new PurchaseTicketCommand(
-                $eventId,
-                $ticketTypeId,
-                (int) $quantity,
-                $user->getId()->toString(),
-                $paymentMethodId,
-                $idempotencyKey
-            ));
-            $ticketIds = $envelope->last(HandledStamp::class)->getResult();
-            
-            $result = [
-                'ticket_ids' => $ticketIds,
-                'status' => 'reserved',
-                'message' => 'Ticket purchase initiated'
-            ];
-            
-            return $this->json($this->ticketPresenter->presentPurchase($result), Response::HTTP_CREATED);
-        } catch (\Exception $e) {
-            throw $e;
+        $data = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \App\Exception\Validation\ValidationException(['json' => 'Invalid JSON']);
         }
+        $eventId = $data['eventId'] ?? null;
+        $ticketTypeId = $data['ticketTypeId'] ?? null;
+        if (!$eventId || !$ticketTypeId) {
+            throw new \App\Exception\Validation\ValidationException(['eventId' => 'required', 'ticketTypeId' => 'required']);
+        }
+        $idempotencyKey = $request->headers->get('X-Idempotency-Key') ?? ($data['idempotencyKey'] ?? throw new \App\Exception\Validation\ValidationException(['idempotencyKey' => 'X-Idempotency-Key header required']));
+        $paymentMethodId = $data['paymentMethodId'] ?? 'pm_test_card';
+        $quantity = (int) ($data['quantity'] ?? 1);
+
+        $envelope = $this->commandBus->dispatch(new PurchaseTicketCommand(
+            $eventId,
+            $ticketTypeId,
+            $quantity,
+            $user->getId()->toString(),
+            $paymentMethodId,
+            $idempotencyKey
+        ));
+        $ticketIds = $envelope->last(HandledStamp::class)->getResult();
+        
+        return $this->json($this->ticketPresenter->presentPurchase(['ticket_ids' => $ticketIds]), Response::HTTP_CREATED);
     }
 
     #[Route('/my', name: 'api_tickets_my', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function my(#[CurrentUser] ?User $user): JsonResponse
+    public function my(#[CurrentUser] User $user): JsonResponse
     {
-        try {
-            if (!$user) {
-                return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
-            }
-            $envelope = $this->queryBus->dispatch(new GetUserTicketsQuery($user->getId()->toString()));
-            $tickets = $envelope->last(HandledStamp::class)->getResult();
-            
-            return $this->json($this->ticketPresenter->presentUserTickets($tickets));
-        } catch (\Exception $e) {
-            throw $e;
-        }
+        $envelope = $this->queryBus->dispatch(new GetUserTicketsQuery($user->getId()->toString()));
+        $tickets = $envelope->last(HandledStamp::class)->getResult();
+        
+        return $this->json($this->ticketPresenter->presentUserTickets($tickets));
     }
 
     #[Route('/{id}/cancel', name: 'api_tickets_cancel', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function cancel(string $id, Request $request, #[CurrentUser] ?User $user): JsonResponse
+    public function cancel(string $id, Request $request, #[CurrentUser] User $user): JsonResponse
     {
-        try {
-            if (!$user) {
-                return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
-            }
-            $data = json_decode($request->getContent(), true) ?? [];
-            $reason = $data['reason'] ?? null;
-            
-            $this->commandBus->dispatch(new CancelTicketCommand($id, $user->getId()->toString(), $reason));
-            
-            return $this->json($this->ticketPresenter->presentCancel());
-        } catch (\Exception $e) {
-            throw $e;
+        $data = json_decode($request->getContent(), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new \App\Exception\Validation\ValidationException(['json' => 'Invalid JSON']);
         }
+        $reason = $data['reason'] ?? null;
+        
+        $this->commandBus->dispatch(new CancelTicketCommand($id, $user->getId()->toString(), $reason));
+        
+        return $this->json($this->ticketPresenter->presentCancel());
     }
 }
