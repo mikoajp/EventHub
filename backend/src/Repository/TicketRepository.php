@@ -152,7 +152,11 @@ class TicketRepository extends ServiceEntityRepository
     {
         return $this->createQueryBuilder('t')
             ->join('t.user', 'u')
+            ->addSelect('u')
             ->join('t.event', 'e')
+            ->addSelect('e')
+            ->join('t.ticketType', 'tt')
+            ->addSelect('tt')
             ->where('u.id = :user_id')
             ->andWhere('e.id = :event_id')
             ->andWhere('t.status IN (:valid_statuses)')
