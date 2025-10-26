@@ -33,10 +33,10 @@ jobs:
         run: cd backend && composer validate --no-check-publish
 
       - name: Run PHPUnit (Unit Tests)
-        run: cd backend && vendor/bin/phpunit tests/Unit --testdox
+        run: cd backend && SYMFONY_DEPRECATIONS_HELPER=weak vendor/bin/phpunit tests/Unit --testdox
         
       - name: Test Summary
-        run: cd backend && vendor/bin/phpunit tests/Unit --no-coverage
+        run: cd backend && SYMFONY_DEPRECATIONS_HELPER=weak vendor/bin/phpunit tests/Unit --no-coverage
 
       - name: Run PHPStan
         run: cd backend && composer require --no-interaction --no-progress --dev -W phpstan/phpstan:^1.11 && vendor/bin/phpstan analyse -c phpstan.neon
