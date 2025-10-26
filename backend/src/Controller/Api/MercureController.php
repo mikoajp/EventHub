@@ -27,20 +27,22 @@ class MercureController extends AbstractController
             
             if ($user) {
                 // Add private user-specific topics
-                $topics[] = "notifications/user/{$user->getId()->toString()}";
+                $topics[] = "notifications/user/" . (string) $user->getId();
                 $topics[] = 'events'; // Authenticated users can see event updates
             }
 
-            // Generate JWT token for Mercure subscription
-            $token = $authorization->createCookie(
+            // Generate JWT cookie and expose token string
+            $cookie = $authorization->createCookie(
                 subscribes: $topics,
                 publishes: [] // Users cannot publish, only subscribe
             );
 
             return $this->json([
-                'token' => $token->getValue(),
+                'token' => $cookie->getValue(),
+                'cookie' => (string) $cookie,
+                'cookie_name' => $cookie->getName(),
                 'topics' => $topics,
-                'mercure_url' => $_ENV['MERCURE_PUBLIC_URL'] ?? 'http://localhost:3000/.well-known/mercure'
+                'mercure_url' => $_ENV['MERCURE_PUBLIC_URL'] ?? 'http://localhost/.well-known/mercure'
             ]);
         } catch (\Exception $e) {
             return $this->json([
