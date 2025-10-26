@@ -13,6 +13,11 @@ abstract class BaseTestCase extends KernelTestCase
 {
     protected ?EntityManagerInterface $entityManager = null;
 
+    protected static function getKernelClass(): string
+    {
+        return \App\Kernel::class;
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

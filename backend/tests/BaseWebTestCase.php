@@ -16,6 +16,11 @@ abstract class BaseWebTestCase extends WebTestCase
     protected ?KernelBrowser $client = null;
     protected ?EntityManagerInterface $entityManager = null;
 
+    protected static function getKernelClass(): string
+    {
+        return \App\Kernel::class;
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

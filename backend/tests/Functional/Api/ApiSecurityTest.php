@@ -2,17 +2,17 @@
 
 namespace App\Tests\Functional\Api;
 
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\BaseWebTestCase;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Test API security: authentication, authorization, serialization groups, field leakage
  */
-final class ApiSecurityTest extends WebTestCase
+final class ApiSecurityTest extends BaseWebTestCase
 {
     public function testUnauthenticatedAccessIsBlocked(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         // Try to access protected endpoints without token
         $client->request('GET', '/api/tickets/my-tickets');
@@ -24,7 +24,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testPublicEndpointsAreAccessible(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         // Public endpoints should be accessible
         $client->request('GET', '/api/events');
@@ -36,7 +36,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testInvalidJwtIsRejected(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         $client->request('GET', '/api/tickets/my-tickets', [], [], [
             'HTTP_AUTHORIZATION' => 'Bearer invalid_token_12345'
@@ -47,7 +47,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testUserCanOnlyAccessOwnTickets(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         // This would require actual JWT authentication setup
         // For now, testing the endpoint structure
@@ -63,7 +63,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testSensitiveFieldsNotExposed(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         // Test that user passwords and other sensitive fields are not exposed
         $client->request('POST', '/api/auth/register', [], [], [
@@ -89,7 +89,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testRateLimitingOnAuthEndpoints(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         // Attempt multiple failed login attempts
         $attempts = 0;
@@ -118,7 +118,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testCsrfProtectionOnStatefulEndpoints(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         // Test CSRF protection if applicable
         // Most REST APIs use token auth instead of CSRF
@@ -127,7 +127,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testInputValidationRejectsInvalidData(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         // Test invalid email format
         $client->request('POST', '/api/auth/register', [], [], [
@@ -143,7 +143,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testNegativeQuantitiesAreRejected(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -159,7 +159,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testExcessiveQuantitiesAreRejected(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -175,7 +175,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testMalformedJsonIsRejected(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -186,7 +186,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testSqlInjectionPrevention(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         // Attempt SQL injection in search/filter parameters
         $client->request('GET', "/api/events", [
@@ -199,7 +199,7 @@ final class ApiSecurityTest extends WebTestCase
 
     public function testXssPreventionInResponses(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
 
         // API responses should be JSON, not HTML, preventing XSS
         $client->request('GET', '/api/events');
