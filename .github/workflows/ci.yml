@@ -40,12 +40,11 @@ jobs:
 
 
 
-      - name: Install dependencies
-        run: cd backend && composer install --no-interaction --no-progress --prefer-dist
-
-
       - name: Validate composer.json
         run: cd backend && composer validate --no-check-publish
+
+      - name: Install dependencies
+        run: cd backend && composer install --no-interaction --no-progress --prefer-dist
 
       - name: Prepare test database
         run: |
