@@ -303,9 +303,12 @@ class EventRepository extends ServiceEntityRepository
     public function findPublishedEvents(): array
     {
         return $this->createQueryBuilder('e')
+            ->leftJoin('e.organizer', 'o')->addSelect('o')
+            ->leftJoin('e.ticketTypes', 'tt')->addSelect('tt')
             ->where('e.status = :status')
             ->setParameter('status', Event::STATUS_PUBLISHED)
             ->orderBy('e.eventDate', 'ASC')
+            ->distinct()
             ->getQuery()
             ->getResult();
     }
@@ -322,10 +325,8 @@ class EventRepository extends ServiceEntityRepository
     public function findEventsWithFilters(array $filters = [], array $sorting = [], int $page = 1, int $limit = 20): array
     {
         $qb = $this->createQueryBuilder('e')
-            ->leftJoin('e.organizer', 'o')
-            ->addSelect('o')
-            ->leftJoin('e.ticketTypes', 'tt')
-            ->addSelect('tt');
+            ->leftJoin('e.organizer', 'o')->addSelect('o')
+            ->leftJoin('e.ticketTypes', 'tt')->addSelect('tt');
 
         // Apply filters
         if (!empty($filters['search'])) {
