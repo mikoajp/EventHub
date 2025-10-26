@@ -16,6 +16,12 @@ if (class_exists(Dotenv::class)) {
     }
 }
 
+// Force a persistent sqlite DB for test to keep schema across multiple kernels
+if (($_ENV['APP_ENV'] ?? 'test') === 'test' && empty($_ENV['DATABASE_URL'])) {
+    $dbPath = dirname(__DIR__).'/var/test.db';
+    $_ENV['DATABASE_URL'] = $_SERVER['DATABASE_URL'] = 'sqlite:///'.$dbPath;
+}
+
 // Auto initialize test database schema to avoid "no such table" errors
 try {
     if (($_ENV['APP_ENV'] ?? 'test') === 'test') {
