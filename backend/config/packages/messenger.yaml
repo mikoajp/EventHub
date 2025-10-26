@@ -53,7 +53,7 @@ framework:
                     queues:
                         notifications_queue: {}
 
-            # Failed messages storage (keep in Doctrine for reliability)
+            # Failed messages storage (keep in Doctrine for reliability - DLQ)
             failed: 'doctrine://default?queue_name=failed'
 
         routing:
@@ -70,6 +70,11 @@ framework:
             'App\Message\Event\*': notifications
 
         default_bus: command.bus
+        
+        # Configure which exceptions should be retried vs sent to DLQ
+        failure_transport_retry_strategy:
+            max_retries: 0  # Failed messages go directly to DLQ
+        
         buses:
             command.bus:
                 middleware:
