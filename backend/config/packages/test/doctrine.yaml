@@ -2,7 +2,8 @@ doctrine:
     dbal:
         # Use SQLite for fast tests by default
         # Override in .env.test.local for PostgreSQL/MySQL
-        dbname_suffix: '_test%env(default::TEST_TOKEN)%'
+        # dbname_suffix disabled for sqlite tests
+        # dbname_suffix: ''
         
     orm:
         auto_generate_proxy_classes: true
