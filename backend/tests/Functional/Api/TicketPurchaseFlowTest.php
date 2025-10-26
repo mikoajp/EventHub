@@ -149,12 +149,10 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $token1 = $this->generateJwtToken($user1->getEmail(), $user1->getRoles());
         $token2 = $this->generateJwtToken($user2->getEmail(), $user2->getRoles());
 
-        // Both users try to buy the last ticket
-        self::ensureKernelShutdown();
-        $client1 = static::createClient();
-        $client2 = static::createClient(); // ok to create separate clients for concurrency simulation
+        // Both users try to buy the last ticket (sequentially to avoid kernel reboots)
+        $client = $this->client;
 
-        $client1->request('POST', '/api/tickets/purchase', [], [], [
+        $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token1,
         ], json_encode([
@@ -164,9 +162,9 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
             'payment_method_id' => 'pm_test_success'
         ]));
 
-        $response1Status = $client1->getResponse()->getStatusCode();
+        $response1Status = $client->getResponse()->getStatusCode();
 
-        $client2->request('POST', '/api/tickets/purchase', [], [], [
+        $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token2,
         ], json_encode([
@@ -176,7 +174,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
             'payment_method_id' => 'pm_test_success'
         ]));
 
-        $response2Status = $client2->getResponse()->getStatusCode();
+        $response2Status = $client->getResponse()->getStatusCode();
 
         // One should succeed, one should fail
         $successCount = 0;

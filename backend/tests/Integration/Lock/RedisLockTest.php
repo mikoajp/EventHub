@@ -17,7 +17,9 @@ final class RedisLockTest extends KernelTestCase
         $redis = new \Redis();
         $url = getenv('REDIS_URL') ?: '127.0.0.1:6379';
         [$host, $port] = array_pad(explode(':', str_replace('redis://', '', $url)), 2, 6379);
-        if (@$redis->connect($host, (int)$port) === false) {
+        try {
+            $redis->connect($host, (int)$port);
+        } catch (\RedisException $e) {
             $this->markTestSkipped('Redis not available at ' . $host . ':' . $port);
         }
         return $redis;
