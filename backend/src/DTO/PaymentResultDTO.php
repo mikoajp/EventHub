@@ -19,4 +19,9 @@ final readonly class PaymentResultDTO
     {
         return $this->paymentId;
     }
+
+    public function getMessage(): ?string
+    {
+        return $this->message;
+    }
 }

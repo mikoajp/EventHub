@@ -46,7 +46,6 @@ final class PurchaseTicketHandlerIdempotencyTest extends TestCase
         $this->handler = new PurchaseTicketHandler(
             $this->entityManager,
             $this->eventRepository,
-            $this->ticketTypeRepository,
             $this->userRepository,
             $this->availabilityChecker,
             $this->commandBus,

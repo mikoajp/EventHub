@@ -24,7 +24,6 @@ final readonly class ProcessPaymentHandler
         private PaymentService $paymentService,
         private EntityManagerInterface $entityManager,
         private MessageBusInterface $eventBus,
-        private MessageBusInterface $commandBus,
         private IdempotencyService $idempotencyService,
         private LoggerInterface $logger
     ) {}

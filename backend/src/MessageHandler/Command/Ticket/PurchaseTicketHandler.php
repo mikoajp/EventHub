@@ -8,7 +8,6 @@ use App\Message\Command\Payment\ProcessPaymentCommand;
 use App\Message\Command\Ticket\PurchaseTicketCommand;
 use App\Message\Event\TicketReservedEvent;
 use App\Repository\EventRepository;
-use App\Repository\TicketTypeRepository;
 use App\Repository\UserRepository;
 use App\Service\IdempotencyService;
 use Doctrine\DBAL\LockMode;
@@ -24,7 +23,6 @@ final readonly class PurchaseTicketHandler
     public function __construct(
         private EntityManagerInterface $entityManager,
         private EventRepository $eventRepository,
-        private TicketTypeRepository $ticketTypeRepository,
         private UserRepository $userRepository,
         private TicketAvailabilityChecker $availabilityChecker,
         private MessageBusInterface $commandBus,
