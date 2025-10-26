@@ -2,7 +2,6 @@
 
 namespace App\Controller\Api;
 
-use App\Application\Service\TicketApplicationService;
 use App\Entity\User;
 use App\Message\Command\Ticket\CancelTicketCommand;
 use App\Message\Command\Ticket\PurchaseTicketCommand;
@@ -26,8 +25,7 @@ class TicketController extends AbstractController
     public function __construct(
         #[Autowire(service: 'messenger.bus.command')] private readonly MessageBusInterface $commandBus,
         #[Autowire(service: 'messenger.bus.query')] private readonly MessageBusInterface $queryBus,
-        private readonly TicketApplicationService $ticketApplicationService,
-        private readonly TicketPresenter $ticketPresenter,
+        private readonly TicketPresenter $ticketPresenter
     ) {}
 
     #[Route('/availability', name: 'api_tickets_availability', methods: ['GET'])]
@@ -80,9 +78,9 @@ class TicketController extends AbstractController
             $envelope = $this->commandBus->dispatch(new PurchaseTicketCommand(
                 $eventId,
                 $ticketTypeId,
+                (int) $quantity,
                 $user->getId()->toString(),
                 $paymentMethodId,
-                $quantity,
                 $idempotencyKey
             ));
             $ticketIds = $envelope->last(HandledStamp::class)->getResult();

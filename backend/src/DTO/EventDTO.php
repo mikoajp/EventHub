@@ -26,6 +26,8 @@ class EventDTO
     #[Assert\Positive]
     public int $maxTickets;
 
+    public array $ticketTypes = [];
+
     public function __construct(
         string $name,
         string $description,

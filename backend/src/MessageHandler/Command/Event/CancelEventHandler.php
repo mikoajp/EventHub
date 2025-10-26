@@ -6,7 +6,7 @@ namespace App\MessageHandler\Command\Event;
 
 use App\Message\Command\Event\CancelEventCommand;
 use App\Repository\EventRepository;
-use App\Repository\UserRepository;
+
 use App\Domain\Event\Service\EventDomainService;
 use App\Infrastructure\Cache\CacheInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,7 +19,6 @@ final readonly class CancelEventHandler
 {
     public function __construct(
         private EventRepository $eventRepository,
-        private UserRepository $userRepository,
         private EventDomainService $eventDomainService,
         private EntityManagerInterface $entityManager,
         private CacheInterface $cache,

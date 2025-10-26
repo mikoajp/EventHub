@@ -6,6 +6,6 @@ final readonly class CancelEventCommand
 {
     public function __construct(
         public string $eventId,
-        public string $reason
+        public ?string $reason = null
     ) {}
 }
