@@ -22,8 +22,8 @@ jobs:
         run: composer config -g github-oauth.github.com "$GITHUB_TOKEN"
 
 
-      - name: Sync dev tools lock (deptrac, rector)
-        run: cd backend && composer update --no-interaction --no-progress --prefer-dist -W qossmic/deptrac-shim rector/rector
+      - name: Sync dev tools lock (deptrac, rector, lcobucci/clock)
+        run: cd backend && composer update --no-interaction --no-progress --prefer-dist -W qossmic/deptrac-shim rector/rector lcobucci/clock
 
       - name: Install dependencies
         run: cd backend && composer install --no-interaction --no-progress --prefer-dist
