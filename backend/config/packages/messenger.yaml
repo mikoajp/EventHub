@@ -71,10 +71,6 @@ framework:
 
         default_bus: command.bus
         
-        # Configure which exceptions should be retried vs sent to DLQ
-        failure_transport_retry_strategy:
-            max_retries: 0  # Failed messages go directly to DLQ
-        
         buses:
             command.bus:
                 middleware:
