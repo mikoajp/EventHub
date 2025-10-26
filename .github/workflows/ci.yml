@@ -16,6 +16,11 @@ jobs:
           tools: composer
           extensions: mbstring, iconv
 
+      - name: Configure Composer GitHub token
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: composer config -g github-oauth.github.com "$GITHUB_TOKEN"
+
 
       - name: Sync dev tools lock (deptrac, rector)
         run: cd backend && composer update --no-interaction --no-progress --prefer-dist -W qossmic/deptrac-shim rector/rector

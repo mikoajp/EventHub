@@ -1,4 +1,6 @@
 {
+    "name": "eventhub/backend",
+    "description": "EventHub backend application",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
