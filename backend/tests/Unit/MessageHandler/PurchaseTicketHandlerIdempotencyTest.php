@@ -124,7 +124,7 @@ final class PurchaseTicketHandlerIdempotencyTest extends TestCase
         $generatedKey = $command->getIdempotencyKey();
 
         // Key should be deterministic
-        $expectedKey = hash('sha256', implode('|', [
+        $expectedKey = 'srv_' . hash('sha256', implode('|', [
             $eventId,
             $ticketTypeId,
             1,
