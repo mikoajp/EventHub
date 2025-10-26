@@ -63,7 +63,7 @@ abstract class BaseTestCase extends KernelTestCase
 
     private static bool $schemaEnsured = false;
 
-    private static function ensureSchema(\Doctrine\ORM\EntityManagerInterface $em): void
+    public static function ensureSchema(\Doctrine\ORM\EntityManagerInterface $em): void
     {
         if (self::$schemaEnsured) {
             return;

@@ -17,8 +17,8 @@ final readonly class MercureMessageBus implements MessageBusInterface
     {
         try {
             $update = new Update(
-                topics: 'events',
-                data: json_encode([
+                'events',
+                json_encode([
                     'type' => 'event.published',
                     'data' => $eventData
                 ])
@@ -46,13 +46,13 @@ final readonly class MercureMessageBus implements MessageBusInterface
                 : 'notifications';
 
             $update = new Update(
-                topics: $topic,
-                data: json_encode([
+                $topic,
+                json_encode([
                     'type' => 'notification',
                     'data' => $notificationData,
                     'timestamp' => $notificationData['timestamp'] ?? (new \DateTimeImmutable())->format('c')
                 ]),
-                private: $userId !== null // Private if userId is set
+                $userId !== null // Private if userId is set
             );
 
             $this->hub->publish($update);
@@ -73,8 +73,8 @@ final readonly class MercureMessageBus implements MessageBusInterface
     {
         try {
             $update = new Update(
-                topics: $channel,
-                data: json_encode([
+                $channel,
+                json_encode([
                     'type' => $type,
                     'data' => $payload
                 ])
@@ -98,8 +98,8 @@ final readonly class MercureMessageBus implements MessageBusInterface
     {
         try {
             $update = new Update(
-                topics: 'social',
-                data: json_encode([
+                'social',
+                json_encode([
                     'type' => 'social.share',
                     'data' => $socialData
                 ])
