@@ -6,8 +6,8 @@ framework:
         collect: false
     cache:
         # Use array cache for tests (no Redis needed)
-        app: cache.adapter.array
-        system: cache.adapter.array
+        app: cache.adapter.redis
+        system: cache.adapter.redis
     messenger:
         # Use sync transport for tests
         transports:

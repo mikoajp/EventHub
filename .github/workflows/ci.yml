@@ -7,21 +7,50 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:15-alpine
         env:
           POSTGRES_DB: eventhub_test
-          POSTGRES_USER: eventhub
-          POSTGRES_PASSWORD: secret
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
         ports:
-          - 5432:5432
+          - 5433:5432
         options: >-
-          --health-cmd "pg_isready -U eventhub"
+          --health-cmd "pg_isready -U test_user"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: test_user
+          RABBITMQ_DEFAULT_PASS: test_pass
+        ports:
+          - 5673:5672
+          - 15673:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     env:
       APP_ENV: test
-      DATABASE_URL: postgresql://eventhub:secret@localhost:5432/eventhub_test
+      DATABASE_URL: postgresql://test_user:test_pass@localhost:5433/eventhub_test
+      REDIS_URL: redis://localhost:6380
+      RABBITMQ_HOST: localhost
+      RABBITMQ_PORT: 5673
+      RABBITMQ_USER: test_user
+      RABBITMQ_PASSWORD: test_pass
     steps:
       - uses: actions/checkout@v4
 
@@ -31,7 +60,7 @@ jobs:
           php-version: '8.2'
           coverage: none
           tools: composer
-          extensions: mbstring, iconv
+          extensions: mbstring, iconv, redis, amqp
 
       - name: Configure Composer GitHub token
         env:
@@ -46,6 +75,12 @@ jobs:
       - name: Install dependencies
         run: cd backend && composer install --no-interaction --no-progress --prefer-dist
 
+      - name: Wait for services
+        run: |
+          for i in {1..60}; do nc -z localhost 5433 && break; sleep 1; done
+          for i in {1..60}; do nc -z localhost 6380 && break; sleep 1; done
+          for i in {1..60}; do nc -z localhost 5673 && break; sleep 1; done
+      
       - name: Prepare test database
         run: |
           cd backend
