@@ -33,13 +33,18 @@ abstract class BaseWebTestCase extends WebTestCase
         // Ensure DB schema exists once per process
         BaseTestCase::ensureSchema($this->entityManager);
 
-        // Don't use transactions - they prevent API from seeing test data
-        // Tests will clean up by rolling back or using separate test database
+        // Begin transaction for test isolation
+        // Note: Kernel client makes separate DB connections that can see uncommitted data
+        $this->entityManager->beginTransaction();
     }
 
     protected function tearDown(): void
     {
-        // Close entity manager
+        // Rollback transaction to clean up test data
+        if ($this->entityManager && $this->entityManager->getConnection()->isTransactionActive()) {
+            $this->entityManager->rollback();
+        }
+        
         if ($this->entityManager) {
             $this->entityManager->close();
             $this->entityManager = null;
@@ -142,14 +147,18 @@ abstract class BaseWebTestCase extends WebTestCase
 
     /**
      * Persist entity for test
-     * Note: In transactional tests, committed data is visible to API calls
+     * Commits data so it's visible to API requests in separate transactions
      */
     protected function persistAndFlush(object $entity): void
     {
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
         
-        // Clear to ensure fresh reads
-        $this->entityManager->clear();
+        // Commit so API can see the data (will be rolled back in tearDown)
+        if ($this->entityManager->getConnection()->isTransactionActive()) {
+            $this->entityManager->commit();
+            // Start new transaction for next operations
+            $this->entityManager->beginTransaction();
+        }
     }
 }
