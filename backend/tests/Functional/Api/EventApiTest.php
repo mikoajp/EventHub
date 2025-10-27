@@ -40,7 +40,9 @@ final class EventApiTest extends BaseWebTestCase
         // Assert
         $data = $this->assertJsonResponse($response, Response::HTTP_OK);
         
-        $eventNames = array_column($data, 'name');
+        // API returns {events: [...], pagination: {...}}
+        $events = $data['events'] ?? $data;
+        $eventNames = array_column($events, 'name');
         $this->assertContains('Published Event', $eventNames);
         $this->assertNotContains('Draft Event', $eventNames);
     }
@@ -111,7 +113,9 @@ final class EventApiTest extends BaseWebTestCase
         // Assert
         $data = $this->assertJsonResponse($response, Response::HTTP_OK);
         
-        $eventNames = array_column($data, 'name');
+        // API returns {events: [...], pagination: {...}}
+        $events = $data['events'] ?? $data;
+        $eventNames = array_column($events, 'name');
         $this->assertContains('Rock Concert', $eventNames);
         $this->assertNotContains('Jazz Night', $eventNames);
     }

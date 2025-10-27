@@ -53,11 +53,12 @@ final class RedisCacheAdapter implements CacheInterface
             try {
                 if ($redisUrl === 'array://') {
                     $this->cache = new ArrayAdapter();
+                    $this->pool = new TagAwareAdapter($this->cache);
                 } else {
                     $this->redis = RedisAdapter::createConnection($redisUrl);
                     $this->cache = new RedisAdapter($this->redis);
+                    $this->pool = new TagAwareAdapter($this->cache);
                 }
-                $this->pool = new TagAwareAdapter($this->cache);
             } catch (\Exception $e) {
                 // Fallback to in-memory cache for tests when Redis is unavailable
                 $this->cache = new ArrayAdapter();

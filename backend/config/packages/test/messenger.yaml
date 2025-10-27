@@ -3,21 +3,13 @@ framework:
         failure_transport: failed
         transports:
             sync: 'sync://'
-            async:
-                dsn: "%env(RABBITMQ_DSN)%"
-                options:
-                    queues: ["async"]
-            high_priority:
-                dsn: "%env(RABBITMQ_DSN)%"
-                options:
-                    queues: ["high_priority"]
-            notifications:
-                dsn: "%env(RABBITMQ_DSN)%"
-                options:
-                    queues: ["notifications"]
+            async: 'sync://'
+            high_priority: 'sync://'
+            notifications: 'sync://'
             failed: 'doctrine://default?queue_name=failed'
         routing:
-            'App\Message\Command\Payment\*': high_priority
-            'App\Message\Command\*': async
+            # In test environment, route everything synchronously
+            'App\Message\Command\Payment\*': sync
+            'App\Message\Command\*': sync
             'App\Message\Query\*': sync
-            'App\Message\Event\*': notifications
+            'App\Message\Event\*': sync

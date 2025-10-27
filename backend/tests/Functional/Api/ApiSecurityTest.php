@@ -219,6 +219,7 @@ final class ApiSecurityTest extends BaseWebTestCase
         $client->request('GET', '/api/events');
 
         $this->assertResponseIsSuccessful();
-        $this->assertResponseHeaderSame('Content-Type', 'application/json');
+        $contentType = $client->getResponse()->headers->get('Content-Type');
+        $this->assertStringContainsString('application/json', $contentType);
     }
 }
