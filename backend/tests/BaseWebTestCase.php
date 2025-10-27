@@ -33,15 +33,16 @@ abstract class BaseWebTestCase extends WebTestCase
         // Ensure DB schema exists once per process
         BaseTestCase::ensureSchema($this->entityManager);
 
-        // Begin transaction for test isolation
-        $this->entityManager->beginTransaction();
+        // Don't use transactions - they prevent API from seeing test data
+        // Tests will clean up by rolling back or using separate test database
     }
 
     protected function tearDown(): void
     {
-        // Rollback transaction to clean up
-        if ($this->entityManager && $this->entityManager->getConnection()->isTransactionActive()) {
-            $this->entityManager->rollback();
+        // Close entity manager
+        if ($this->entityManager) {
+            $this->entityManager->close();
+            $this->entityManager = null;
         }
 
         $this->client = null;
@@ -65,35 +66,39 @@ abstract class BaseWebTestCase extends WebTestCase
      */
     protected function generateJwtToken(string $email, array $roles = []): string
     {
-        try {
-            $container = static::getContainer();
-            $em = $container->get('doctrine')->getManager();
-            // Ensure schema exists for functional tests too
-            BaseTestCase::ensureSchema($em);
-            $repo = $em->getRepository(\App\Entity\User::class);
-            $user = $repo->findOneBy(['email' => $email]);
-            if (!$user) {
-                $user = (new \App\Entity\User())
-                    ->setEmail($email)
-                    ->setFirstName('Test')
-                    ->setLastName('User')
-                    ->setRoles($roles ?: ['ROLE_USER'])
-                    ->setPassword(password_hash('password', PASSWORD_BCRYPT));
-                $em->persist($user);
-                $em->flush();
-            }
-            if ($container->has('lexik_jwt_authentication.jwt_manager')) {
-                $jwtManager = $container->get('lexik_jwt_authentication.jwt_manager');
-                return $jwtManager->create($user);
-            }
-        } catch (\Throwable $e) {
-            // fall through to simple token
+        $container = static::getContainer();
+        $em = $container->get('doctrine')->getManager();
+        
+        // Ensure schema exists for functional tests
+        BaseTestCase::ensureSchema($em);
+        
+        $repo = $em->getRepository(\App\Entity\User::class);
+        $user = $repo->findOneBy(['email' => $email]);
+        
+        if (!$user) {
+            // Create user with properly hashed password
+            $passwordHasher = $container->get('security.password_hasher');
+            $user = new \App\Entity\User();
+            $user->setEmail($email)
+                ->setFirstName('Test')
+                ->setLastName('User')
+                ->setRoles($roles ?: ['ROLE_USER']);
+            
+            // Use Symfony password hasher
+            $hashedPassword = $passwordHasher->hashPassword($user, 'password');
+            $user->setPassword($hashedPassword);
+            
+            $em->persist($user);
+            $em->flush();
         }
-        return base64_encode(json_encode([
-            'email' => $email,
-            'roles' => $roles ?: ['ROLE_USER'],
-            'exp' => time() + 3600
-        ]));
+        
+        // Always try to use real JWT manager
+        if (!$container->has('lexik_jwt_authentication.jwt_manager')) {
+            throw new \RuntimeException('JWT Manager not available in test environment');
+        }
+        
+        $jwtManager = $container->get('lexik_jwt_authentication.jwt_manager');
+        return $jwtManager->create($user);
     }
 
     /**
@@ -137,10 +142,14 @@ abstract class BaseWebTestCase extends WebTestCase
 
     /**
      * Persist entity for test
+     * Note: In transactional tests, committed data is visible to API calls
      */
     protected function persistAndFlush(object $entity): void
     {
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
+        
+        // Clear to ensure fresh reads
+        $this->entityManager->clear();
     }
 }
