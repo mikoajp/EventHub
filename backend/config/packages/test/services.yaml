@@ -1,5 +1,5 @@
 services:
     App\Infrastructure\Cache\RedisCacheAdapter:
         arguments:
-            $redisUrl: '%env(REDIS_URL)%'
-            $cacheEnabled: true
+            $redisUrl: 'array://'
+            $cacheEnabled: false

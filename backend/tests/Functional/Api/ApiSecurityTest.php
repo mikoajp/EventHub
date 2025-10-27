@@ -71,7 +71,8 @@ final class ApiSecurityTest extends BaseWebTestCase
         ], json_encode([
             'email' => 'security-test@test.com',
             'password' => 'TestPassword123!',
-            'name' => 'Security Tester'
+            'firstName' => 'Security',
+            'lastName' => 'Tester'
         ]));
 
         if ($client->getResponse()->isSuccessful()) {
@@ -135,7 +136,8 @@ final class ApiSecurityTest extends BaseWebTestCase
         ], json_encode([
             'email' => 'not-an-email',
             'password' => 'pass',
-            'name' => ''
+            'firstName' => '',
+            'lastName' => ''
         ]));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -148,10 +150,11 @@ final class ApiSecurityTest extends BaseWebTestCase
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
-            'event_id' => 'some-uuid',
-            'ticket_type_id' => 'some-uuid',
+            'eventId' => 'some-uuid',
+            'ticketTypeId' => 'some-uuid',
             'quantity' => -1, // Negative quantity
-            'payment_method_id' => 'pm_test'
+            'paymentMethodId' => 'pm_test',
+            'idempotencyKey' => 'test-negative-' . uniqid()
         ]));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -164,10 +167,11 @@ final class ApiSecurityTest extends BaseWebTestCase
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
         ], json_encode([
-            'event_id' => 'some-uuid',
-            'ticket_type_id' => 'some-uuid',
+            'eventId' => 'some-uuid',
+            'ticketTypeId' => 'some-uuid',
             'quantity' => 1000, // Excessive quantity
-            'payment_method_id' => 'pm_test'
+            'paymentMethodId' => 'pm_test',
+            'idempotencyKey' => 'test-excessive-' . uniqid()
         ]));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
@@ -177,8 +181,12 @@ final class ApiSecurityTest extends BaseWebTestCase
     {
         $client = $this->client;
 
+        // Create authenticated user for this test
+        $this->createAuthenticatedClient('malformed-test@test.com');
+
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
+            'HTTP_AUTHORIZATION' => 'Bearer ' . $this->generateJwtToken('malformed-test@test.com'),
         ], '{invalid json here}');
 
         $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);

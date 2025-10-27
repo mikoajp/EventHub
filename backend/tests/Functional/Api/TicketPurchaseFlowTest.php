@@ -31,7 +31,8 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         ], json_encode([
             'email' => 'buyer@test.com',
             'password' => 'SecurePass123!',
-            'name' => 'Test Buyer'
+            'firstName' => 'Test',
+            'lastName' => 'Buyer'
         ]));
 
         $this->assertResponseStatusCodeSame(Response::HTTP_CREATED);
@@ -69,10 +70,10 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
         ], json_encode([
-            'event_id' => $event->getId()->toString(),
-            'ticket_type_id' => $ticketType->getId()->toString(),
+            'eventId' => $event->getId()->toString(),
+            'ticketTypeId' => $ticketType->getId()->toString(),
             'quantity' => 2,
-            'payment_method_id' => 'pm_test_success'
+            'paymentMethodId' => 'pm_test_success'
         ]));
 
         $this->assertResponseIsSuccessful();
@@ -101,10 +102,10 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
             'HTTP_X_IDEMPOTENCY_KEY' => $idempotencyKey,
         ], json_encode([
-            'event_id' => $event->getId()->toString(),
-            'ticket_type_id' => $ticketType->getId()->toString(),
+            'eventId' => $event->getId()->toString(),
+            'ticketTypeId' => $ticketType->getId()->toString(),
             'quantity' => 1,
-            'payment_method_id' => 'pm_test_success'
+            'paymentMethodId' => 'pm_test_success'
         ]));
 
         $this->assertResponseIsSuccessful();
@@ -116,10 +117,10 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
             'HTTP_X_IDEMPOTENCY_KEY' => $idempotencyKey,
         ], json_encode([
-            'event_id' => $event->getId()->toString(),
-            'ticket_type_id' => $ticketType->getId()->toString(),
+            'eventId' => $event->getId()->toString(),
+            'ticketTypeId' => $ticketType->getId()->toString(),
             'quantity' => 1,
-            'payment_method_id' => 'pm_test_success'
+            'paymentMethodId' => 'pm_test_success'
         ]));
 
         $this->assertResponseIsSuccessful();
@@ -156,10 +157,11 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token1,
         ], json_encode([
-            'event_id' => $event->getId()->toString(),
-            'ticket_type_id' => $ticketType->getId()->toString(),
+            'eventId' => $event->getId()->toString(),
+            'ticketTypeId' => $ticketType->getId()->toString(),
             'quantity' => 1,
-            'payment_method_id' => 'pm_test_success'
+            'paymentMethodId' => 'pm_test_success',
+            'idempotencyKey' => 'test-concurrent-1-' . uniqid()
         ]));
 
         $response1Status = $client->getResponse()->getStatusCode();
@@ -168,10 +170,11 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token2,
         ], json_encode([
-            'event_id' => $event->getId()->toString(),
-            'ticket_type_id' => $ticketType->getId()->toString(),
+            'eventId' => $event->getId()->toString(),
+            'ticketTypeId' => $ticketType->getId()->toString(),
             'quantity' => 1,
-            'payment_method_id' => 'pm_test_success'
+            'paymentMethodId' => 'pm_test_success',
+            'idempotencyKey' => 'test-concurrent-2-' . uniqid()
         ]));
 
         $response2Status = $client->getResponse()->getStatusCode();
@@ -212,10 +215,11 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
         ], json_encode([
-            'event_id' => $event->getId()->toString(),
-            'ticket_type_id' => $ticketType->getId()->toString(),
+            'eventId' => $event->getId()->toString(),
+            'ticketTypeId' => $ticketType->getId()->toString(),
             'quantity' => 1,
-            'payment_method_id' => 'pm_test_fail' // This should fail
+            'paymentMethodId' => 'pm_test_fail', // This should fail
+            'idempotencyKey' => 'test-payment-fail-' . uniqid()
         ]));
 
         // Should handle payment failure gracefully
