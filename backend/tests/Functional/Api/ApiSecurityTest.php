@@ -145,10 +145,13 @@ final class ApiSecurityTest extends BaseWebTestCase
 
     public function testNegativeQuantitiesAreRejected(): void
     {
+        // Create authenticated user for this test
+        $this->createAuthenticatedClient('negative-test@test.com');
         $client = $this->client;
 
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
+            'HTTP_AUTHORIZATION' => 'Bearer ' . $this->generateJwtToken('negative-test@test.com'),
         ], json_encode([
             'eventId' => 'some-uuid',
             'ticketTypeId' => 'some-uuid',
@@ -162,10 +165,13 @@ final class ApiSecurityTest extends BaseWebTestCase
 
     public function testExcessiveQuantitiesAreRejected(): void
     {
+        // Create authenticated user for this test
+        $this->createAuthenticatedClient('excessive-test@test.com');
         $client = $this->client;
 
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
+            'HTTP_AUTHORIZATION' => 'Bearer ' . $this->generateJwtToken('excessive-test@test.com'),
         ], json_encode([
             'eventId' => 'some-uuid',
             'ticketTypeId' => 'some-uuid',

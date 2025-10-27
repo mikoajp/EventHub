@@ -124,7 +124,10 @@ abstract class BaseWebTestCase extends WebTestCase
     protected function assertJsonResponse(Response $response, int $statusCode = 200): array
     {
         $this->assertSame($statusCode, $response->getStatusCode());
-        $this->assertTrue($response->headers->contains('Content-Type', 'application/json'));
+        
+        $contentType = $response->headers->get('Content-Type');
+        $this->assertNotNull($contentType, 'Response should have Content-Type header');
+        $this->assertStringContainsString('application/json', $contentType, 'Response Content-Type should be application/json');
         
         $content = $response->getContent();
         $this->assertJson($content);

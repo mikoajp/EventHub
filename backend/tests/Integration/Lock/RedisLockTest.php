@@ -30,12 +30,14 @@ final class RedisLockTest extends KernelTestCase
         $redis = $this->getRedis();
         $store = new RedisStore($redis);
         $factory = new LockFactory($store);
-        $key = new Key('idem:test:resource');
+        
+        // Use a unique resource name for this test to avoid conflicts
+        $resourceName = 'test:lock:resource:' . uniqid();
 
-        $lock1 = $factory->createLockFromKey($key, 5.0, false);
+        $lock1 = $factory->createLock($resourceName, 5.0, false);
         $this->assertTrue($lock1->acquire());
 
-        $lock2 = $factory->createLockFromKey($key, 5.0, false);
+        $lock2 = $factory->createLock($resourceName, 5.0, false);
         $this->assertFalse($lock2->acquire(false), 'Second lock should not acquire immediately');
 
         $lock1->release();

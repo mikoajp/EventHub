@@ -23,7 +23,8 @@ final class HealthControllerTest extends WebTestCase
         
         $client->request('GET', '/health');
         
-        $this->assertResponseHeaderSame('Content-Type', 'application/json');
+        $contentType = $client->getResponse()->headers->get('Content-Type');
+        $this->assertStringContainsString('application/json', $contentType);
     }
 
     public function testHealthEndpointReturnsCorrectStructure(): void

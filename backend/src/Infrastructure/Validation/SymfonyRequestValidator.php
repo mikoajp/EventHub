@@ -64,7 +64,7 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
     public function hasValidJson(Request $request): bool
     {
         $content = $request->getContent();
-        if (empty($content)) {
+        if ($content === '' || $content === null) {
             return false;
         }
 

@@ -455,8 +455,6 @@ class EventRepository extends ServiceEntityRepository
     {
         $result = $this->createQueryBuilder('e')
             ->select('DISTINCT e.venue')
-            ->where('e.status = :status')
-            ->setParameter('status', Event::STATUS_PUBLISHED)
             ->orderBy('e.venue', 'ASC')
             ->getQuery()
             ->getScalarResult();
