@@ -4,15 +4,15 @@ framework:
         transports:
             sync: 'sync://'
             async:
-                dsn: "%env(default:sync://:string:RABBITMQ_DSN)%"
+                dsn: "%env(RABBITMQ_DSN)%"
                 options:
                     queues: ["async"]
             high_priority:
-                dsn: "%env(default:sync://:string:RABBITMQ_DSN)%"
+                dsn: "%env(RABBITMQ_DSN)%"
                 options:
                     queues: ["high_priority"]
             notifications:
-                dsn: "%env(default:sync://:string:RABBITMQ_DSN)%"
+                dsn: "%env(RABBITMQ_DSN)%"
                 options:
                     queues: ["notifications"]
             failed: 'doctrine://default?queue_name=failed'
