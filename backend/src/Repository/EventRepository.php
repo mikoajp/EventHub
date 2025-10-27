@@ -225,8 +225,19 @@ class EventRepository extends ServiceEntityRepository
      */
     public function getDailyStatistics(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
     {
+        // Use platform-agnostic date extraction via Doctrine
+        $platform = $this->getEntityManager()->getConnection()->getDatabasePlatform()->getName();
+        
+        // Different SQL for different platforms
+        if ($platform === 'postgresql') {
+            $dateFunction = "DATE(t.purchased_at)";
+        } else {
+            // For SQLite and others, use DATE function or substring
+            $dateFunction = "DATE(t.purchased_at)";
+        }
+        
         $sql = "
-            SELECT DATE(t.purchased_at) as date, COUNT(t.id) as tickets, SUM(t.price) as revenue
+            SELECT {$dateFunction} as date, COUNT(t.id) as tickets, SUM(t.price) as revenue
             FROM ticket t
             WHERE t.event_id = :event_id 
             AND t.status = :status
@@ -248,7 +259,7 @@ class EventRepository extends ServiceEntityRepository
             $params['to'] = $to->format('Y-m-d H:i:s');
         }
 
-        $sql .= " GROUP BY DATE(t.purchased_at) ORDER BY DATE(t.purchased_at) ASC";
+        $sql .= " GROUP BY {$dateFunction} ORDER BY {$dateFunction} ASC";
 
         $connection = $this->getEntityManager()->getConnection();
         $result = $connection->executeQuery($sql, $params);

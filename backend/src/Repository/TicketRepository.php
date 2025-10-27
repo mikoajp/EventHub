@@ -75,31 +75,42 @@ class TicketRepository extends ServiceEntityRepository
         ?\DateTimeImmutable $from = null,
         ?\DateTimeImmutable $to = null
     ): array {
-        $qb = $this->createQueryBuilder('t')
-            ->select([
-                "DATE(t.purchasedAt) as sale_date",
-                "COUNT(t.id) as daily_sales",
-                "SUM(t.price) as daily_revenue"
-            ])
-            ->where('t.event = :event')
-            ->andWhere('t.status = :status')
-            ->andWhere('t.purchasedAt IS NOT NULL')
-            ->setParameter('event', $event)
-            ->setParameter('status', Ticket::STATUS_PURCHASED)
-            ->groupBy('sale_date')
-            ->orderBy('sale_date', 'ASC');
-
+        // Use native SQL for DATE function compatibility
+        $conn = $this->getEntityManager()->getConnection();
+        $platform = $conn->getDatabasePlatform()->getName();
+        
+        // Platform-specific date function
+        $dateFunc = ($platform === 'postgresql') ? 'DATE(t.purchased_at)' : 'DATE(t.purchased_at)';
+        
+        $sql = "
+            SELECT {$dateFunc} as sale_date,
+                   COUNT(t.id) as daily_sales,
+                   SUM(t.price) as daily_revenue
+            FROM ticket t
+            WHERE t.event_id = :event_id
+              AND t.status = :status
+              AND t.purchased_at IS NOT NULL
+        ";
+        
+        $params = [
+            'event_id' => $event->getId()->toString(),
+            'status' => Ticket::STATUS_PURCHASED
+        ];
+        
         if ($from) {
-            $qb->andWhere('t.purchasedAt >= :from')
-               ->setParameter('from', $from);
+            $sql .= " AND t.purchased_at >= :from";
+            $params['from'] = $from->format('Y-m-d H:i:s');
         }
 
         if ($to) {
-            $qb->andWhere('t.purchasedAt <= :to')
-               ->setParameter('to', $to);
+            $sql .= " AND t.purchased_at <= :to";
+            $params['to'] = $to->format('Y-m-d H:i:s');
         }
-
-        return $qb->getQuery()->getResult();
+        
+        $sql .= " GROUP BY {$dateFunc} ORDER BY {$dateFunc} ASC";
+        
+        $result = $conn->executeQuery($sql, $params);
+        return $result->fetchAllAssociative();
     }
 
     public function getTotalRevenue(Event $event): int
