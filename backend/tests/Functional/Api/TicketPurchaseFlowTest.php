@@ -27,8 +27,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
 
         // Create user and get token directly (login via API has issues)
         $email = 'buyer-' . uniqid() . '@test.com';
-        $user = $this->createUser($email);
-        $token = $this->generateJwtToken($email, $user->getRoles());
+        $token = $this->generateJwtToken($email, ['ROLE_USER']);
 
         // Step 3: Create event (as organizer)
         $organizer = $this->createOrganizer();
@@ -67,8 +66,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $client = $this->client;
 
         $email = 'buyer2-' . uniqid() . '@test.com';
-        $user = $this->createUser($email);
-        $token = $this->generateJwtToken($email, $user->getRoles());
+        $token = $this->generateJwtToken($email, ['ROLE_USER']);
 
         $organizer = $this->createOrganizer();
         $event = $this->createPublishedEvent($organizer);
@@ -110,6 +108,9 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $this->assertSame($firstResponse, $secondResponse);
 
         // Verify only one ticket was created
+        $userRepo = $this->entityManager->getRepository(User::class);
+        $user = $userRepo->findOneBy(['email' => $email]);
+        
         $tickets = $this->entityManager->getRepository(Ticket::class)->findBy([
             'user' => $user,
             'event' => $event
@@ -126,11 +127,9 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
 
         $email1 = 'concurrent1-' . uniqid() . '@test.com';
         $email2 = 'concurrent2-' . uniqid() . '@test.com';
-        $user1 = $this->createUser($email1);
-        $user2 = $this->createUser($email2);
 
-        $token1 = $this->generateJwtToken($email1, $user1->getRoles());
-        $token2 = $this->generateJwtToken($email2, $user2->getRoles());
+        $token1 = $this->generateJwtToken($email1, ['ROLE_USER']);
+        $token2 = $this->generateJwtToken($email2, ['ROLE_USER']);
 
         // Both users try to buy the last ticket (sequentially to avoid kernel reboots)
         $client = $this->client;
@@ -186,8 +185,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $client = $this->client;
 
         $email = 'payment-fail-' . uniqid() . '@test.com';
-        $user = $this->createUser($email);
-        $token = $this->generateJwtToken($email, $user->getRoles());
+        $token = $this->generateJwtToken($email, ['ROLE_USER']);
 
         $organizer = $this->createOrganizer();
         $event = $this->createPublishedEvent($organizer);
@@ -209,6 +207,9 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         // Ticket should be cancelled, not left in reserved state
         sleep(2); // Allow async processing
 
+        $userRepo = $this->entityManager->getRepository(User::class);
+        $user = $userRepo->findOneBy(['email' => $email]);
+        
         $tickets = $this->entityManager->getRepository(Ticket::class)->findBy([
             'user' => $user,
             'event' => $event
