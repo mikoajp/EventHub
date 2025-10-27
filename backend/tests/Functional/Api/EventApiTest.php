@@ -25,7 +25,7 @@ final class EventApiTest extends BaseWebTestCase
     public function testGetEventsReturnsPublishedEventsOnly(): void
     {
         // Arrange
-        $user = $this->createUser('test@test.com');
+        $user = $this->createUser(); // Use unique email
         $this->persistAndFlush($user);
 
         $publishedEvent = $this->createEvent($user, 'Published Event', Event::STATUS_PUBLISHED);
@@ -50,7 +50,7 @@ final class EventApiTest extends BaseWebTestCase
     public function testGetEventByIdReturnsEventDetails(): void
     {
         // Arrange
-        $user = $this->createUser('test@test.com');
+        $user = $this->createUser(); // Use unique email
         $this->persistAndFlush($user);
 
         $event = $this->createEvent($user, 'Detailed Event', Event::STATUS_PUBLISHED);
@@ -98,7 +98,7 @@ final class EventApiTest extends BaseWebTestCase
     public function testFilterEventsBySearchTerm(): void
     {
         // Arrange
-        $user = $this->createUser('test@test.com');
+        $user = $this->createUser(); // Use unique email
         $this->persistAndFlush($user);
 
         $rockEvent = $this->createEvent($user, 'Rock Concert', Event::STATUS_PUBLISHED);
@@ -120,10 +120,10 @@ final class EventApiTest extends BaseWebTestCase
         $this->assertNotContains('Jazz Night', $eventNames);
     }
 
-    private function createUser(string $email): User
+    private function createUser(string $email = null): User
     {
         $user = new User();
-        $user->setEmail($email);
+        $user->setEmail($email ?? 'test-' . uniqid() . '@test.com');
         $user->setFirstName('Test');
         $user->setLastName('User');
         $user->setPassword('hashed_password');

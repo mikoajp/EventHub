@@ -61,7 +61,7 @@ final class EventRepositoryIntegrationTest extends BaseTestCase
     public function testFindByUuidReturnsCorrectEvent(): void
     {
         // Arrange
-        $user = $this->createUser('test@test.com');
+        $user = $this->createUser('test-uuid-' . uniqid() . '@test.com');
         $this->persistAndFlush($user);
 
         $event = $this->createEvent($user, 'Test Event');
@@ -91,7 +91,7 @@ final class EventRepositoryIntegrationTest extends BaseTestCase
     public function testGetUniqueVenuesReturnsDistinctVenues(): void
     {
         // Arrange
-        $user = $this->createUser('test@test.com');
+        $user = $this->createUser('test-venues-' . uniqid() . '@test.com');
         $this->persistAndFlush($user);
 
         // Use unique venue names to avoid conflicts with other tests
