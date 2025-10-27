@@ -54,15 +54,13 @@
         </div>
         
         <div class="ticket-info">
-            <h3>Your Tickets</h3>
-            {% for ticket in tickets %}
-                <p>
-                    <strong>Ticket #{{ loop.index }}</strong><br>
-                    Type: {{ ticket.ticketType.name }}<br>
-                    Price: ${{ (ticket.price / 100)|number_format(2) }}<br>
-                    Status: {{ ticket.status|capitalize }}
-                </p>
-            {% endfor %}
+            <h3>Your Ticket</h3>
+            <p>
+                <strong>Ticket Details</strong><br>
+                Type: {{ ticket.ticketType.name }}<br>
+                Price: ${{ (ticket.price / 100)|number_format(2) }}<br>
+                Status: {{ ticket.status|capitalize }}
+            </p>
         </div>
         
         <p>You can view and manage your tickets in your account dashboard.</p>
