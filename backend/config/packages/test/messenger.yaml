@@ -3,9 +3,18 @@ framework:
         failure_transport: failed
         transports:
             sync: 'sync://'
-            async: "amqp+lib://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/async"
-            high_priority: "amqp+lib://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/high_priority"
-            notifications: "amqp+lib://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/notifications"
+            async:
+                dsn: "%env(default:sync://:string:RABBITMQ_DSN)%"
+                options:
+                    queues: ["async"]
+            high_priority:
+                dsn: "%env(default:sync://:string:RABBITMQ_DSN)%"
+                options:
+                    queues: ["high_priority"]
+            notifications:
+                dsn: "%env(default:sync://:string:RABBITMQ_DSN)%"
+                options:
+                    queues: ["notifications"]
             failed: 'doctrine://default?queue_name=failed'
         routing:
             'App\Message\Command\Payment\*': high_priority
