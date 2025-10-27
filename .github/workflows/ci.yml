@@ -52,6 +52,7 @@ jobs:
       RABBITMQ_USER: test_user
       RABBITMQ_PASSWORD: test_pass
       RABBITMQ_DSN: amqp://test_user:test_pass@localhost:5673/%2f
+      JWT_PASSPHRASE: dev-test-jwt
     steps:
       - uses: actions/checkout@v4
 
@@ -82,11 +83,18 @@ jobs:
           for i in {1..60}; do nc -z localhost 6380 && break; sleep 1; done
           for i in {1..60}; do nc -z localhost 5673 && break; sleep 1; done
       
+      - name: Generate JWT keys
+        run: cd backend && php bin/console lexik:jwt:generate-keypair --skip-if-exists --env=test
+
+      - name: Setup message transports
+        run: cd backend && php bin/console messenger:setup-transports --env=test
+
       - name: Prepare test database
         run: |
           cd backend
           php bin/console doctrine:database:create --if-not-exists --env=test
-          php bin/console doctrine:schema:update --force --env=test
+          php bin/console doctrine:migrations:migrate --no-interaction --env=test
+          if [ -d src/DataFixtures ]; then php bin/console doctrine:fixtures:load --no-interaction --env=test || true; fi
 
       - name: Run PHPUnit (All Tests)
         run: cd backend && SYMFONY_DEPRECATIONS_HELPER=weak vendor/bin/phpunit
