@@ -174,10 +174,7 @@ final class RedisCacheAdapter implements CacheInterface
         }
 
         try {
-            if ($this->pool instanceof TagAwareAdapter) {
-                return $this->pool->invalidateTags($tags);
-            }
-            return false;
+            return $this->pool->invalidateTags($tags);
         } catch (\Exception $e) {
             $this->logger?->error('Cache invalidate tags error: ' . $e->getMessage());
             return false;
