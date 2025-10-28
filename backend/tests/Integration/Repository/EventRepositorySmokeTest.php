@@ -95,21 +95,30 @@ final class EventRepositorySmokeTest extends TestCase
     {
         $reflection = new \ReflectionClass(EventRepository::class);
         $constructor = $reflection->getConstructor();
-        
+
         $this->assertNotNull($constructor, 'Repository should have a constructor');
-        
+
         $parameters = $constructor->getParameters();
-        $this->assertCount(1, $parameters, 'Constructor should accept one parameter');
-        
-        $param = $parameters[0];
-        // Parameter can be named 'doctrine', 'registry', or 'managerRegistry'
+        $this->assertCount(2, $parameters, 'Constructor should accept two parameters');
+
+        // First parameter: ManagerRegistry
+        $param1 = $parameters[0];
         $this->assertTrue(
-            in_array($param->getName(), ['doctrine', 'registry', 'managerRegistry']),
-            'Constructor parameter should be named doctrine, registry, or managerRegistry'
+            in_array($param1->getName(), ['doctrine', 'registry', 'managerRegistry']),
+            'First constructor parameter should be named doctrine, registry, or managerRegistry'
         );
-        
-        $type = $param->getType();
-        $this->assertNotNull($type, 'Parameter should be type-hinted');
+
+        $type1 = $param1->getType();
+        $this->assertNotNull($type1, 'First parameter should be type-hinted');
+        $this->assertSame('Doctrine\Persistence\ManagerRegistry', $type1->getName());
+
+        // Second parameter: TicketStatisticsQueryBuilder
+        $param2 = $parameters[1];
+        $this->assertSame('queryBuilder', $param2->getName(), 'Second parameter should be named queryBuilder');
+
+        $type2 = $param2->getType();
+        $this->assertNotNull($type2, 'Second parameter should be type-hinted');
+        $this->assertSame('App\Repository\QueryBuilder\TicketStatisticsQueryBuilder', $type2->getName());
     }
 
     public function testRepositoryMethodsHaveCorrectReturnTypes(): void
