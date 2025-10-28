@@ -124,11 +124,12 @@ final class RedisCacheAdapter implements CacheInterface
                     $deleted++;
                 }
             }
-            return true;
         } catch (\Exception $e) {
             $this->logger?->error('Cache pattern delete error: ' . $e->getMessage());
             return false;
         }
+
+        return true;
     }
 
     public function clear(): bool
