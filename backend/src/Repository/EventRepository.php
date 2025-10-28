@@ -6,7 +6,6 @@ use App\Entity\Event;
 use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use Exception;
 use Symfony\Component\Uid\Uuid;
 
 class EventRepository extends ServiceEntityRepository
@@ -42,46 +41,26 @@ class EventRepository extends ServiceEntityRepository
 
     /**
      * Persist an event entity
-     *
-     * @throws Exception
      */
-    public function persist(Event $event, bool $flush = true): void
+    public function persist(Event $event): void
     {
-        $em = $this->getEntityManager();
-        $em->beginTransaction();
+        $this->getEntityManager()->persist($event);
+    }
 
-        try {
-            $em->persist($event);
-            if ($flush) {
-                $em->flush();
-            }
-            $em->commit();
-        } catch (Exception $e) {
-            $em->rollback();
-            throw $e;
-        }
+    /**
+     * Flush pending changes to the database
+     */
+    public function flush(): void
+    {
+        $this->getEntityManager()->flush();
     }
 
     /**
      * Remove an event entity
-     *
-     * @throws Exception
      */
-    public function remove(Event $event, bool $flush = true): void
+    public function remove(Event $event): void
     {
-        $em = $this->getEntityManager();
-        $em->beginTransaction();
-
-        try {
-            $em->remove($event);
-            if ($flush) {
-                $em->flush();
-            }
-            $em->commit();
-        } catch (Exception $e) {
-            $em->rollback();
-            throw $e;
-        }
+        $this->getEntityManager()->remove($event);
     }
 
     /**
