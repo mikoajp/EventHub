@@ -170,13 +170,7 @@ abstract class BaseWebTestCase extends WebTestCase
             $connection->commit();
         }
         
-        // Ensure data is actually written to database
-        $connection->executeStatement('SELECT 1'); // Force sync
-        
         // Start new transaction for test isolation
         $connection->beginTransaction();
-        
-        // Clear entity manager to force fresh queries
-        $this->entityManager->clear();
     }
 }
