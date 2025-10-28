@@ -44,10 +44,11 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $this->assertIsArray($events);
 
         // Step 5: Purchase ticket
+        $idempotencyKey = 'test-complete-flow-' . uniqid();
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
-            'HTTP_X_IDEMPOTENCY_KEY' => 'test-complete-flow-' . uniqid(),
+            'HTTP_X_IDEMPOTENCY_KEY' => $idempotencyKey,
         ], json_encode([
             'eventId' => $event->getId()->toString(),
             'ticketTypeId' => $ticketType->getId()->toString(),
@@ -138,25 +139,28 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token1,
+            'HTTP_X_IDEMPOTENCY_KEY' => 'test-concurrent-1-' . uniqid(),
         ], json_encode([
             'eventId' => $event->getId()->toString(),
             'ticketTypeId' => $ticketType->getId()->toString(),
             'quantity' => 1,
-            'paymentMethodId' => 'pm_test_success',
-            'idempotencyKey' => 'test-concurrent-1-' . uniqid()
+            'paymentMethodId' => 'pm_test_success'
         ]));
 
         $response1Status = $client->getResponse()->getStatusCode();
 
+        // Clear entity manager to ensure fresh state for second request
+        $this->entityManager->clear();
+        
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token2,
+            'HTTP_X_IDEMPOTENCY_KEY' => 'test-concurrent-2-' . uniqid(),
         ], json_encode([
             'eventId' => $event->getId()->toString(),
             'ticketTypeId' => $ticketType->getId()->toString(),
             'quantity' => 1,
-            'paymentMethodId' => 'pm_test_success',
-            'idempotencyKey' => 'test-concurrent-2-' . uniqid()
+            'paymentMethodId' => 'pm_test_success'
         ]));
 
         $response2Status = $client->getResponse()->getStatusCode();
@@ -172,6 +176,9 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
 
         $this->assertSame(1, $successCount, 'Only one purchase should succeed');
 
+        // Clear and refresh to get fresh state from database
+        $this->entityManager->clear();
+        
         // Verify only 1 ticket exists
         $tickets = $this->entityManager->getRepository(Ticket::class)->findBy([
             'ticketType' => $ticketType,
@@ -196,12 +203,12 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            'HTTP_X_IDEMPOTENCY_KEY' => 'test-payment-fail-' . uniqid(),
         ], json_encode([
             'eventId' => $event->getId()->toString(),
             'ticketTypeId' => $ticketType->getId()->toString(),
             'quantity' => 1,
-            'paymentMethodId' => 'pm_test_fail', // This should fail
-            'idempotencyKey' => 'test-payment-fail-' . uniqid()
+            'paymentMethodId' => 'pm_test_fail' // This should fail
         ]));
 
         // Should handle payment failure gracefully
@@ -249,8 +256,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $organizer->setLastName('Organizer');
         $organizer->setRoles(['ROLE_ORGANIZER']);
 
-        $this->entityManager->persist($organizer);
-        $this->entityManager->flush();
+        $this->persistAndFlush($organizer);
 
         return $organizer;
     }
@@ -267,8 +273,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
             ->setPublishedAt(new \DateTime())
             ->setOrganizer($organizer);
 
-        $this->entityManager->persist($event);
-        $this->entityManager->flush();
+        $this->persistAndFlush($event);
 
         return $event;
     }
@@ -281,8 +286,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
             ->setQuantity($quantity)
             ->setEvent($event);
 
-        $this->entityManager->persist($ticketType);
-        $this->entityManager->flush();
+        $this->persistAndFlush($ticketType);
 
         return $ticketType;
     }

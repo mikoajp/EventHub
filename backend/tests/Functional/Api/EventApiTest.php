@@ -15,20 +15,6 @@ final class EventApiTest extends BaseWebTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
-        // Clear cache before each test to avoid stale data
-        $this->clearCache();
-    }
-    
-    /**
-     * Clear cache to ensure fresh data
-     */
-    private function clearCache(): void
-    {
-        $cache = static::getContainer()->get('App\Infrastructure\Cache\CacheInterface');
-        if ($cache && $cache->isEnabled()) {
-            $cache->clear();
-        }
     }
     
     public function testGetEventsReturnsJsonArray(): void
@@ -52,9 +38,6 @@ final class EventApiTest extends BaseWebTestCase
         
         $this->persistAndFlush($publishedEvent);
         $this->persistAndFlush($draftEvent);
-        
-        // Clear cache after creating data to ensure API sees fresh data
-        $this->clearCache();
 
         // Act
         $response = $this->jsonRequest('GET', '/api/events');
@@ -79,9 +62,6 @@ final class EventApiTest extends BaseWebTestCase
         $this->persistAndFlush($event);
         
         $eventId = $event->getId()->toString();
-        
-        // Clear cache after creating data
-        $this->clearCache();
 
         // Act
         $response = $this->jsonRequest('GET', "/api/events/{$eventId}");
@@ -131,9 +111,6 @@ final class EventApiTest extends BaseWebTestCase
         
         $this->persistAndFlush($rockEvent);
         $this->persistAndFlush($jazzEvent);
-        
-        // Clear cache after creating data
-        $this->clearCache();
 
         // Act
         $response = $this->jsonRequest('GET', '/api/events?search=rock');
@@ -169,6 +146,11 @@ final class EventApiTest extends BaseWebTestCase
         $event->setMaxTickets(100);
         $event->setOrganizer($organizer);
         $event->setStatus($status);
+        
+        // Set publishedAt if status is published
+        if ($status === Event::STATUS_PUBLISHED) {
+            $event->setPublishedAt(new \DateTime());
+        }
         
         return $event;
     }

@@ -14,6 +14,12 @@ if (class_exists(Dotenv::class)) {
     if (file_exists($envPath)) {
         (new Dotenv())->bootEnv($envPath);
     }
+    
+    // Load .env.test.local if it exists (for local overrides)
+    $envLocalPath = dirname(__DIR__).'/.env.test.local';
+    if (file_exists($envLocalPath)) {
+        (new Dotenv())->loadEnv($envLocalPath);
+    }
 }
 
 // Initialize DB schema for tests if Doctrine is available

@@ -5,9 +5,8 @@ framework:
     profiler:
         collect: false
     cache:
-        default_redis_provider: '%env(REDIS_URL)%'
-        app: cache.adapter.redis
-        system: cache.adapter.redis
+        app: cache.adapter.array
+        system: cache.adapter.array
     messenger:
         # Use sync transport for tests
         transports:

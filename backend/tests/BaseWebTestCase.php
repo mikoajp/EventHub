@@ -33,19 +33,52 @@ abstract class BaseWebTestCase extends WebTestCase
         // Ensure DB schema exists once per process
         BaseTestCase::ensureSchema($this->entityManager);
 
-        // Begin transaction for test isolation
-        // Note: Kernel client makes separate DB connections that can see uncommitted data
-        $this->entityManager->beginTransaction();
+        // DO NOT use transactions in functional tests
+        // Kernel client uses separate DB connections that need committed data
+        // We'll clean up data in tearDown by truncating tables
+        
+        // Clear cache at the start of each test to ensure fresh data
+        $this->clearCache();
     }
 
     protected function tearDown(): void
     {
-        // Rollback transaction to clean up test data
-        if ($this->entityManager && $this->entityManager->getConnection()->isTransactionActive()) {
-            $this->entityManager->rollback();
-        }
-        
+        // Clean up test data by truncating tables
+        // DO NOT use rollback - API needs committed data during test
         if ($this->entityManager) {
+            try {
+                $connection = $this->entityManager->getConnection();
+                $platform = $connection->getDatabasePlatform();
+                
+                // Different cleanup strategy for SQLite vs PostgreSQL
+                if ($platform->getName() === 'sqlite') {
+                    // For SQLite, disable foreign keys and delete all rows
+                    $connection->executeStatement('PRAGMA foreign_keys = OFF');
+                    
+                    // Delete in correct order (children first)
+                    $tables = ['ticket', 'order_item', 'ticket_type', '"order"', 'event', 'idempotency_key', 'user', 'refresh_token'];
+                    foreach ($tables as $table) {
+                        try {
+                            $connection->executeStatement("DELETE FROM {$table}");
+                        } catch (\Exception $e) {
+                            // Table might not exist yet
+                        }
+                    }
+                    
+                    $connection->executeStatement('PRAGMA foreign_keys = ON');
+                } else {
+                    // For PostgreSQL, use TRUNCATE with CASCADE
+                    $connection->executeStatement('SET CONSTRAINTS ALL DEFERRED');
+                    
+                    $tables = ['ticket', 'ticket_type', 'order_item', '"order"', 'event', 'user', 'idempotency_key', 'refresh_token'];
+                    foreach ($tables as $table) {
+                        $connection->executeStatement($platform->getTruncateTableSQL($table, true));
+                    }
+                }
+            } catch (\Exception $e) {
+                // Ignore errors during cleanup
+            }
+            
             $this->entityManager->close();
             $this->entityManager = null;
         }
@@ -155,22 +188,38 @@ abstract class BaseWebTestCase extends WebTestCase
 
     /**
      * Persist entity for test
-     * Commits data so it's visible to API requests in separate transactions
+     * Data is immediately visible to API since we don't use transactions in functional tests
      */
     protected function persistAndFlush(object $entity): void
     {
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
         
-        // CRITICAL: Commit transaction so data is visible to API requests
-        // API uses a separate database connection that won't see uncommitted data
+        // For file-based SQLite, ensure transaction is committed so other connections can see data
         $connection = $this->entityManager->getConnection();
-        
-        if ($connection->isTransactionActive()) {
-            $connection->commit();
+        if ($connection->getDatabasePlatform()->getName() === 'sqlite') {
+            if ($connection->isTransactionActive()) {
+                $connection->commit();
+                $connection->beginTransaction();
+            }
         }
         
-        // Start new transaction for test isolation
-        $connection->beginTransaction();
+        // Clear cache after persisting to ensure API sees fresh data
+        $this->clearCache();
+    }
+    
+    /**
+     * Clear cache to ensure fresh data
+     */
+    protected function clearCache(): void
+    {
+        try {
+            $cache = static::getContainer()->get('App\\Infrastructure\\Cache\\CacheInterface');
+            if ($cache && $cache->isEnabled()) {
+                $cache->clear();
+            }
+        } catch (\Exception $e) {
+            // Ignore cache errors in tests
+        }
     }
 }
