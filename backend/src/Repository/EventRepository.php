@@ -495,4 +495,19 @@ class EventRepository extends ServiceEntityRepository
         ];
     }
 
+    /**
+     * Search published events by name
+     */
+    public function searchPublishedEvents(string $searchTerm): array
+    {
+        return $this->createQueryBuilder('e')
+            ->where('e.status = :status')
+            ->andWhere('LOWER(e.name) LIKE LOWER(:search)')
+            ->setParameter('status', Event::STATUS_PUBLISHED)
+            ->setParameter('search', '%' . $searchTerm . '%')
+            ->orderBy('e.eventDate', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
 }

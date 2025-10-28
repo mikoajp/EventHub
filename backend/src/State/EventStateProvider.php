@@ -9,12 +9,14 @@ use ApiPlatform\State\ProviderInterface;
 use App\Entity\Event;
 use App\Presenter\EventPresenter;
 use App\Repository\EventRepository;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 final class EventStateProvider implements ProviderInterface
 {
     public function __construct(
         private readonly EventRepository $repository,
         private readonly EventPresenter $presenter,
+        private readonly RequestStack $requestStack,
     ) {}
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|object|null
@@ -30,7 +32,14 @@ final class EventStateProvider implements ProviderInterface
         }
 
         if ($operation instanceof GetCollection) {
-            $events = $this->repository->findPublishedEvents();
+            $request = $this->requestStack->getCurrentRequest();
+            $searchTerm = $request?->query->get('search');
+
+            if ($searchTerm) {
+                $events = $this->repository->searchPublishedEvents($searchTerm);
+            } else {
+                $events = $this->repository->findPublishedEvents();
+            }
 
             $presented = array_map(
                 fn(Event $e) => $this->presenter->presentListItem($e),
