@@ -71,12 +71,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank]
     #[Groups(['user:read', 'user:write'])]
-    private string $firstName;
+    private ?string $firstName = null;
 
     #[ORM\Column(length: 100)]
     #[Assert\NotBlank]
     #[Groups(['user:read', 'user:write'])]
-    private string $lastName;
+    private ?string $lastName = null;
 
     #[ORM\Column(length: 20, nullable: true)]
     #[Groups(['user:read', 'user:write'])]
@@ -150,7 +150,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // Clear temporary, sensitive data
     }
 
-    public function getFirstName(): string
+    public function getFirstName(): ?string
     {
         return $this->firstName;
     }
@@ -161,7 +161,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getLastName(): string
+    public function getLastName(): ?string
     {
         return $this->lastName;
     }
@@ -201,6 +201,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read'])]
     public function getFullName(): string
     {
-        return $this->firstName . ' ' . $this->lastName;
+        $firstName = $this->firstName ?? '';
+        $lastName = $this->lastName ?? '';
+        return trim($firstName . ' ' . $lastName) ?: 'Unknown User';
     }
 }
