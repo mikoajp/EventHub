@@ -21,6 +21,7 @@ use App\Exception\Event\EventNotFoundException;
 use App\Exception\Event\EventNotPublishableException;
 use App\Exception\Authorization\InsufficientPermissionsException;
 use App\Exception\Validation\InvalidRequestDataException;
+use App\Security\Voter\EventVoter;
 use Symfony\Component\Messenger\Stamp\HandledStamp;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -153,14 +154,12 @@ class EventController extends AbstractController
     {
         $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
         $event = $envelope->last(HandledStamp::class)->getResult();
-        
+
         if (!$event) {
             throw new EventNotFoundException($id);
         }
 
-        if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-            throw new InsufficientPermissionsException('publish', 'event');
-        }
+        $this->denyAccessUnlessGranted(EventVoter::PUBLISH, $event);
 
         if ($event->getStatus() !== Event::STATUS_DRAFT) {
             throw new EventNotPublishableException($id, 'Only draft events can be published');
@@ -187,17 +186,15 @@ class EventController extends AbstractController
     ): JsonResponse {
         $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
         $event = $envelope->last(HandledStamp::class)->getResult();
-        
+
         if (!$event) {
             throw new EventNotFoundException($id);
         }
 
-        if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-            throw new \App\Exception\Authorization\InsufficientPermissionsException('edit this event');
-        }
+        $this->denyAccessUnlessGranted(EventVoter::EDIT, $event);
 
         $eventDTO = $this->requestValidator->validateAndCreateEventDTO($request);
-        
+
         $this->commandBus->dispatch(new UpdateEventCommand($id, $user->getId()->toString(), $eventDTO));
 
         $this->notificationApplicationService->sendGlobalNotification([
@@ -228,12 +225,12 @@ class EventController extends AbstractController
     {
         $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
         $event = $envelope->last(HandledStamp::class)->getResult();
-        
-        if (!$event) { throw new EventNotFoundException($id); }
 
-        if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-            throw new InsufficientPermissionsException('cancel', 'event');
+        if (!$event) {
+            throw new EventNotFoundException($id);
         }
+
+        $this->denyAccessUnlessGranted(EventVoter::CANCEL, $event);
 
         $this->commandBus->dispatch(new CancelEventCommand($id));
 
@@ -254,12 +251,12 @@ class EventController extends AbstractController
     {
         $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
         $event = $envelope->last(HandledStamp::class)->getResult();
-        
-        if (!$event) { throw new EventNotFoundException($id); }
 
-        if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-            throw new InsufficientPermissionsException('unpublish', 'event');
+        if (!$event) {
+            throw new EventNotFoundException($id);
         }
+
+        $this->denyAccessUnlessGranted(EventVoter::UNPUBLISH, $event);
 
         $this->commandBus->dispatch(new UnpublishEventCommand($id, $user->getId()->toString()));
 
@@ -283,16 +280,16 @@ class EventController extends AbstractController
     ): JsonResponse {
         $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
         $event = $envelope->last(HandledStamp::class)->getResult();
-        
-        if (!$event) { throw new \App\Exception\Event\EventNotFoundException($request->get('id')); }
 
-        if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-            throw new \App\Exception\Authorization\InsufficientPermissionsException('view statistics for this event');
+        if (!$event) {
+            throw new EventNotFoundException($id);
         }
+
+        $this->denyAccessUnlessGranted(EventVoter::STATISTICS, $event);
 
         $from = $request->query->get('from');
         $to = $request->query->get('to');
-        
+
         $fromDt = $from ? new \DateTimeImmutable($from) : null;
         $toDt = $to ? new \DateTimeImmutable($to) : null;
 
@@ -311,12 +308,12 @@ class EventController extends AbstractController
     ): JsonResponse {
         $envelope = $this->queryBus->dispatch(new GetEventByIdQuery($id));
         $event = $envelope->last(HandledStamp::class)->getResult();
-        
-        if (!$event) { throw new EventNotFoundException($id); }
 
-        if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-            throw new InsufficientPermissionsException('send notifications', 'event');
+        if (!$event) {
+            throw new EventNotFoundException($id);
         }
+
+        $this->denyAccessUnlessGranted(EventVoter::NOTIFY, $event);
 
         $data = json_decode($request->getContent(), true);
         if (json_last_error() !== JSON_ERROR_NONE) {
