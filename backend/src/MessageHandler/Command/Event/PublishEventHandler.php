@@ -37,82 +37,18 @@ final readonly class PublishEventHandler
                 'user_id' => $command->userId
             ]);
 
-            $event = $this->eventRepository->find(Uuid::fromString($command->eventId));
-            if (!$event) {
-                $this->logger->error('Event not found', [
-                    'event_id' => $command->eventId
-                ]);
+            $event = $this->loadEvent($command->eventId);
+            $user = $this->loadUser($command->userId);
+
+            if ($this->isAlreadyPublished($event)) {
+                $this->handleAlreadyPublished($event, $user);
                 return;
             }
 
-            $user = $this->userRepository->find(Uuid::fromString($command->userId));
-            if (!$user) {
-                $this->logger->error('User not found', [
-                    'user_id' => $command->userId
-                ]);
-                return;
-            }
-            if ($event->getStatus() === Event::STATUS_PUBLISHED) {
-                $this->logger->info('Event already published - completing successfully', [
-                    'event_id' => $command->eventId,
-                    'event_name' => $event->getName(),
-                    'published_at' => $event->getPublishedAt()?->format('Y-m-d H:i:s')
-                ]);
-
-                $this->sendSuccessNotifications($event, $user);
-
-                // Notify all subscribers about the published event
-                $this->notificationApplicationService->sendEventPublishedNotifications($event);
-
-                if ($event->getPublishedAt()) {
-                    $this->eventBus->dispatch(new EventPublishedEvent(
-                        $event->getId()->toString(),
-                        $user->getId()->toString(),
-                        new \DateTimeImmutable('now')
-                    ));
-                }
-
-                return;
-            }
-
-            if ($event->getStatus() === Event::STATUS_CANCELLED) {
-                $this->logger->warning('Cannot publish cancelled event - completing gracefully', [
-                    'event_id' => $command->eventId,
-                    'status' => $event->getStatus()
-                ]);
-                return;
-            }
-
-            if ($event->getStatus() !== Event::STATUS_DRAFT) {
-                $this->logger->warning('Event is not in draft status - completing gracefully', [
-                    'event_id' => $command->eventId,
-                    'current_status' => $event->getStatus(),
-                    'expected_status' => Event::STATUS_DRAFT
-                ]);
-                return;
-            }
-
-            if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
-                $this->logger->error('User has no permission to publish event - completing gracefully', [
-                    'event_id' => $command->eventId,
-                    'user_id' => $command->userId,
-                    'organizer_id' => $event->getOrganizer()->getId()->toString()
-                ]);
-                return;
-            }
+            $this->validatePublishPreconditions($event, $user, $command->eventId, $command->userId);
 
             $publishedAt = $this->publishEvent($event);
-
-            $this->sendSuccessNotifications($event, $user);
-
-            // Notify all subscribers about the published event
-            $this->notificationApplicationService->sendEventPublishedNotifications($event);
-
-            $this->eventBus->dispatch(new EventPublishedEvent(
-                $event->getId()->toString(),
-                $user->getId()->toString(),
-                $publishedAt
-            ));
+            $this->notifyAndDispatchEvent($event, $user, $publishedAt);
 
         } catch (\Exception $e) {
             if ($this->isCriticalException($e)) {
@@ -131,6 +67,104 @@ final readonly class PublishEventHandler
                 'reason' => $e->getMessage()
             ]);
         }
+    }
+
+    private function loadEvent(string $eventId): Event
+    {
+        $event = $this->eventRepository->find(Uuid::fromString($eventId));
+
+        if (!$event) {
+            $this->logger->error('Event not found', [
+                'event_id' => $eventId
+            ]);
+            throw new \RuntimeException("Event not found: {$eventId}");
+        }
+
+        return $event;
+    }
+
+    private function loadUser(string $userId): \App\Entity\User
+    {
+        $user = $this->userRepository->find(Uuid::fromString($userId));
+
+        if (!$user) {
+            $this->logger->error('User not found', [
+                'user_id' => $userId
+            ]);
+            throw new \RuntimeException("User not found: {$userId}");
+        }
+
+        return $user;
+    }
+
+    private function isAlreadyPublished(Event $event): bool
+    {
+        return $event->getStatus() === Event::STATUS_PUBLISHED;
+    }
+
+    private function handleAlreadyPublished(Event $event, \App\Entity\User $user): void
+    {
+        $this->logger->info('Event already published - completing successfully', [
+            'event_id' => $event->getId()->toString(),
+            'event_name' => $event->getName(),
+            'published_at' => $event->getPublishedAt()?->format('Y-m-d H:i:s')
+        ]);
+
+        $this->sendSuccessNotifications($event, $user);
+        $this->notificationApplicationService->sendEventPublishedNotifications($event);
+
+        if ($event->getPublishedAt()) {
+            $this->eventBus->dispatch(new EventPublishedEvent(
+                $event->getId()->toString(),
+                $user->getId()->toString(),
+                new \DateTimeImmutable('now')
+            ));
+        }
+    }
+
+    private function validatePublishPreconditions(
+        Event $event,
+        \App\Entity\User $user,
+        string $eventId,
+        string $userId
+    ): void {
+        if ($event->getStatus() === Event::STATUS_CANCELLED) {
+            $this->logger->warning('Cannot publish cancelled event - completing gracefully', [
+                'event_id' => $eventId,
+                'status' => $event->getStatus()
+            ]);
+            throw new \RuntimeException('Cannot publish cancelled event');
+        }
+
+        if ($event->getStatus() !== Event::STATUS_DRAFT) {
+            $this->logger->warning('Event is not in draft status - completing gracefully', [
+                'event_id' => $eventId,
+                'current_status' => $event->getStatus(),
+                'expected_status' => Event::STATUS_DRAFT
+            ]);
+            throw new \RuntimeException('Event is not in draft status');
+        }
+
+        if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
+            $this->logger->error('User has no permission to publish event - completing gracefully', [
+                'event_id' => $eventId,
+                'user_id' => $userId,
+                'organizer_id' => $event->getOrganizer()->getId()->toString()
+            ]);
+            throw new \RuntimeException('User has no permission to publish event');
+        }
+    }
+
+    private function notifyAndDispatchEvent(Event $event, \App\Entity\User $user, \DateTimeImmutable $publishedAt): void
+    {
+        $this->sendSuccessNotifications($event, $user);
+        $this->notificationApplicationService->sendEventPublishedNotifications($event);
+
+        $this->eventBus->dispatch(new EventPublishedEvent(
+            $event->getId()->toString(),
+            $user->getId()->toString(),
+            $publishedAt
+        ));
     }
 
     private function publishEvent(Event $event): \DateTimeImmutable
