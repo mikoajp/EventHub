@@ -47,6 +47,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         $client->request('POST', '/api/tickets/purchase', [], [], [
             'CONTENT_TYPE' => 'application/json',
             'HTTP_AUTHORIZATION' => 'Bearer ' . $token,
+            'HTTP_X_IDEMPOTENCY_KEY' => 'test-complete-flow-' . uniqid(),
         ], json_encode([
             'eventId' => $event->getId()->toString(),
             'ticketTypeId' => $ticketType->getId()->toString(),

@@ -161,11 +161,18 @@ final class ApiSecurityTest extends BaseWebTestCase
             'idempotencyKey' => 'test-negative-' . uniqid()
         ]));
 
-        // Should reject negative quantity with 400 or 422, or 404 if validation happens after entity lookup
+        // Should reject with validation error (400/422) or 404 if entities not found first
         $statusCode = $client->getResponse()->getStatusCode();
+        $responseContent = $client->getResponse()->getContent();
+        
+        // Accept 400 (validation), 422 (unprocessable), or 404 (entity not found)
         $this->assertTrue(
             in_array($statusCode, [Response::HTTP_BAD_REQUEST, Response::HTTP_UNPROCESSABLE_ENTITY, Response::HTTP_NOT_FOUND]),
-            'Negative quantity should be rejected with 400, 422, or 404'
+            sprintf(
+                'Negative quantity should be rejected. Expected: 400, 422, or 404. Got: %d. Response: %s',
+                $statusCode,
+                $responseContent
+            )
         );
     }
 
@@ -187,11 +194,18 @@ final class ApiSecurityTest extends BaseWebTestCase
             'idempotencyKey' => 'test-excessive-' . uniqid()
         ]));
 
-        // Should reject excessive quantity with 400 or 422, or 404 if validation happens after entity lookup
+        // Should reject with validation error (400/422) or 404 if entities not found first
         $statusCode = $client->getResponse()->getStatusCode();
+        $responseContent = $client->getResponse()->getContent();
+        
+        // Accept 400 (validation), 422 (unprocessable), or 404 (entity not found)
         $this->assertTrue(
             in_array($statusCode, [Response::HTTP_BAD_REQUEST, Response::HTTP_UNPROCESSABLE_ENTITY, Response::HTTP_NOT_FOUND]),
-            'Excessive quantity should be rejected with 400, 422, or 404'
+            sprintf(
+                'Excessive quantity should be rejected. Expected: 400, 422, or 404. Got: %d. Response: %s',
+                $statusCode,
+                $responseContent
+            )
         );
     }
 

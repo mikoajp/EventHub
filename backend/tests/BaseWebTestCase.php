@@ -72,7 +72,9 @@ abstract class BaseWebTestCase extends WebTestCase
     protected function generateJwtToken(string $email, array $roles = []): string
     {
         $container = static::getContainer();
-        $em = $container->get('doctrine')->getManager();
+        
+        // Use the test's EntityManager to ensure visibility
+        $em = $this->entityManager ?? $container->get('doctrine')->getManager();
         
         // Ensure schema exists for functional tests
         BaseTestCase::ensureSchema($em);
@@ -95,6 +97,12 @@ abstract class BaseWebTestCase extends WebTestCase
             
             $em->persist($user);
             $em->flush();
+            
+            // Commit transaction so API can see the user
+            if ($em->getConnection()->isTransactionActive()) {
+                $em->commit();
+                $em->beginTransaction();
+            }
         }
         
         // Always try to use real JWT manager

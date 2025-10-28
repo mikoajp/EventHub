@@ -63,6 +63,13 @@ class TicketController extends AbstractController
         $idempotencyKey = $request->headers->get('X-Idempotency-Key') ?? ($data['idempotencyKey'] ?? throw new \App\Exception\Validation\ValidationException(['idempotencyKey' => 'X-Idempotency-Key header required']));
         $paymentMethodId = $data['paymentMethodId'] ?? 'pm_test_card';
         $quantity = (int) ($data['quantity'] ?? 1);
+        
+        // Validate quantity range
+        if ($quantity < 1 || $quantity > 10) {
+            throw new \App\Exception\Validation\ValidationException([
+                'quantity' => 'Quantity must be between 1 and 10'
+            ]);
+        }
 
         $envelope = $this->commandBus->dispatch(new PurchaseTicketCommand(
             $eventId,

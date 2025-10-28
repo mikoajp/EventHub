@@ -27,6 +27,35 @@ final readonly class StripePaymentGateway implements PaymentGatewayInterface
 
             usleep(500000);
 
+            // Support test payment methods for testing
+            if ($paymentMethodId === 'pm_test_fail') {
+                $this->logger->warning('Stripe payment failed (test mode)', [
+                    'payment_method_id' => $paymentMethodId,
+                    'reason' => 'test_payment_method_fail'
+                ]);
+                
+                return new PaymentResultDTO(
+                    success: false,
+                    paymentId: null,
+                    message: 'Payment failed - test payment method'
+                );
+            }
+            
+            if ($paymentMethodId === 'pm_test_success' || str_starts_with($paymentMethodId, 'pm_test_')) {
+                $paymentId = 'pi_' . uniqid();
+                
+                $this->logger->info('Stripe payment successful (test mode)', [
+                    'payment_id' => $paymentId,
+                    'amount' => $amount
+                ]);
+                
+                return new PaymentResultDTO(
+                    success: true,
+                    paymentId: $paymentId,
+                    message: 'Payment processed successfully'
+                );
+            }
+
             $isSuccessful = rand(1, 100) <= 95;
 
             if ($isSuccessful) {
