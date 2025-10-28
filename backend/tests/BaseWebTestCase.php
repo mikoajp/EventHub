@@ -162,11 +162,21 @@ abstract class BaseWebTestCase extends WebTestCase
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
         
-        // Commit so API can see the data (will be rolled back in tearDown)
-        if ($this->entityManager->getConnection()->isTransactionActive()) {
-            $this->entityManager->commit();
-            // Start new transaction for next operations
-            $this->entityManager->beginTransaction();
+        // CRITICAL: Commit transaction so data is visible to API requests
+        // API uses a separate database connection that won't see uncommitted data
+        $connection = $this->entityManager->getConnection();
+        
+        if ($connection->isTransactionActive()) {
+            $connection->commit();
         }
+        
+        // Ensure data is actually written to database
+        $connection->executeStatement('SELECT 1'); // Force sync
+        
+        // Start new transaction for test isolation
+        $connection->beginTransaction();
+        
+        // Clear entity manager to force fresh queries
+        $this->entityManager->clear();
     }
 }
