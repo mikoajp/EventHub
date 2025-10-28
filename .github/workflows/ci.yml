@@ -122,7 +122,7 @@ jobs:
         run: cd backend && php bin/console messenger:setup-transports --env=test
 
       - name: Run PHPUnit with coverage
-        run: cd backend && SYMFONY_DEPRECATIONS_HELPER=max[direct]=0 vendor/bin/phpunit --coverage-clover coverage.xml
+        run: cd backend && SYMFONY_DEPRECATIONS_HELPER='max[self]=0&max[direct]=999&max[indirect]=999&verbose=0' vendor/bin/phpunit --coverage-clover coverage.xml
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
