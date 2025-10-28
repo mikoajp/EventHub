@@ -21,12 +21,32 @@ final class EventStateProvider implements ProviderInterface
     {
         if ($operation instanceof Get) {
             $event = $this->repository->find($uriVariables['id'] ?? null);
-            return $event ? $this->presenter->present($event) : null;
+
+            if (!$event) {
+                return null;
+            }
+
+            return $this->presenter->presentDetails($event);
         }
+
         if ($operation instanceof GetCollection) {
             $events = $this->repository->findPublishedEvents();
-            return array_map(fn(Event $e) => $this->presenter->present($e), $events);
+
+            $presented = array_map(
+                fn(Event $e) => $this->presenter->presentListItem($e),
+                $events
+            );
+
+            return [
+                'events' => $presented,
+                'pagination' => [
+                    'total' => count($presented),
+                    'page' => 1,
+                    'limit' => count($presented),
+                ]
+            ];
         }
+
         return null;
     }
 }
