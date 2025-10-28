@@ -19,6 +19,11 @@ final class EventStateProvider implements ProviderInterface
         private readonly RequestStack $requestStack,
     ) {}
 
+    /**
+     * Provide event data for API Platform operations.
+     *
+     * @return iterable<object>|object|array<string, mixed>|null
+     */
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|object|null
     {
         if ($operation instanceof Get) {

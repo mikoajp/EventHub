@@ -11,35 +11,14 @@ use Psr\Log\LoggerInterface;
 
 final class RedisCacheAdapter implements CacheInterface
 {
-    /**
-     * Invalidate all items matching any of the provided tags.
-     */
-    public function invalidateTags(array $tags): bool
-    {
-        if (!$this->isEnabled) {
-            return true;
-        }
-        try {
-            if ($this->pool instanceof TagAwareAdapter) {
-                return $this->pool->invalidateTags($tags);
-            }
-            return false;
-        } catch (\Exception $e) {
-            $this->logger?->error('Cache invalidate tags error: ' . $e->getMessage());
-            return false;
-        }
-    }
+    private RedisAdapter|ArrayAdapter|null $cache = null;
 
-    /** @var \Symfony\Component\Cache\Adapter\RedisAdapter|null */
-    private $cache;
     /** @var \Redis|\Predis\ClientInterface|null */
     private $redis;
-    /** @var \Psr\Log\LoggerInterface|null */
-    private $logger;
-    /** @var bool */
-    private $isEnabled;
-    /** @var \Symfony\Component\Cache\Adapter\TagAwareAdapter|null */
-    private $pool;
+
+    private ?LoggerInterface $logger = null;
+    private bool $isEnabled;
+    private ?TagAwareAdapter $pool = null;
 
     public function __construct(
         string $redisUrl = 'redis://localhost:6379',
@@ -70,7 +49,7 @@ final class RedisCacheAdapter implements CacheInterface
 
     public function get(string $key, ?callable $callback = null, int $ttl = 3600): mixed
     {
-        if (!$this->isEnabled) {
+        if (!$this->isEnabled || !$this->pool) {
             return $callback ? $callback() : null;
         }
 
@@ -91,7 +70,7 @@ final class RedisCacheAdapter implements CacheInterface
 
     public function set(string $key, mixed $value, int $ttl = 3600, array $tags = []): bool
     {
-        if (!$this->isEnabled) {
+        if (!$this->isEnabled || !$this->pool) {
             return true;
         }
 
@@ -111,7 +90,7 @@ final class RedisCacheAdapter implements CacheInterface
 
     public function delete(string $key): bool
     {
-        if (!$this->isEnabled) {
+        if (!$this->isEnabled || !$this->pool) {
             return true;
         }
 
@@ -154,7 +133,7 @@ final class RedisCacheAdapter implements CacheInterface
 
     public function clear(): bool
     {
-        if (!$this->isEnabled) {
+        if (!$this->isEnabled || !$this->pool) {
             return true;
         }
 
@@ -168,7 +147,7 @@ final class RedisCacheAdapter implements CacheInterface
 
     public function has(string $key): bool
     {
-        if (!$this->isEnabled) {
+        if (!$this->isEnabled || !$this->pool) {
             return false;
         }
         try {
@@ -182,5 +161,24 @@ final class RedisCacheAdapter implements CacheInterface
     public function isEnabled(): bool
     {
         return $this->isEnabled;
+    }
+
+    /**
+     * Invalidate all items matching any of the provided tags.
+     */
+    public function invalidateTags(array $tags): bool
+    {
+        if (!$this->isEnabled || !$this->pool) {
+            return true;
+        }
+        try {
+            if ($this->pool instanceof TagAwareAdapter) {
+                return $this->pool->invalidateTags($tags);
+            }
+            return false;
+        } catch (\Exception $e) {
+            $this->logger?->error('Cache invalidate tags error: ' . $e->getMessage());
+            return false;
+        }
     }
 }

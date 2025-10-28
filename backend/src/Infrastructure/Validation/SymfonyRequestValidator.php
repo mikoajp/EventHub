@@ -20,7 +20,7 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
 
         if (isset($rules['required'])) {
             $missingFields = array_diff($rules['required'], array_keys(array_filter($data)));
-            
+
             if (!empty($missingFields)) {
                 throw new InvalidRequestDataException(
                     sprintf('Missing required fields: %s', implode(', ', $missingFields))
@@ -44,7 +44,7 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
     public function validateDTO(object $dto): array
     {
         $errors = $this->validator->validate($dto);
-        
+
         if (count($errors) > 0) {
             $errorMessages = [];
             foreach ($errors as $error) {
@@ -64,7 +64,8 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
     public function hasValidJson(Request $request): bool
     {
         $content = $request->getContent();
-        if ($content === '' || $content === null) {
+
+        if ($content === '') {
             return false;
         }
 
