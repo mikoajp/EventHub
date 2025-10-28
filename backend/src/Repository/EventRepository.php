@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Event;
+use App\Repository\QueryBuilder\TicketStatisticsQueryBuilder;
 use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -10,9 +11,14 @@ use Symfony\Component\Uid\Uuid;
 
 class EventRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
-    {
+    private TicketStatisticsQueryBuilder $queryBuilder;
+
+    public function __construct(
+        ManagerRegistry $registry,
+        TicketStatisticsQueryBuilder $queryBuilder
+    ) {
         parent::__construct($registry, Event::class);
+        $this->queryBuilder = $queryBuilder;
     }
 
     /**
@@ -73,27 +79,16 @@ class EventRepository extends ServiceEntityRepository
      */
     public function getTicketSalesStatistics(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
     {
-        $qb = $this->getEntityManager()->createQueryBuilder()
+        $qb = $this->queryBuilder->createBaseQuery()
             ->select('COUNT(t.id) as total, tt.name as ticketTypeName, tt.id as ticketTypeId')
-            ->from('App\Entity\Ticket', 't')
             ->join('t.ticketType', 'tt')
-            ->where('t.event = :event')
-            ->andWhere('t.status = :status')
-            ->setParameter('event', $event)
-            ->setParameter('status', 'purchased');
+            ->groupBy('tt.id');
 
-        if ($from) {
-            $qb->andWhere('t.purchasedAt >= :from')
-                ->setParameter('from', $from);
-        }
+        $this->queryBuilder
+            ->withEvent($qb, $event)
+            ->withDateRange($qb, $from, $to);
 
-        if ($to) {
-            $qb->andWhere('t.purchasedAt <= :to')
-                ->setParameter('to', $to);
-        }
-
-        $results = $qb->groupBy('tt.id')
-            ->getQuery()
+        $results = $qb->getQuery()
             ->useQueryCache(true)
             ->getResult();
 
@@ -125,23 +120,12 @@ class EventRepository extends ServiceEntityRepository
      */
     public function getRevenueStatistics(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
     {
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('SUM(t.price) as totalRevenue, COUNT(t.id) as ticketCount')
-            ->from('App\Entity\Ticket', 't')
-            ->where('t.event = :event')
-            ->andWhere('t.status = :status')
-            ->setParameter('event', $event)
-            ->setParameter('status', 'purchased');
+        $qb = $this->queryBuilder->createBaseQuery()
+            ->select('SUM(t.price) as totalRevenue, COUNT(t.id) as ticketCount');
 
-        if ($from) {
-            $qb->andWhere('t.purchasedAt >= :from')
-                ->setParameter('from', $from);
-        }
-
-        if ($to) {
-            $qb->andWhere('t.purchasedAt <= :to')
-                ->setParameter('to', $to);
-        }
+        $this->queryBuilder
+            ->withEvent($qb, $event)
+            ->withDateRange($qb, $from, $to);
 
         $result = $qb->getQuery()
             ->useQueryCache(true)
@@ -164,23 +148,12 @@ class EventRepository extends ServiceEntityRepository
      */
     public function getOrderStatistics(Event $event, ?DateTimeImmutable $from = null, ?DateTimeImmutable $to = null): array
     {
-        $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('COUNT(t.id) as totalTickets, AVG(t.price) as avgTicketPrice')
-            ->from('App\Entity\Ticket', 't')
-            ->where('t.event = :event')
-            ->andWhere('t.status = :status')
-            ->setParameter('event', $event)
-            ->setParameter('status', 'purchased');
+        $qb = $this->queryBuilder->createBaseQuery()
+            ->select('COUNT(t.id) as totalTickets, AVG(t.price) as avgTicketPrice');
 
-        if ($from) {
-            $qb->andWhere('t.purchasedAt >= :from')
-                ->setParameter('from', $from);
-        }
-
-        if ($to) {
-            $qb->andWhere('t.purchasedAt <= :to')
-                ->setParameter('to', $to);
-        }
+        $this->queryBuilder
+            ->withEvent($qb, $event)
+            ->withDateRange($qb, $from, $to);
 
         $result = $qb->getQuery()
             ->useQueryCache(true)
