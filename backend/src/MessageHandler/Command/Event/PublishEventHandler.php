@@ -99,7 +99,7 @@ final readonly class PublishEventHandler
 
     private function isAlreadyPublished(Event $event): bool
     {
-        return $event->getStatus() === Event::STATUS_PUBLISHED;
+        return $event->isPublished();
     }
 
     private function handleAlreadyPublished(Event $event, \App\Entity\User $user): void
@@ -128,19 +128,19 @@ final readonly class PublishEventHandler
         string $eventId,
         string $userId
     ): void {
-        if ($event->getStatus() === Event::STATUS_CANCELLED) {
+        if ($event->isCancelled()) {
             $this->logger->warning('Cannot publish cancelled event - completing gracefully', [
                 'event_id' => $eventId,
-                'status' => $event->getStatus()
+                'status' => $event->getStatus()->value
             ]);
             throw new \RuntimeException('Cannot publish cancelled event');
         }
 
-        if ($event->getStatus() !== Event::STATUS_DRAFT) {
+        if (!$event->isDraft()) {
             $this->logger->warning('Event is not in draft status - completing gracefully', [
                 'event_id' => $eventId,
-                'current_status' => $event->getStatus(),
-                'expected_status' => Event::STATUS_DRAFT
+                'current_status' => $event->getStatus()->value,
+                'expected_status' => 'draft'
             ]);
             throw new \RuntimeException('Event is not in draft status');
         }
