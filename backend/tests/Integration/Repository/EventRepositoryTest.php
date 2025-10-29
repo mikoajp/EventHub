@@ -16,6 +16,7 @@ use App\Tests\BaseTestCase;
  */
 final class EventRepositoryTest extends BaseTestCase
 {
+    private bool $dataIsolated = false;
     private EventRepository $eventRepository;
     private User $organizer;
 
@@ -25,8 +26,11 @@ final class EventRepositoryTest extends BaseTestCase
         
         $this->eventRepository = $this->entityManager->getRepository(Event::class);
         
-        // Don't try to clean up tables in setUp - let BaseTestCase handle transactions
-        // Each test runs in a transaction that is rolled back automatically
+        // Clean data only once to avoid seeing data from other tests
+        if (!$this->dataIsolated) {
+            $this->cleanupExistingData();
+            $this->dataIsolated = true;
+        }
         
         // Create an organizer for events
         $this->organizer = new User();
@@ -37,6 +41,20 @@ final class EventRepositoryTest extends BaseTestCase
         
         $this->entityManager->persist($this->organizer);
         $this->entityManager->flush();
+    }
+    
+    private function cleanupExistingData(): void
+    {
+        // Remove all existing events to ensure test isolation
+        $qb = $this->eventRepository->createQueryBuilder('e');
+        $events = $qb->getQuery()->getResult();
+        
+        foreach ($events as $event) {
+            $this->entityManager->remove($event);
+        }
+        
+        $this->entityManager->flush();
+        $this->entityManager->clear();
     }
 
     public function testFindPublishedEvents(): void
@@ -343,17 +361,21 @@ final class EventRepositoryTest extends BaseTestCase
         $this->assertInstanceOf(\DateTimeInterface::class, $event->getCreatedAt());
         $this->assertInstanceOf(\DateTimeInterface::class, $event->getUpdatedAt());
         
-        $originalUpdatedAt = $event->getUpdatedAt();
+        $originalUpdatedAt = clone $event->getUpdatedAt();
+        $originalTimestamp = $originalUpdatedAt->getTimestamp();
         
-        // Update event
-        usleep(100000); // 0.1 second
+        // Update event - wait longer to ensure timestamp changes
+        sleep(2); // 2 seconds to ensure different timestamp
         $event->setName('Updated Name');
         $this->entityManager->flush();
         
+        $newTimestamp = $event->getUpdatedAt()->getTimestamp();
+        
         // UpdatedAt should change
         $this->assertGreaterThan(
-            $originalUpdatedAt->getTimestamp(),
-            $event->getUpdatedAt()->getTimestamp()
+            $originalTimestamp,
+            $newTimestamp,
+            "UpdatedAt should be greater after update. Original: {$originalTimestamp}, New: {$newTimestamp}"
         );
     }
 
