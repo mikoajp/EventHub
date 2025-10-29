@@ -27,7 +27,7 @@ final class OrderTest extends TestCase
         $order = new Order();
         $order->setStatus('paid');
         
-        $this->assertSame('paid', $order->getStatus());
+        $this->assertSame('paid', $order->getStatus()->value);
     }
 
     public function testSetAndGetTotalAmount(): void

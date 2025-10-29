@@ -52,7 +52,7 @@ final class EventTest extends TestCase
         $event = new Event();
         $event->setStatus(Event::STATUS_PUBLISHED);
         
-        $this->assertSame(Event::STATUS_PUBLISHED, $event->getStatus());
+        $this->assertSame(Event::STATUS_PUBLISHED, $event->getStatus()->value);
     }
 
     public function testIsPublished(): void

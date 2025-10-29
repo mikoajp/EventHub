@@ -47,7 +47,7 @@ final class TicketCapacityTest extends TestCase
         $ticket = new Ticket();
         $ticket->setStatus(Ticket::STATUS_RESERVED);
 
-        $this->assertSame(Ticket::STATUS_RESERVED, $ticket->getStatus());
+        $this->assertSame(Ticket::STATUS_RESERVED, $ticket->getStatus()->value);
     }
 
     public function testTicketCanBeMarkedAsPurchased(): void
@@ -57,7 +57,7 @@ final class TicketCapacityTest extends TestCase
 
         $ticket->markAsPurchased();
 
-        $this->assertSame(Ticket::STATUS_PURCHASED, $ticket->getStatus());
+        $this->assertSame(Ticket::STATUS_PURCHASED, $ticket->getStatus()->value);
         $this->assertInstanceOf(\DateTimeImmutable::class, $ticket->getPurchasedAt());
         $this->assertNotNull($ticket->getQrCode());
     }

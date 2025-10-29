@@ -6,6 +6,12 @@ use App\Enum\Currency;
 
 final readonly class PaymentConfiguration
 {
+    private Currency $defaultCurrency;
+    private array $supportedCurrencies;
+    private int $maxPaymentAmount;
+    private int $minPaymentAmount;
+    private array $feeStructure;
+
     /**
      * @param Currency $defaultCurrency Default currency for payments
      * @param array<Currency> $supportedCurrencies List of supported currencies
@@ -14,23 +20,31 @@ final readonly class PaymentConfiguration
      * @param array<string, mixed> $feeStructure Fee structure by currency
      */
     public function __construct(
-        private Currency $defaultCurrency = Currency::USD,
-        private array $supportedCurrencies = [],
-        private int $maxPaymentAmount = 1000000, // $10,000 in cents
-        private int $minPaymentAmount = 1, // $0.01 in cents
-        private array $feeStructure = []
+        Currency $defaultCurrency = Currency::USD,
+        array $supportedCurrencies = [],
+        int $maxPaymentAmount = 1000000, // $10,000 in cents
+        int $minPaymentAmount = 1, // $0.01 in cents
+        array $feeStructure = []
     ) {
-        if (empty($this->supportedCurrencies)) {
+        $this->defaultCurrency = $defaultCurrency;
+        $this->maxPaymentAmount = $maxPaymentAmount;
+        $this->minPaymentAmount = $minPaymentAmount;
+        
+        if (empty($supportedCurrencies)) {
             $this->supportedCurrencies = [
                 Currency::USD,
                 Currency::EUR,
                 Currency::GBP,
                 Currency::PLN,
             ];
+        } else {
+            $this->supportedCurrencies = $supportedCurrencies;
         }
 
-        if (empty($this->feeStructure)) {
+        if (empty($feeStructure)) {
             $this->feeStructure = $this->getDefaultFeeStructure();
+        } else {
+            $this->feeStructure = $feeStructure;
         }
     }
 

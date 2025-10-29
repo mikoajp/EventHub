@@ -28,7 +28,7 @@ final class TicketTest extends TestCase
         $ticket = new Ticket();
         $ticket->setStatus(Ticket::STATUS_PURCHASED);
         
-        $this->assertSame(Ticket::STATUS_PURCHASED, $ticket->getStatus());
+        $this->assertSame(Ticket::STATUS_PURCHASED, $ticket->getStatus()->value);
     }
 
     public function testSetAndGetPrice(): void
