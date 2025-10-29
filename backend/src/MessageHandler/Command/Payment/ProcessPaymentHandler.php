@@ -68,7 +68,7 @@ final readonly class ProcessPaymentHandler
         }
 
         // Idempotency check: if ticket already purchased, consider success
-        if ($ticket->getStatus() === Ticket::STATUS_PURCHASED) {
+        if ($ticket->getStatus() === \App\Enum\TicketStatus::PURCHASED) {
             $this->logger->info('Ticket already purchased, skipping payment', [
                 'ticket_id' => $command->ticketId
             ]);
@@ -76,12 +76,12 @@ final readonly class ProcessPaymentHandler
             return;
         }
 
-        if ($ticket->getStatus() !== Ticket::STATUS_RESERVED) {
+        if ($ticket->getStatus() !== \App\Enum\TicketStatus::RESERVED) {
             $this->idempotencyService->markFailed($idempotencyRecord, 'Ticket is not in reserved status');
             throw new \App\Exception\Ticket\InvalidTicketStatusException(
                 $command->ticketId,
-                Ticket::STATUS_RESERVED,
-                $ticket->getStatus()
+                $ticket->getStatus()->value,
+                \App\Enum\TicketStatus::RESERVED->value
             );
         }
 
@@ -130,7 +130,7 @@ final readonly class ProcessPaymentHandler
 
             } else {
                 // Payment failed - cancel ticket and mark as failed
-                $ticket->setStatus(Ticket::STATUS_CANCELLED);
+                $ticket->setStatus(\App\Enum\TicketStatus::CANCELLED);
                 $this->entityManager->flush();
 
                 $this->idempotencyService->markFailed($idempotencyRecord, 'Payment failed: ' . $paymentResult->getMessage());
@@ -151,7 +151,7 @@ final readonly class ProcessPaymentHandler
 
         } catch (\Exception $e) {
             // Rollback: cancel ticket and mark idempotency as failed
-            $ticket->setStatus(Ticket::STATUS_CANCELLED);
+            $ticket->setStatus(\App\Enum\TicketStatus::CANCELLED);
             $this->entityManager->flush();
 
             $this->idempotencyService->markFailed($idempotencyRecord, $e->getMessage());

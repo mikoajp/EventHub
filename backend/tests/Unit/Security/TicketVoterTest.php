@@ -170,6 +170,9 @@ final class TicketVoterTest extends TestCase
         $user = $this->createMock(User::class);
         $user->method('getEmail')->willReturn($email);
         $user->method('getRoles')->willReturn($roles);
+        $user->method('hasRole')->willReturnCallback(function($role) use ($roles) {
+            return in_array($role->value, $roles, true);
+        });
         
         return $user;
     }
