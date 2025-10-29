@@ -19,14 +19,14 @@ final readonly class EventPublishingService
 
     public function publishEvent(Event $event, User $publisher): \DateTimeImmutable
     {
-        if ($event->getStatus() === Event::STATUS_PUBLISHED) {
+        if ($event->isPublished()) {
             throw new EventAlreadyPublishedException($event->getId()->toString());
         }
 
-        if ($event->getStatus() !== Event::STATUS_DRAFT) {
+        if (!$event->isDraft()) {
             throw new EventNotPublishableException(
                 $event->getId()->toString(),
-                'Only draft events can be published. Current status: ' . $event->getStatus()
+                'Only draft events can be published. Current status: ' . $event->getStatus()->value
             );
         }
 
@@ -36,7 +36,7 @@ final readonly class EventPublishingService
 
         $publishedAt = new \DateTimeImmutable();
         
-        $event->setStatus(Event::STATUS_PUBLISHED);
+        $event->setStatus(\App\Enum\EventStatus::PUBLISHED);
         $event->setPublishedAt($publishedAt);
 
         $this->entityManager->flush();
@@ -54,7 +54,7 @@ final readonly class EventPublishingService
     public function canUserPublishEvent(Event $event, User $user): bool
     {
         return $event->getOrganizer() === $user || 
-               in_array('ROLE_ADMIN', $user->getRoles());
+               $user->hasRole(\App\Enum\UserRole::ADMIN);
     }
 
     public function cancelEvent(Event $event, User $canceller, string $reason): void
@@ -63,7 +63,7 @@ final readonly class EventPublishingService
             throw new InsufficientPermissionsException('cancel this event');
         }
 
-        $event->setStatus(Event::STATUS_CANCELLED);
+        $event->setStatus(\App\Enum\EventStatus::CANCELLED);
         $event->setCancelledAt(new \DateTimeImmutable());
 
         $this->entityManager->flush();

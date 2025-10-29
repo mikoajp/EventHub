@@ -145,7 +145,7 @@ final readonly class PublishEventHandler
             throw new \RuntimeException('Event is not in draft status');
         }
 
-        if ($event->getOrganizer() !== $user && !in_array('ROLE_ADMIN', $user->getRoles())) {
+        if ($event->getOrganizer() !== $user && !$user->hasRole(\App\Enum\UserRole::ADMIN)) {
             $this->logger->error('User has no permission to publish event - completing gracefully', [
                 'event_id' => $eventId,
                 'user_id' => $userId,

@@ -22,7 +22,7 @@ class EventDomainService
             ->setVenue($eventDTO->venue)
             ->setMaxTickets($eventDTO->maxTickets)
             ->setOrganizer($organizer)
-            ->setStatus(Event::STATUS_DRAFT);
+            ->setStatus(\App\Enum\EventStatus::DRAFT);
 
         $this->entityManager->persist($event);
         $this->entityManager->flush();
@@ -46,7 +46,7 @@ class EventDomainService
     public function canUserModifyEvent(Event $event, User $user): bool
     {
         return $event->getOrganizer() === $user || 
-               in_array('ROLE_ADMIN', $user->getRoles());
+               $user->hasRole(\App\Enum\UserRole::ADMIN);
     }
 
     public function canBeModified(Event $event, int $ticketsSold = 0): bool
@@ -80,7 +80,7 @@ class EventDomainService
 
     public function isEventPublishable(Event $event): bool
     {
-        return $event->getStatus() === Event::STATUS_DRAFT &&
+        return $event->isDraft() &&
                $event->getName() &&
                $event->getEventDate() &&
                $event->getVenue();
@@ -88,22 +88,22 @@ class EventDomainService
 
     public function isPublished(Event $event): bool
     {
-        return $event->getStatus() === Event::STATUS_PUBLISHED;
+        return $event->isPublished();
     }
 
     public function isDraft(Event $event): bool
     {
-        return $event->getStatus() === Event::STATUS_DRAFT;
+        return $event->isDraft();
     }
 
     public function isCancelled(Event $event): bool
     {
-        return $event->getStatus() === Event::STATUS_CANCELLED;
+        return $event->isCancelled();
     }
 
     public function isCompleted(Event $event): bool
     {
-        return $event->getStatus() === Event::STATUS_COMPLETED;
+        return $event->isCompleted();
     }
 
     public function isUpcoming(Event $event): bool
@@ -136,12 +136,12 @@ class EventDomainService
         if (!$this->canBeCancelled($event)) {
             throw new \App\Exception\Event\EventCannotBeCancelledException(
                 $event->getId()->toString(),
-                'Event cannot be cancelled in current state: ' . $event->getStatus()
+                'Event cannot be cancelled in current state: ' . $event->getStatus()->value
             );
         }
 
         $event->setPreviousStatus($event->getStatus());
-        $event->setStatus(Event::STATUS_CANCELLED);
+        $event->setStatus(\App\Enum\EventStatus::CANCELLED);
         $event->setCancelledAt(new \DateTimeImmutable());
         $this->entityManager->flush();
     }
@@ -156,7 +156,7 @@ class EventDomainService
         }
 
         $event->setPreviousStatus($event->getStatus());
-        $event->setStatus(Event::STATUS_DRAFT);
+        $event->setStatus(\App\Enum\EventStatus::DRAFT);
         $event->setPublishedAt(null);
         $this->entityManager->flush();
     }
@@ -166,12 +166,12 @@ class EventDomainService
         if (!$this->canBeCompleted($event)) {
             throw new \App\Exception\Event\EventNotPublishableException(
                 $event->getId()->toString(),
-                'Event cannot be completed - must be published and past. Current status: ' . $event->getStatus()
+                'Event cannot be completed - must be published and past. Current status: ' . $event->getStatus()->value
             );
         }
 
         $event->setPreviousStatus($event->getStatus());
-        $event->setStatus(Event::STATUS_COMPLETED);
+        $event->setStatus(\App\Enum\EventStatus::COMPLETED);
         $this->entityManager->flush();
     }
 }

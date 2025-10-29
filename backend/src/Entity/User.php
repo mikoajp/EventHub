@@ -124,13 +124,43 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
-        $roles[] = 'ROLE_USER';
+        $roles[] = \App\Enum\UserRole::USER->value;
         return array_unique($roles);
     }
 
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
+        return $this;
+    }
+
+    /**
+     * Check if user has a specific role
+     */
+    public function hasRole(\App\Enum\UserRole $role): bool
+    {
+        return in_array($role->value, $this->getRoles(), true);
+    }
+
+    /**
+     * Add a role to the user
+     */
+    public function addRole(\App\Enum\UserRole $role): static
+    {
+        if (!$this->hasRole($role)) {
+            $this->roles[] = $role->value;
+        }
+        return $this;
+    }
+
+    /**
+     * Remove a role from the user
+     */
+    public function removeRole(\App\Enum\UserRole $role): static
+    {
+        $this->roles = array_values(
+            array_filter($this->roles, fn($r) => $r !== $role->value)
+        );
         return $this;
     }
 

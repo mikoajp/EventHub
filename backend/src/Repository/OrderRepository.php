@@ -57,7 +57,7 @@ class OrderRepository extends ServiceEntityRepository
     {
         $qb = $this->createQueryBuilder('o')
             ->where('o.status = :status')
-            ->setParameter('status', Order::STATUS_PENDING);
+            ->setParameter('status', \App\Enum\OrderStatus::PENDING->value);
 
         if ($olderThan) {
             $qb->andWhere('o.createdAt < :olderThan')
@@ -84,7 +84,7 @@ class OrderRepository extends ServiceEntityRepository
             ->where('o.event = :event')
             ->andWhere('o.status = :status')
             ->setParameter('event', $event)
-            ->setParameter('status', Order::STATUS_PAID)
+            ->setParameter('status', \App\Enum\OrderStatus::PAID->value)
             ->getQuery()
             ->getSingleResult();
 

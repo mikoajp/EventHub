@@ -170,7 +170,7 @@ class TicketVoter extends Voter
 
     private function isAdmin(User $user): bool
     {
-        return in_array('ROLE_ADMIN', $user->getRoles(), true);
+        return $user->hasRole(\App\Enum\UserRole::ADMIN);
     }
 
     private function isTicketCancellable(Ticket $ticket): bool
