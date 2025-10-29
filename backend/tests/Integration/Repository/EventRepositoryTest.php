@@ -25,20 +25,8 @@ final class EventRepositoryTest extends BaseTestCase
         
         $this->eventRepository = $this->entityManager->getRepository(Event::class);
         
-        // Clear all existing events to ensure test isolation
-        $connection = $this->entityManager->getConnection();
-        $platform = $connection->getDatabasePlatform();
-        
-        try {
-            $connection->executeStatement('DELETE FROM event_attendees');
-            $connection->executeStatement('DELETE FROM ticket');
-            $connection->executeStatement('DELETE FROM order_item');
-            $connection->executeStatement('DELETE FROM "order"');
-            $connection->executeStatement('DELETE FROM ticket_type');
-            $connection->executeStatement($platform->getTruncateTableSQL('events', false));
-        } catch (\Exception $e) {
-            // Ignore if tables don't exist yet
-        }
+        // Don't try to clean up tables in setUp - let BaseTestCase handle transactions
+        // Each test runs in a transaction that is rolled back automatically
         
         // Create an organizer for events
         $this->organizer = new User();
