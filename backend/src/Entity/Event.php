@@ -328,9 +328,9 @@ class Event
     public function removeTicketType(TicketType $ticketType): static
     {
         if ($this->ticketTypes->removeElement($ticketType)) {
-            if ($ticketType->getEvent() === $this) {
-                $ticketType->setEvent(null);
-            }
+            // Note: We don't set event to null because TicketType::event is non-nullable
+            // Doctrine will handle orphan removal if configured with orphanRemoval=true
+            // For now, just remove from collection
         }
 
         return $this;

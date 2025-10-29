@@ -202,10 +202,15 @@ final class EventTest extends TestCase
         $event = new Event();
         $ticketType = new TicketType();
         $ticketType->setName('VIP');
+        $ticketType->setPrice(5000);
+        $ticketType->setQuantity(50);
         
         $event->addTicketType($ticketType);
         $this->assertCount(1, $event->getTicketTypes());
+        $this->assertSame($event, $ticketType->getEvent());
         
+        // Note: removeTicketType removes from collection but doesn't set event to null
+        // because TicketType::event is non-nullable (orphan removal would delete it)
         $event->removeTicketType($ticketType);
         $this->assertCount(0, $event->getTicketTypes());
     }
@@ -332,13 +337,14 @@ final class EventTest extends TestCase
         $originalUpdatedAt = $event->getUpdatedAt();
         
         // Wait a moment to ensure timestamp difference
-        usleep(100000); // 0.1 seconds
+        usleep(1000000); // 1 second to ensure different timestamp
         
         $event->onPreUpdate();
         
         $this->assertGreaterThan(
             $originalUpdatedAt->getTimestamp(),
-            $event->getUpdatedAt()->getTimestamp()
+            $event->getUpdatedAt()->getTimestamp(),
+            'UpdatedAt timestamp should be greater after onPreUpdate()'
         );
     }
 

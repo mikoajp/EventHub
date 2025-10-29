@@ -16,7 +16,7 @@ final class AuthControllerTest extends BaseWebTestCase
 {
     public function testRegisterCreatesNewUser(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('POST', '/api/auth/register', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -49,7 +49,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testRegisterRequiresEmail(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('POST', '/api/auth/register', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -64,7 +64,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testRegisterRequiresPassword(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('POST', '/api/auth/register', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -79,7 +79,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testRegisterRequiresFirstName(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('POST', '/api/auth/register', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -94,7 +94,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testRegisterRequiresLastName(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('POST', '/api/auth/register', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -109,7 +109,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testRegisterRejectsInvalidEmail(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('POST', '/api/auth/register', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -125,7 +125,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testRegisterRejectsDuplicateEmail(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         // First registration
         $client->request('POST', '/api/auth/register', [], [], [
@@ -154,7 +154,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testRegisterHashesPassword(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $plainPassword = 'MySecurePassword123!';
         
@@ -179,7 +179,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testLoginWithValidCredentials(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         // First register a user
         $client->request('POST', '/api/auth/register', [], [], [
@@ -211,7 +211,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testLoginWithInvalidPassword(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         // First register a user
         $client->request('POST', '/api/auth/register', [], [], [
@@ -236,7 +236,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testLoginWithNonexistentUser(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('POST', '/api/auth/login', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -250,7 +250,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testLoginRequiresEmail(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('POST', '/api/auth/login', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -263,7 +263,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testLoginRequiresPassword(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('POST', '/api/auth/login', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -276,7 +276,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testMeEndpointReturnsCurrentUser(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         // Register and login
         $client->request('POST', '/api/auth/register', [], [], [
@@ -311,7 +311,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testMeEndpointRequiresAuthentication(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('GET', '/api/auth/me', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -322,7 +322,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testMeEndpointRejectsInvalidToken(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('GET', '/api/auth/me', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -334,7 +334,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testRegisterReturnsJsonResponse(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         $client->request('POST', '/api/auth/register', [], [], [
             'CONTENT_TYPE' => 'application/json',
@@ -356,7 +356,7 @@ final class AuthControllerTest extends BaseWebTestCase
 
     public function testLoginReturnsJsonResponse(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         
         // Register first
         $client->request('POST', '/api/auth/register', [], [], [

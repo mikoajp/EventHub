@@ -19,7 +19,7 @@ final class FailureSimulationTest extends BaseWebTestCase
      */
     public function testTimeoutRecoveryWithIdempotencyKey(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         $token = $this->createAuthenticatedUser($client);
         
         // Create an event and ticket type first
@@ -69,7 +69,7 @@ final class FailureSimulationTest extends BaseWebTestCase
      */
     public function testInternalServerErrorWithIdempotency(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         $token = $this->createAuthenticatedUser($client);
         
         $eventId = $this->createTestEvent($client, $token);
@@ -113,7 +113,7 @@ final class FailureSimulationTest extends BaseWebTestCase
      */
     public function testPartialFailureWithTransactionalRollback(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         $token = $this->createAuthenticatedUser($client);
         
         $eventId = $this->createTestEvent($client, $token);
@@ -147,7 +147,7 @@ final class FailureSimulationTest extends BaseWebTestCase
      */
     public function testNetworkInterruptionProtection(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         $token = $this->createAuthenticatedUser($client);
         
         $eventId = $this->createTestEvent($client, $token);
@@ -196,7 +196,7 @@ final class FailureSimulationTest extends BaseWebTestCase
      */
     public function testConcurrentRequestsWithSameIdempotencyKey(): void
     {
-        $client = static::createClient();
+        $client = $this->client;
         $token = $this->createAuthenticatedUser($client);
         
         $eventId = $this->createTestEvent($client, $token);

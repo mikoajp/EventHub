@@ -25,9 +25,24 @@ final class EventRepositoryTest extends BaseTestCase
         
         $this->eventRepository = $this->entityManager->getRepository(Event::class);
         
+        // Clear all existing events to ensure test isolation
+        $connection = $this->entityManager->getConnection();
+        $platform = $connection->getDatabasePlatform();
+        
+        try {
+            $connection->executeStatement('DELETE FROM event_attendees');
+            $connection->executeStatement('DELETE FROM ticket');
+            $connection->executeStatement('DELETE FROM order_item');
+            $connection->executeStatement('DELETE FROM "order"');
+            $connection->executeStatement('DELETE FROM ticket_type');
+            $connection->executeStatement($platform->getTruncateTableSQL('events', false));
+        } catch (\Exception $e) {
+            // Ignore if tables don't exist yet
+        }
+        
         // Create an organizer for events
         $this->organizer = new User();
-        $this->organizer->setEmail('organizer@test.com');
+        $this->organizer->setEmail('organizer-' . uniqid() . '@test.com');
         $this->organizer->setPassword('hashed_password');
         $this->organizer->setFirstName('Test');
         $this->organizer->setLastName('Organizer');
@@ -320,12 +335,20 @@ final class EventRepositoryTest extends BaseTestCase
 
     public function testEventLifecycleCallbacks(): void
     {
-        $event = $this->createEvent('Lifecycle Test', EventStatus::DRAFT);
+        $event = new Event();
+        $event->setName('Lifecycle Test');
+        $event->setDescription('Test description');
+        $event->setVenue('Test Venue');
+        $event->setEventDate(new \DateTime('+1 month'));
+        $event->setMaxTickets(100);
+        $event->setStatus(EventStatus::DRAFT);
+        $event->setOrganizer($this->organizer);
         
         // Before persist, timestamps should be null
         $this->assertNull($event->getCreatedAt());
         $this->assertNull($event->getUpdatedAt());
         
+        $this->entityManager->persist($event);
         $this->entityManager->flush();
         
         // After persist, timestamps should be set
