@@ -113,8 +113,18 @@ final class TicketVoterTest extends TestCase
     {
         $organizer = $this->createUser('organizer@test.com', ['ROLE_ORGANIZER']);
         $buyer = $this->createUser('buyer@test.com');
-        $ticket = $this->createTicket($buyer, $organizer);
-        $ticket->setStatus('confirmed');
+        
+        // Create event
+        $event = $this->createMock(Event::class);
+        $event->method('getOrganizer')->willReturn($organizer);
+        $event->method('getEventDate')->willReturn(new \DateTime('+30 days'));
+        
+        // Create ticket with PURCHASED status
+        $ticket = $this->createMock(Ticket::class);
+        $ticket->method('getUser')->willReturn($buyer);
+        $ticket->method('getEvent')->willReturn($event);
+        $ticket->method('getStatus')->willReturn(\App\Enum\TicketStatus::PURCHASED);
+        
         $token = $this->createToken($organizer);
 
         $result = $this->voter->vote($token, $ticket, [TicketVoter::REFUND]);

@@ -259,4 +259,11 @@ final class EventVoterTest extends TestCase
         return $token;
     }
 
-    private function createTokenWithoutUser(
+    private function createTokenWithoutUser(): TokenInterface
+    {
+        $token = $this->createMock(TokenInterface::class);
+        $token->method('getUser')->willReturn(null);
+        
+        return $token;
+    }
+}
