@@ -4,6 +4,7 @@ namespace App\Tests\Unit\Domain\Payment;
 
 use App\Domain\Payment\Service\PaymentDomainService;
 use App\DTO\PaymentResultDTO;
+use App\Infrastructure\Payment\PaymentConfiguration;
 use PHPUnit\Framework\TestCase;
 
 final class PaymentDomainServiceTest extends TestCase
@@ -12,7 +13,8 @@ final class PaymentDomainServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->service = new PaymentDomainService();
+        $config = new PaymentConfiguration();
+        $this->service = new PaymentDomainService($config);
     }
 
     public function testServiceExists(): void

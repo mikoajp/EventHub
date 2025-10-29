@@ -49,7 +49,7 @@ final class EventRepositoryIntegrationTest extends BaseTestCase
             if ($event->getId()->toString() === $publishedEventId) {
                 $foundOurEvent = true;
             }
-            if ($event->getStatus() !== Event::STATUS_PUBLISHED) {
+            if ($event->getStatus()->value !== Event::STATUS_PUBLISHED) {
                 $foundDraftEvent = true;
             }
         }

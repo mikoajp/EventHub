@@ -49,6 +49,9 @@ services:
             $fromEmail: '%env(FROM_EMAIL)%'
 
     # Payment Infrastructure
+    App\Infrastructure\Payment\PaymentConfiguration:
+        # Uses default constructor values - can be overridden per environment
+
     App\Infrastructure\Payment\PaymentGatewayInterface:
         alias: App\Infrastructure\Payment\StripePaymentGateway
 
