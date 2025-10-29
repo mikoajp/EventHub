@@ -231,6 +231,9 @@ final class EventVoterTest extends TestCase
         
         if ($organizer) {
             $event->method('getOrganizer')->willReturn($organizer);
+        } else {
+            // Return a default organizer for anonymous access tests
+            $event->method('getOrganizer')->willReturn($this->createUser('default@test.com'));
         }
 
         return $event;
@@ -256,11 +259,4 @@ final class EventVoterTest extends TestCase
         return $token;
     }
 
-    private function createTokenWithoutUser(): TokenInterface
-    {
-        $token = $this->createMock(TokenInterface::class);
-        $token->method('getUser')->willReturn(null);
-        
-        return $token;
-    }
-}
+    private function createTokenWithoutUser(

@@ -182,7 +182,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         // Verify only 1 ticket exists
         $tickets = $this->entityManager->getRepository(Ticket::class)->findBy([
             'ticketType' => $ticketType,
-            'status' => [Ticket::STATUS_RESERVED, Ticket::STATUS_PURCHASED]
+            'status' => [\App\Enum\TicketStatus::RESERVED->value, \App\Enum\TicketStatus::PURCHASED->value]
         ]);
 
         $this->assertCount(1, $tickets);
@@ -226,7 +226,7 @@ final class TicketPurchaseFlowTest extends BaseWebTestCase
         foreach ($tickets as $ticket) {
             $this->assertSame(
                 Ticket::STATUS_CANCELLED,
-                $ticket->getStatus(),
+                $ticket->getStatus()->value,
                 'Failed payment should result in cancelled ticket'
             );
         }

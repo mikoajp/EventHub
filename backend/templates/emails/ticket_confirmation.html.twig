@@ -59,7 +59,7 @@
                 <strong>Ticket Details</strong><br>
                 Type: {{ ticket.ticketType.name }}<br>
                 Price: ${{ (ticket.price / 100)|number_format(2) }}<br>
-                Status: {{ ticket.status|capitalize }}
+                Status: {{ ticket.status.value|capitalize }}
             </p>
         </div>
         
