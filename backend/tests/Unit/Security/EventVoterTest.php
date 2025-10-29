@@ -226,7 +226,7 @@ final class EventVoterTest extends TestCase
     private function createEvent(string $status, ?User $organizer = null): Event
     {
         $event = $this->createMock(Event::class);
-        $event->method('getStatus')->willReturn($status);
+        $event->method('getStatus')->willReturn(\App\Enum\EventStatus::from($status));
         $event->method('isPublished')->willReturn($status === Event::STATUS_PUBLISHED);
         
         if ($organizer) {
