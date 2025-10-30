@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use App\Enum\OrderStatus;
 use App\Repository\OrderRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -16,6 +17,7 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\HasLifecycleCallbacks]
 class Order
 {
+    // Keep constants for backward compatibility
     public const STATUS_PENDING = 'pending';
     public const STATUS_PAID = 'paid';
     public const STATUS_CANCELLED = 'cancelled';
@@ -42,9 +44,9 @@ class Order
     #[Groups(['order:read', 'order:write'])]
     private ?int $totalAmount = null; // Amount in cents
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(type: 'string', length: 50, enumType: OrderStatus::class)]
     #[Groups(['order:read', 'order:write'])]
-    private ?string $status = self::STATUS_PENDING;
+    private OrderStatus $status = OrderStatus::PENDING;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Groups(['order:read', 'order:write'])]
@@ -125,13 +127,16 @@ class Order
         return number_format($this->totalAmount / 100, 2);
     }
 
-    public function getStatus(): ?string
+    public function getStatus(): OrderStatus
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): static
+    public function setStatus(OrderStatus|string $status): static
     {
+        if (is_string($status)) {
+            $status = OrderStatus::from($status);
+        }
         $this->status = $status;
         return $this;
     }
@@ -216,44 +221,38 @@ class Order
 
     public function isPaid(): bool
     {
-        return $this->status === self::STATUS_PAID;
+        return $this->status === OrderStatus::PAID;
     }
 
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === OrderStatus::PENDING;
     }
 
     public function isCancelled(): bool
     {
-        return $this->status === self::STATUS_CANCELLED;
+        return $this->status === OrderStatus::CANCELLED;
     }
 
     public function isRefunded(): bool
     {
-        return $this->status === self::STATUS_REFUNDED;
+        return $this->status === OrderStatus::REFUNDED;
     }
 
     public function canBeCancelled(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status === OrderStatus::PENDING;
     }
 
     public function canBeRefunded(): bool
     {
-        return $this->status === self::STATUS_PAID;
+        return $this->status === OrderStatus::PAID;
     }
 
     // Presentation concern moved to Presenter (Faza 4); kept for BC for now.
     #[Groups(['order:read'])]
     public function getStatusLabel(): string
     {
-        return match($this->status) {
-            self::STATUS_PENDING => 'Pending',
-            self::STATUS_PAID => 'Paid',
-            self::STATUS_CANCELLED => 'Cancelled',
-            self::STATUS_REFUNDED => 'Refunded',
-            default => 'Unknown'
-        };
+        return $this->status->getLabel();
     }
 }

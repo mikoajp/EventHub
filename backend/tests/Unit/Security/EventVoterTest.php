@@ -226,11 +226,14 @@ final class EventVoterTest extends TestCase
     private function createEvent(string $status, ?User $organizer = null): Event
     {
         $event = $this->createMock(Event::class);
-        $event->method('getStatus')->willReturn($status);
+        $event->method('getStatus')->willReturn(\App\Enum\EventStatus::from($status));
         $event->method('isPublished')->willReturn($status === Event::STATUS_PUBLISHED);
         
         if ($organizer) {
             $event->method('getOrganizer')->willReturn($organizer);
+        } else {
+            // Return a default organizer for anonymous access tests
+            $event->method('getOrganizer')->willReturn($this->createUser('default@test.com'));
         }
 
         return $event;
@@ -241,6 +244,9 @@ final class EventVoterTest extends TestCase
         $user = $this->createMock(User::class);
         $user->method('getEmail')->willReturn($email);
         $user->method('getRoles')->willReturn($roles);
+        $user->method('hasRole')->willReturnCallback(function($role) use ($roles) {
+            return in_array($role->value, $roles, true);
+        });
         
         return $user;
     }

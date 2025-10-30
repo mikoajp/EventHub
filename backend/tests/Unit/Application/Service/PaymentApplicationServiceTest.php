@@ -5,6 +5,7 @@ namespace App\Tests\Unit\Application\Service;
 use App\Application\Service\PaymentApplicationService;
 use App\Domain\Payment\Service\PaymentDomainService;
 use App\DTO\PaymentResultDTO;
+use App\Infrastructure\Payment\PaymentConfiguration;
 use App\Infrastructure\Payment\PaymentGatewayInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -17,7 +18,8 @@ final class PaymentApplicationServiceTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->domain = new PaymentDomainService();
+        $config = new PaymentConfiguration();
+        $this->domain = new PaymentDomainService($config);
         $this->gateway = new class implements PaymentGatewayInterface {
             public function processPayment(string $paymentMethodId, int $amount, string $currency = 'USD', array $metadata = []): PaymentResultDTO
             {

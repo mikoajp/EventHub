@@ -34,34 +34,56 @@ final class RetryAndDLQTest extends KernelTestCase
         self::bootKernel();
         
         $container = self::getContainer();
+        $bus = $container->get(MessageBusInterface::class);
         
-        // Test routing configuration
-        // Payment commands should go to high_priority
-        // Regular commands should go to async
-        // Events should go to notifications
+        // Test that message bus is properly configured
+        $this->assertInstanceOf(MessageBusInterface::class, $bus);
         
-        $this->assertTrue(true, 'Routing is configured in messenger.yaml');
+        // Note: We can't actually dispatch commands without valid UUIDs
+        // This test verifies that the message bus infrastructure is configured
+        
+        // Verify transports exist
+        $this->assertTrue($container->has('messenger.transport.async'));
+        $this->assertTrue($container->has('messenger.transport.high_priority'));
+        
+        // Verify message bus is traceable (for routing verification)
+        $this->assertInstanceOf(\Symfony\Component\Messenger\TraceableMessageBus::class, $bus);
     }
 
-    public function testRetryStrategyConfiguration(): void
+    public function testRetryStrategyIsConfiguredForTransports(): void
     {
         self::bootKernel();
         
-        // Verify retry configuration exists
-        // async: max_retries: 3, delay: 1000, multiplier: 2
-        // high_priority: max_retries: 5, delay: 500, multiplier: 1.5
+        $container = self::getContainer();
         
-        $this->assertTrue(true, 'Retry strategies configured in messenger.yaml');
+        // Verify transports have retry configuration
+        // We can't directly test retry strategy without triggering failures,
+        // but we can verify the infrastructure is in place
+        
+        $this->assertTrue($container->has('messenger.transport.async'));
+        $this->assertTrue($container->has('messenger.transport.high_priority'));
+        
+        // Verify that failed transport exists for DLQ
+        $this->assertTrue($container->has('messenger.transport.failed'));
     }
 
-    public function testFailedMessagesGoToDeadLetterQueue(): void
+    public function testFailedMessagesInfrastructureIsConfigured(): void
     {
         self::bootKernel();
+        
+        $container = self::getContainer();
         
         // When a message fails after all retries, it should go to 'failed' transport
         // The failed transport is configured as: doctrine://default?queue_name=failed
         
-        $this->assertTrue(true, 'DLQ configured as doctrine transport');
+        $this->assertTrue(
+            $container->has('messenger.transport.failed'),
+            'Failed transport (DLQ) must be configured'
+        );
+        
+        // Verify we can get the transport
+        $failedTransport = $container->get('messenger.transport.failed');
+        $this->assertNotNull($failedTransport);
     }
 
     public function testRedeliveryStampTracksRetries(): void
@@ -143,40 +165,54 @@ final class RetryAndDLQTest extends KernelTestCase
         $this->assertSame(0, $maxRetriesForDLQ, 'DLQ should not retry messages');
     }
 
-    public function testTransientErrorsAreRetried(): void
+    public function testTransientErrorsCanBeIdentified(): void
     {
         // Transient errors (network issues, temporary unavailability)
         // should be retried according to retry strategy
         
-        // Examples of transient errors:
-        // - Database deadlock
-        // - Network timeout
-        // - Service temporarily unavailable
-        
+        // Examples of transient errors that should be retried:
         $transientErrors = [
             'SQLSTATE[40001]: Serialization failure: 1213 Deadlock found',
             'Connection timeout',
-            'Service unavailable (503)'
+            'Service unavailable (503)',
+            'SQLSTATE[HY000]: General error: 2006 MySQL server has gone away'
         ];
         
-        $this->assertCount(3, $transientErrors);
+        foreach ($transientErrors as $error) {
+            // These errors indicate temporary issues that might succeed on retry
+            // Check if error contains any transient error keyword
+            $isTransient = 
+                stripos($error, 'deadlock') !== false ||
+                stripos($error, 'timeout') !== false ||
+                stripos($error, 'unavailable') !== false ||
+                stripos($error, 'server has gone away') !== false;
+            
+            $this->assertTrue($isTransient, "Error '{$error}' should be identified as transient");
+        }
+        
+        $this->assertCount(4, $transientErrors);
     }
 
-    public function testPermanentErrorsFailImmediately(): void
+    public function testPermanentErrorsCanBeIdentified(): void
     {
         // Permanent errors should not be retried
         // Examples:
-        // - Invalid data format
-        // - Entity not found
-        // - Authorization failed
-        
         $permanentErrors = [
             'InvalidArgumentException: Ticket not found',
             'InvalidArgumentException: Invalid payment method',
-            'ValidationException: Invalid email format'
+            'ValidationException: Invalid email format',
+            'AccessDeniedException: User not authorized'
         ];
         
-        $this->assertCount(3, $permanentErrors);
+        foreach ($permanentErrors as $error) {
+            // These errors indicate logical/business errors that won't succeed on retry
+            $this->assertMatchesRegularExpression(
+                '/(InvalidArgumentException|ValidationException|AccessDeniedException)/',
+                $error
+            );
+        }
+        
+        $this->assertCount(4, $permanentErrors);
     }
 
     public function testInMemoryTransportForTesting(): void

@@ -53,7 +53,7 @@ final class EventDomainServiceTest extends TestCase
     public function testIsEventPublishableReturnsTrueForDraftEvent(): void
     {
         $event = $this->createMock(Event::class);
-        $event->method('getStatus')->willReturn(Event::STATUS_DRAFT);
+        $event->method('isDraft')->willReturn(true);
         $event->method('getName')->willReturn('Test Event');
         $event->method('getEventDate')->willReturn(new \DateTime('+1 month'));
         $event->method('getVenue')->willReturn('Test Venue');
@@ -66,7 +66,7 @@ final class EventDomainServiceTest extends TestCase
     public function testIsEventPublishableReturnsFalseForPublishedEvent(): void
     {
         $event = $this->createMock(Event::class);
-        $event->method('getStatus')->willReturn(Event::STATUS_PUBLISHED);
+        $event->method('isDraft')->willReturn(false);
         
         $result = $this->service->isEventPublishable($event);
         
@@ -76,7 +76,7 @@ final class EventDomainServiceTest extends TestCase
     public function testIsEventPublishableReturnsFalseForCancelledEvent(): void
     {
         $event = $this->createMock(Event::class);
-        $event->method('getStatus')->willReturn(Event::STATUS_CANCELLED);
+        $event->method('isDraft')->willReturn(false);
         
         $result = $this->service->isEventPublishable($event);
         
@@ -86,7 +86,7 @@ final class EventDomainServiceTest extends TestCase
     public function testIsEventPublishableReturnsFalseWhenNoName(): void
     {
         $event = $this->createMock(Event::class);
-        $event->method('getStatus')->willReturn(Event::STATUS_DRAFT);
+        $event->method('isDraft')->willReturn(true);
         $event->method('getName')->willReturn(null);
         $event->method('getEventDate')->willReturn(new \DateTime('+1 month'));
         $event->method('getVenue')->willReturn('Test Venue');

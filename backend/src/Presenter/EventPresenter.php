@@ -28,7 +28,7 @@ final readonly class EventPresenter implements EventPresenterInterface
             eventDate: EventDate::fromNative($event->getEventDate())->format(),
             venue: $event->getVenue(),
             maxTickets: $event->getMaxTickets(),
-            status: $event->getStatus(),
+            status: $event->getStatus()->value,
             publishedAt: $event->getPublishedAt()?->format('c'),
             createdAt: $event->getCreatedAt()?->format('c'),
             ticketsSold: $this->calculationService->calculateTicketsSold($event),
@@ -67,7 +67,7 @@ final readonly class EventPresenter implements EventPresenterInterface
             eventDateFormatted: $this->formatEventDate($event),
             venue: $event->getVenue(),
             maxTickets: $event->getMaxTickets(),
-            status: $event->getStatus(),
+            status: $event->getStatus()->value,
             statusLabel: $this->getStatusLabel($event),
             publishedAt: $event->getPublishedAt()?->format('c'),
             createdAt: $event->getCreatedAt()?->format('c'),
@@ -149,13 +149,7 @@ final readonly class EventPresenter implements EventPresenterInterface
 
     public function getStatusLabel(Event $event): string
     {
-        return match($event->getStatus()) {
-            Event::STATUS_DRAFT => 'Draft',
-            Event::STATUS_PUBLISHED => 'Published',
-            Event::STATUS_CANCELLED => 'Cancelled',
-            Event::STATUS_COMPLETED => 'Completed',
-            default => 'Unknown'
-        };
+        return $event->getStatus()->getLabel();
     }
 
     public function formatEventDate(Event $event): string

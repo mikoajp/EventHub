@@ -77,7 +77,7 @@ class EventVoter extends Voter
     private function canView(Event $event, ?User $user): bool
     {
         // Everyone can view published events
-        if ($event->getStatus() === Event::STATUS_PUBLISHED) {
+        if ($event->isPublished()) {
             return true;
         }
 
@@ -207,6 +207,6 @@ class EventVoter extends Voter
 
     private function isAdmin(User $user): bool
     {
-        return in_array('ROLE_ADMIN', $user->getRoles(), true);
+        return $user->hasRole(\App\Enum\UserRole::ADMIN);
     }
 }

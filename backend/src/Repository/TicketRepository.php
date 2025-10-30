@@ -31,7 +31,7 @@ class TicketRepository extends ServiceEntityRepository
             ->where('t.event = :event')
             ->andWhere('t.status = :status')
             ->setParameter('event', $event)
-            ->setParameter('status', Ticket::STATUS_PURCHASED)
+            ->setParameter('status', \App\Enum\TicketStatus::PURCHASED->value)
             ->groupBy('tt.id');
 
         if ($from) {
@@ -94,7 +94,7 @@ class TicketRepository extends ServiceEntityRepository
         
         $params = [
             'event_id' => $event->getId()->toString(),
-            'status' => Ticket::STATUS_PURCHASED
+            'status' => \App\Enum\TicketStatus::PURCHASED->value
         ];
         
         if ($from) {
@@ -120,7 +120,7 @@ class TicketRepository extends ServiceEntityRepository
             ->where('t.event = :event')
             ->andWhere('t.status = :status')
             ->setParameter('event', $event)
-            ->setParameter('status', Ticket::STATUS_PURCHASED)
+            ->setParameter('status', \App\Enum\TicketStatus::PURCHASED->value)
             ->getQuery()
             ->getSingleScalarResult();
 
@@ -139,7 +139,7 @@ class TicketRepository extends ServiceEntityRepository
             ->where('t.event = :event')
             ->andWhere('t.status = :status')
             ->setParameter('event', $event)
-            ->setParameter('status', Ticket::STATUS_PURCHASED)
+            ->setParameter('status', \App\Enum\TicketStatus::PURCHASED->value)
             ->groupBy('tt.id')
             ->getQuery()
             ->getResult();
@@ -152,8 +152,8 @@ class TicketRepository extends ServiceEntityRepository
             ->set('t.status', ':cancelled_status')
             ->where('t.status = :reserved_status')
             ->andWhere('t.createdAt < :expiry_time')
-            ->setParameter('cancelled_status', Ticket::STATUS_CANCELLED)
-            ->setParameter('reserved_status', Ticket::STATUS_RESERVED)
+            ->setParameter('cancelled_status', \App\Enum\TicketStatus::CANCELLED->value)
+            ->setParameter('reserved_status', \App\Enum\TicketStatus::RESERVED->value)
             ->setParameter('expiry_time', $expiryTime)
             ->getQuery()
             ->execute();
@@ -173,7 +173,7 @@ class TicketRepository extends ServiceEntityRepository
             ->andWhere('t.status IN (:valid_statuses)')
             ->setParameter('user_id', $userId)
             ->setParameter('event_id', $eventId)
-            ->setParameter('valid_statuses', [Ticket::STATUS_PURCHASED, Ticket::STATUS_RESERVED])
+            ->setParameter('valid_statuses', [\App\Enum\TicketStatus::PURCHASED->value, \App\Enum\TicketStatus::RESERVED->value])
             ->getQuery()
             ->getResult();
     }
@@ -197,7 +197,7 @@ class TicketRepository extends ServiceEntityRepository
             ->andWhere('t.status IN (:valid_statuses)')
             ->setParameter('event_id', $eventId)
             ->setParameter('ticket_type_id', $ticketTypeId)
-            ->setParameter('valid_statuses', [Ticket::STATUS_PURCHASED, Ticket::STATUS_RESERVED])
+            ->setParameter('valid_statuses', [\App\Enum\TicketStatus::PURCHASED->value, \App\Enum\TicketStatus::RESERVED->value])
             ->groupBy('tt.id, tt.quantity, tt.name, tt.price');
 
         $result = $qb->getQuery()->getOneOrNullResult();

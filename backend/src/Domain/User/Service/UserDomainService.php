@@ -21,7 +21,7 @@ final readonly class UserDomainService
             ->setFirstName($registrationDTO->firstName)
             ->setLastName($registrationDTO->lastName)
             ->setPhone($registrationDTO->phone)
-            ->setRoles(['ROLE_USER']);
+            ->setRoles([\App\Enum\UserRole::USER->value]);
 
         $hashedPassword = $this->passwordHasher->hashPassword($user, $registrationDTO->password);
         $user->setPassword($hashedPassword);
@@ -61,18 +61,15 @@ final readonly class UserDomainService
 
     public function promoteToOrganizer(User $user): void
     {
-        $roles = $user->getRoles();
-        if (!in_array('ROLE_ORGANIZER', $roles)) {
-            $roles[] = 'ROLE_ORGANIZER';
-            $user->setRoles($roles);
+        if (!$user->hasRole(\App\Enum\UserRole::ORGANIZER)) {
+            $user->addRole(\App\Enum\UserRole::ORGANIZER);
             $this->entityManager->flush();
         }
     }
 
     public function demoteFromOrganizer(User $user): void
     {
-        $roles = array_filter($user->getRoles(), fn($role) => $role !== 'ROLE_ORGANIZER');
-        $user->setRoles(array_values($roles));
+        $user->removeRole(\App\Enum\UserRole::ORGANIZER);
         $this->entityManager->flush();
     }
 }

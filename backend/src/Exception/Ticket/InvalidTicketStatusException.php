@@ -9,8 +9,19 @@ final class InvalidTicketStatusException extends TicketException
 {
     protected string $errorCode = 'INVALID_TICKET_STATUS';
 
-    public function __construct(string $ticketId, string $currentStatus, string $expectedStatus)
-    {
+    public function __construct(
+        string $ticketId,
+        \App\Enum\TicketStatus|string $currentStatus,
+        \App\Enum\TicketStatus|string $expectedStatus
+    ) {
+        // Convert enum to string if needed
+        if ($currentStatus instanceof \App\Enum\TicketStatus) {
+            $currentStatus = $currentStatus->value;
+        }
+        if ($expectedStatus instanceof \App\Enum\TicketStatus) {
+            $expectedStatus = $expectedStatus->value;
+        }
+        
         parent::__construct(
             sprintf(
                 'Ticket "%s" has invalid status. Expected: %s, Current: %s',

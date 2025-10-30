@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use App\Enum\TicketStatus;
 use App\Repository\TicketRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -44,6 +45,7 @@ use Symfony\Component\Uid\Uuid;
 )]
 class Ticket
 {
+    // Keep constants for backward compatibility
     public const STATUS_RESERVED = 'reserved';
     public const STATUS_PURCHASED = 'purchased';
     public const STATUS_CANCELLED = 'cancelled';
@@ -74,9 +76,9 @@ class Ticket
     #[Groups(['ticket:read'])]
     private int $price; // in cents
 
-    #[ORM\Column(length: 20)]
+    #[ORM\Column(type: 'string', length: 20, enumType: TicketStatus::class)]
     #[Groups(['ticket:read'])]
-    private string $status = self::STATUS_RESERVED;
+    private TicketStatus $status = TicketStatus::RESERVED;
 
     #[ORM\Column(nullable: true)]
     #[Groups(['ticket:read'])]
@@ -145,13 +147,16 @@ class Ticket
         return $this;
     }
 
-    public function getStatus(): string
+    public function getStatus(): TicketStatus
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): static
+    public function setStatus(TicketStatus|string $status): static
     {
+        if (is_string($status)) {
+            $status = TicketStatus::from($status);
+        }
         $this->status = $status;
         return $this;
     }
@@ -185,7 +190,7 @@ class Ticket
 
     public function markAsPurchased(): void
     {
-        $this->status = self::STATUS_PURCHASED;
+        $this->status = TicketStatus::PURCHASED;
         $this->purchasedAt = new \DateTimeImmutable();
         $this->qrCode = $this->generateQrCode();
     }

@@ -3,25 +3,43 @@
 namespace App\Infrastructure\Payment;
 
 use App\DTO\PaymentResultDTO;
+use App\Enum\Currency;
 use Psr\Log\LoggerInterface;
 
 final readonly class StripePaymentGateway implements PaymentGatewayInterface
 {
     public function __construct(
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        private PaymentConfiguration $configuration
     ) {}
 
     public function processPayment(
         string $paymentMethodId,
         int $amount,
-        string $currency = 'USD',
+        Currency|string $currency = Currency::USD,
         array $metadata = []
     ): PaymentResultDTO {
+        // Convert string to Currency enum if needed
+        if (is_string($currency)) {
+            $currency = Currency::from($currency);
+        }
         try {
+            // Validate payment configuration
+            if (!$this->configuration->isCurrencySupported($currency)) {
+                throw new \InvalidArgumentException("Currency {$currency->value} is not supported");
+            }
+
+            if (!$this->configuration->isAmountValid($amount)) {
+                throw new \InvalidArgumentException(
+                    "Amount must be between {$this->configuration->getMinPaymentAmount()} " .
+                    "and {$this->configuration->getMaxPaymentAmount()} cents"
+                );
+            }
+
             $this->logger->info('Processing Stripe payment', [
                 'payment_method_id' => $paymentMethodId,
                 'amount' => $amount,
-                'currency' => $currency,
+                'currency' => $currency->value,
                 'metadata' => $metadata
             ]);
 

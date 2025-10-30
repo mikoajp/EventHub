@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
+use App\Enum\EventStatus;
 use App\Repository\EventRepository;
 use App\State\EventStateProcessor;
 use App\State\EventStateProvider;
@@ -53,6 +54,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 class Event
 {
+    // Keep constants for backward compatibility
     public const STATUS_DRAFT = 'draft';
     public const STATUS_PUBLISHED = 'published';
     public const STATUS_CANCELLED = 'cancelled';
@@ -92,9 +94,9 @@ class Event
     #[Groups(['event:read', 'event:write'])]
     private ?int $maxTickets = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(type: 'string', length: 50, enumType: EventStatus::class)]
     #[Groups(['event:read', 'event:write'])]
-    private ?string $status = self::STATUS_DRAFT;
+    private EventStatus $status = EventStatus::DRAFT;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Groups(['event:read'])]
@@ -112,9 +114,9 @@ class Event
     #[Groups(['event:read'])]
     private ?\DateTimeInterface $cancelledAt = null;
 
-    #[ORM\Column(length: 50, nullable: true)]
+    #[ORM\Column(type: 'string', length: 50, nullable: true, enumType: EventStatus::class)]
     #[Groups(['event:read'])]
-    private ?string $previousStatus = null;
+    private ?EventStatus $previousStatus = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'organizedEvents', cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: false)]
@@ -222,13 +224,16 @@ class Event
         return $this;
     }
 
-    public function getStatus(): ?string
+    public function getStatus(): EventStatus
     {
         return $this->status;
     }
 
-    public function setStatus(string $status): static
+    public function setStatus(EventStatus|string $status): static
     {
+        if (is_string($status)) {
+            $status = EventStatus::from($status);
+        }
         $this->status = $status;
         return $this;
     }
@@ -277,13 +282,16 @@ class Event
         return $this;
     }
 
-    public function getPreviousStatus(): ?string
+    public function getPreviousStatus(): ?EventStatus
     {
         return $this->previousStatus;
     }
 
-    public function setPreviousStatus(?string $previousStatus): static
+    public function setPreviousStatus(EventStatus|string|null $previousStatus): static
     {
+        if (is_string($previousStatus)) {
+            $previousStatus = EventStatus::from($previousStatus);
+        }
         $this->previousStatus = $previousStatus;
         return $this;
     }
@@ -320,9 +328,9 @@ class Event
     public function removeTicketType(TicketType $ticketType): static
     {
         if ($this->ticketTypes->removeElement($ticketType)) {
-            if ($ticketType->getEvent() === $this) {
-                $ticketType->setEvent(null);
-            }
+            // Note: We don't set event to null because TicketType::event is non-nullable
+            // Doctrine will handle orphan removal if configured with orphanRemoval=true
+            // For now, just remove from collection
         }
 
         return $this;
@@ -410,21 +418,21 @@ class Event
     }
     public function isPublished(): bool
     {
-        return $this->status === self::STATUS_PUBLISHED;
+        return $this->status === EventStatus::PUBLISHED;
     }
 
     public function isDraft(): bool
     {
-        return $this->status === self::STATUS_DRAFT;
+        return $this->status === EventStatus::DRAFT;
     }
 
     public function isCancelled(): bool
     {
-        return $this->status === self::STATUS_CANCELLED;
+        return $this->status === EventStatus::CANCELLED;
     }
 
     public function isCompleted(): bool
     {
-        return $this->status === self::STATUS_COMPLETED;
+        return $this->status === EventStatus::COMPLETED;
     }
 }

@@ -4,6 +4,7 @@ namespace App\Security\Voter;
 
 use App\Entity\Ticket;
 use App\Entity\User;
+use App\Enum\TicketStatus;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
@@ -108,7 +109,7 @@ class TicketVoter extends Voter
         }
 
         // Cannot cancel if already cancelled or used
-        if (in_array($ticket->getStatus(), ['cancelled', 'used', 'refunded'])) {
+        if (in_array($ticket->getStatus(), [TicketStatus::CANCELLED, TicketStatus::USED, TicketStatus::REFUNDED], true)) {
             return false;
         }
 
@@ -124,12 +125,12 @@ class TicketVoter extends Voter
         }
 
         // Cannot refund if already refunded
-        if ($ticket->getStatus() === 'refunded') {
+        if ($ticket->getStatus() === TicketStatus::REFUNDED) {
             return false;
         }
 
         // Ticket must be in a refundable state
-        return in_array($ticket->getStatus(), ['reserved', 'confirmed', 'cancelled']);
+        return in_array($ticket->getStatus(), [TicketStatus::RESERVED, TicketStatus::PURCHASED, TicketStatus::CANCELLED], true);
     }
 
     private function canTransfer(Ticket $ticket, User $user): bool
@@ -150,7 +151,7 @@ class TicketVoter extends Voter
         }
 
         // Ticket must not be used or cancelled
-        if (in_array($ticket->getStatus(), ['used', 'cancelled', 'refunded'])) {
+        if (in_array($ticket->getStatus(), [TicketStatus::USED, TicketStatus::CANCELLED, TicketStatus::REFUNDED], true)) {
             return false;
         }
 
@@ -170,7 +171,7 @@ class TicketVoter extends Voter
 
     private function isAdmin(User $user): bool
     {
-        return in_array('ROLE_ADMIN', $user->getRoles(), true);
+        return $user->hasRole(\App\Enum\UserRole::ADMIN);
     }
 
     private function isTicketCancellable(Ticket $ticket): bool

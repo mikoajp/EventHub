@@ -34,7 +34,7 @@ final class TicketDomainServiceTest extends TestCase
         $ticket = $this->service->createTicket($user, $event, $ticketType);
 
         $this->assertInstanceOf(Ticket::class, $ticket);
-        $this->assertSame(Ticket::STATUS_RESERVED, $ticket->getStatus());
+        $this->assertSame(Ticket::STATUS_RESERVED, $ticket->getStatus()->value);
         $this->assertSame(5000, $ticket->getPrice());
     }
 
@@ -47,7 +47,7 @@ final class TicketDomainServiceTest extends TestCase
 
         $this->service->confirmTicketPurchase($ticket, 'payment_123');
 
-        $this->assertSame(Ticket::STATUS_PURCHASED, $ticket->getStatus());
+        $this->assertSame(Ticket::STATUS_PURCHASED, $ticket->getStatus()->value);
         $this->assertInstanceOf(\DateTimeImmutable::class, $ticket->getPurchasedAt());
     }
 
@@ -60,7 +60,7 @@ final class TicketDomainServiceTest extends TestCase
 
         $this->service->cancelTicket($ticket, 'Customer request');
 
-        $this->assertSame(Ticket::STATUS_CANCELLED, $ticket->getStatus());
+        $this->assertSame(Ticket::STATUS_CANCELLED, $ticket->getStatus()->value);
     }
 
     public function testRefundTicketChangesStatusToRefunded(): void
@@ -72,7 +72,7 @@ final class TicketDomainServiceTest extends TestCase
 
         $this->service->refundTicket($ticket, 'refund_123');
 
-        $this->assertSame(Ticket::STATUS_REFUNDED, $ticket->getStatus());
+        $this->assertSame(Ticket::STATUS_REFUNDED, $ticket->getStatus()->value);
     }
 
     public function testIsTicketTransferableReturnsTrueForPurchasedFutureEvent(): void

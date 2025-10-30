@@ -49,8 +49,22 @@ services:
             $fromEmail: '%env(FROM_EMAIL)%'
 
     # Payment Infrastructure
+    App\Infrastructure\Payment\PaymentConfiguration:
+        # Uses default constructor values - can be overridden per environment
+
+    App\Infrastructure\Payment\StripePaymentGateway:
+        arguments:
+            $logger: '@logger'
+            $configuration: '@App\Infrastructure\Payment\PaymentConfiguration'
+
     App\Infrastructure\Payment\PaymentGatewayInterface:
         alias: App\Infrastructure\Payment\StripePaymentGateway
+
+    # Repository Services
+    App\Repository\EventRepository:
+        arguments:
+            $registry: '@doctrine'
+            $queryBuilder: '@App\Repository\QueryBuilder\TicketStatisticsQueryBuilder'
 
     # Messaging Infrastructure
     App\Infrastructure\Messaging\MessageBusInterface:

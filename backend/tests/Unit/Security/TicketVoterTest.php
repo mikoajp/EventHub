@@ -100,7 +100,7 @@ final class TicketVoterTest extends TestCase
         $ticket = $this->createMock(Ticket::class);
         $ticket->method('getUser')->willReturn($user);
         $ticket->method('getEvent')->willReturn($event);
-        $ticket->method('getStatus')->willReturn('cancelled');
+        $ticket->method('getStatus')->willReturn(\App\Enum\TicketStatus::CANCELLED);
         
         $token = $this->createToken($user);
 
@@ -113,8 +113,18 @@ final class TicketVoterTest extends TestCase
     {
         $organizer = $this->createUser('organizer@test.com', ['ROLE_ORGANIZER']);
         $buyer = $this->createUser('buyer@test.com');
-        $ticket = $this->createTicket($buyer, $organizer);
-        $ticket->setStatus('confirmed');
+        
+        // Create event
+        $event = $this->createMock(Event::class);
+        $event->method('getOrganizer')->willReturn($organizer);
+        $event->method('getEventDate')->willReturn(new \DateTime('+30 days'));
+        
+        // Create ticket with PURCHASED status
+        $ticket = $this->createMock(Ticket::class);
+        $ticket->method('getUser')->willReturn($buyer);
+        $ticket->method('getEvent')->willReturn($event);
+        $ticket->method('getStatus')->willReturn(\App\Enum\TicketStatus::PURCHASED);
+        
         $token = $this->createToken($organizer);
 
         $result = $this->voter->vote($token, $ticket, [TicketVoter::REFUND]);
@@ -156,7 +166,7 @@ final class TicketVoterTest extends TestCase
         $ticket = $this->createMock(Ticket::class);
         $ticket->method('getUser')->willReturn($user);
         $ticket->method('getEvent')->willReturn($event);
-        $ticket->method('getStatus')->willReturn('used');
+        $ticket->method('getStatus')->willReturn(\App\Enum\TicketStatus::USED);
         
         $token = $this->createToken($user);
 
@@ -170,6 +180,9 @@ final class TicketVoterTest extends TestCase
         $user = $this->createMock(User::class);
         $user->method('getEmail')->willReturn($email);
         $user->method('getRoles')->willReturn($roles);
+        $user->method('hasRole')->willReturnCallback(function($role) use ($roles) {
+            return in_array($role->value, $roles, true);
+        });
         
         return $user;
     }
@@ -190,7 +203,7 @@ final class TicketVoterTest extends TestCase
         $ticket = $this->createMock(Ticket::class);
         $ticket->method('getUser')->willReturn($owner);
         $ticket->method('getEvent')->willReturn($event);
-        $ticket->method('getStatus')->willReturn('reserved');
+        $ticket->method('getStatus')->willReturn(\App\Enum\TicketStatus::RESERVED);
 
         return $ticket;
     }
@@ -204,7 +217,7 @@ final class TicketVoterTest extends TestCase
         $ticket = $this->createMock(Ticket::class);
         $ticket->method('getUser')->willReturn($owner);
         $ticket->method('getEvent')->willReturn($event);
-        $ticket->method('getStatus')->willReturn('reserved');
+        $ticket->method('getStatus')->willReturn(\App\Enum\TicketStatus::RESERVED);
 
         return $ticket;
     }
@@ -218,7 +231,7 @@ final class TicketVoterTest extends TestCase
         $ticket = $this->createMock(Ticket::class);
         $ticket->method('getUser')->willReturn($owner);
         $ticket->method('getEvent')->willReturn($event);
-        $ticket->method('getStatus')->willReturn('reserved');
+        $ticket->method('getStatus')->willReturn(\App\Enum\TicketStatus::RESERVED);
 
         return $ticket;
     }
@@ -232,7 +245,7 @@ final class TicketVoterTest extends TestCase
         $ticket = $this->createMock(Ticket::class);
         $ticket->method('getUser')->willReturn($owner);
         $ticket->method('getEvent')->willReturn($event);
-        $ticket->method('getStatus')->willReturn('confirmed');
+        $ticket->method('getStatus')->willReturn(\App\Enum\TicketStatus::PURCHASED);
 
         return $ticket;
     }

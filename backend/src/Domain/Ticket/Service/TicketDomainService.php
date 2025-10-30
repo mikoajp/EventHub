@@ -20,7 +20,7 @@ final readonly class TicketDomainService
         $ticket->setUser($user)
             ->setEvent($event)
             ->setTicketType($ticketType)
-            ->setStatus(Ticket::STATUS_RESERVED)
+            ->setStatus(\App\Enum\TicketStatus::RESERVED)
             ->setPrice($ticketType->getPrice());
 
         $this->entityManager->persist($ticket);
@@ -31,7 +31,7 @@ final readonly class TicketDomainService
 
     public function confirmTicketPurchase(Ticket $ticket, string $paymentId): void
     {
-        $ticket->setStatus(Ticket::STATUS_PURCHASED)
+        $ticket->setStatus(\App\Enum\TicketStatus::PURCHASED)
             ->setPurchasedAt(new \DateTimeImmutable());
 
         $this->entityManager->flush();
@@ -39,14 +39,14 @@ final readonly class TicketDomainService
 
     public function cancelTicket(Ticket $ticket, ?string $reason = null): void
     {
-        $ticket->setStatus(Ticket::STATUS_CANCELLED);
+        $ticket->setStatus(\App\Enum\TicketStatus::CANCELLED);
 
         $this->entityManager->flush();
     }
 
     public function refundTicket(Ticket $ticket, string $refundId): void
     {
-        $ticket->setStatus(Ticket::STATUS_REFUNDED);
+        $ticket->setStatus(\App\Enum\TicketStatus::REFUNDED);
 
         $this->entityManager->flush();
     }
@@ -54,7 +54,7 @@ final readonly class TicketDomainService
     public function isTicketTransferable(Ticket $ticket): bool
     {
         // Ticket must be purchased (not reserved, cancelled, refunded, or used)
-        if ($ticket->getStatus() !== Ticket::STATUS_PURCHASED) {
+        if ($ticket->getStatus() !== \App\Enum\TicketStatus::PURCHASED) {
             return false;
         }
         
@@ -65,7 +65,7 @@ final readonly class TicketDomainService
     public function transferTicket(Ticket $ticket, User $newOwner): void
     {
         if (!$this->isTicketTransferable($ticket)) {
-            $reason = $ticket->getStatus() !== Ticket::STATUS_PURCHASED 
+            $reason = $ticket->getStatus() !== \App\Enum\TicketStatus::PURCHASED 
                 ? 'Ticket must be purchased' 
                 : 'Event has already occurred';
             throw new \App\Exception\Ticket\TicketNotTransferableException(

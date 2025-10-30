@@ -269,7 +269,7 @@ class EventRepository extends ServiceEntityRepository
             ->leftJoin('e.organizer', 'o')->addSelect('PARTIAL o.{id,email}')
             ->leftJoin('e.ticketTypes', 'tt')->addSelect('tt')
             ->where('e.status = :status')
-            ->setParameter('status', Event::STATUS_PUBLISHED)
+            ->setParameter('status', \App\Enum\EventStatus::PUBLISHED->value)
             ->orderBy('e.eventDate', 'ASC')
             ->distinct()
             ->getQuery()
@@ -437,7 +437,7 @@ class EventRepository extends ServiceEntityRepository
             ->from('App\Entity\TicketType', 'tt')
             ->join('tt.event', 'e')
             ->where('e.status = :status')
-            ->setParameter('status', Event::STATUS_PUBLISHED)
+            ->setParameter('status', \App\Enum\EventStatus::PUBLISHED->value)
             ->getQuery()
             ->getSingleResult();
 
@@ -455,7 +455,7 @@ class EventRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('e')
             ->where('e.status = :status')
             ->andWhere('LOWER(e.name) LIKE LOWER(:search)')
-            ->setParameter('status', Event::STATUS_PUBLISHED)
+            ->setParameter('status', \App\Enum\EventStatus::PUBLISHED->value)
             ->setParameter('search', '%' . $searchTerm . '%')
             ->orderBy('e.eventDate', 'ASC')
             ->getQuery()

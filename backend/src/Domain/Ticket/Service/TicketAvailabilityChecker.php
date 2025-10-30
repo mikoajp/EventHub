@@ -17,7 +17,7 @@ class TicketAvailabilityChecker
     {
         $soldTickets = $this->ticketRepository->count([
             'ticketType' => $ticketType,
-            'status' => [Ticket::STATUS_PURCHASED, Ticket::STATUS_RESERVED]
+            'status' => [\App\Enum\TicketStatus::PURCHASED->value, \App\Enum\TicketStatus::RESERVED->value]
         ]);
 
         $availableQuantity = $ticketType->getQuantity() - $soldTickets;
@@ -29,7 +29,7 @@ class TicketAvailabilityChecker
     {
         $soldTickets = $this->ticketRepository->count([
             'ticketType' => $ticketType,
-            'status' => [Ticket::STATUS_PURCHASED, Ticket::STATUS_RESERVED]
+            'status' => [\App\Enum\TicketStatus::PURCHASED->value, \App\Enum\TicketStatus::RESERVED->value]
         ]);
 
         return max(0, $ticketType->getQuantity() - $soldTickets);
