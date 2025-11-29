@@ -392,7 +392,7 @@ export const EventDetailsPage: React.FC = () => {
                 <Card withBorder padding="xl" radius="lg" shadow="sm">
                   <Title order={4} mb="lg">Ticket Options</Title>
                   <Stack gap="md">
-                    {event.ticketTypes.map((ticketType) => (
+                    {event.ticketTypes?.map((ticketType) => (
                         <Paper
                             key={ticketType.id}
                             withBorder

@@ -8,7 +8,7 @@ framework:
 
             # Primary async transport using RabbitMQ (AMQP via php-amqplib)
             async:
-                dsn: 'amqp+lib://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/async'
+                dsn: 'amqp://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/async'
                 retry_strategy:
                     max_retries: 3
                     delay: 1000
@@ -24,7 +24,7 @@ framework:
 
             # High priority commands using RabbitMQ
             high_priority:
-                dsn: 'amqp+lib://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/high_priority'
+                dsn: 'amqp://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/high_priority'
                 retry_strategy:
                     max_retries: 5
                     delay: 500
@@ -40,7 +40,7 @@ framework:
 
             # Events/notifications using RabbitMQ
             notifications:
-                dsn: 'amqp+lib://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/notifications'
+                dsn: 'amqp://%env(RABBITMQ_USER)%:%env(RABBITMQ_PASSWORD)%@%env(RABBITMQ_HOST)%:%env(RABBITMQ_PORT)%/%2f/notifications'
                 retry_strategy:
                     max_retries: 3
                     delay: 1000

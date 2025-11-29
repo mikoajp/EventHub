@@ -84,7 +84,7 @@ final readonly class EventPresenter implements EventPresenterInterface
                     'quantity' => $tt->getQuantity(),
                     'priceFormatted' => Money::fromInt($tt->getPrice())->format(),
                 ],
-                $event->getTicketTypes()->toArray()
+                $event->getTicketTypes() ? $event->getTicketTypes()->toArray() : []
             ),
         );
     }

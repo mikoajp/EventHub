@@ -32,7 +32,7 @@ import {
   IconClock,
   IconFlame,
 } from '@tabler/icons-react';
-import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area } from 'recharts';
+import { LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line } from 'recharts';
 import { format } from 'date-fns';
 import { useEvents, usePublishEvent, useEventStatistics } from '../hooks/useEvents';
 
@@ -235,12 +235,12 @@ export const DashboardPage: React.FC = () => {
                                         boxShadow: 'var(--mantine-shadow-md)',
                                       }}
                                   />
-                                  <Area
+                                  <Line
                                       type="monotone"
                                       dataKey="sales"
                                       stroke="#4d6ef7"
-                                      fill="#e6ecfe"
                                       strokeWidth={2}
+                                      dot={false}
                                       name="Daily Sales"
                                   />
                                 </LineChart>

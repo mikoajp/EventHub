@@ -6,7 +6,7 @@ export class ApiClient {
   private isRefreshing = false;
   private refreshSubscribers: ((token: string) => void)[] = [];
 
-  constructor(baseURL: string = 'https://127.0.0.1:8000/api') {
+  constructor(baseURL: string = import.meta.env.VITE_API_URL || 'https://eventuiapp.com/api') {
     this.client = axios.create({
       baseURL,
       headers: {
@@ -62,7 +62,7 @@ export class ApiClient {
 
             // Call refresh endpoint
             const response = await axios.post(
-              'https://127.0.0.1:8000/api/token/refresh',
+                `${import.meta.env.VITE_API_URL || 'https://eventuiapp.com/api'}/token/refresh`,
               { refresh_token: refreshToken }
             );
 

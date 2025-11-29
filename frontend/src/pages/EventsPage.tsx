@@ -49,7 +49,9 @@ const EventListItem: React.FC<{
   };
 
   const soldPercentage = (event.ticketsSold / event.maxTickets) * 100;
-  const minPrice = Math.min(...event.ticketTypes.map(tt => tt.price));
+  const minPrice = Array.isArray(event.ticketTypes) && event.ticketTypes.length > 0 
+    ? Math.min(...event.ticketTypes.map(tt => tt.price))
+    : 0;
 
   return (
       <Card withBorder padding="md" radius="md">
@@ -184,8 +186,8 @@ export const EventsPage: React.FC = () => {
   const { data: eventsResponse, isLoading, error} = useEvents(filters);
   const { data: filterOptions } = useFilterOptions();
 
-  const events = eventsResponse?.events || [];
-  const pagination = eventsResponse?.pagination;
+  const events = eventsResponse?.events ?? [];
+  const pagination = eventsResponse?.pagination ?? null;
 
   const handleFiltersChange = (newFilters: Partial<EventFilters>) => {
     setFilters(prev => ({

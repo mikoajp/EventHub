@@ -56,7 +56,7 @@ final readonly class EventStatisticsService
     private function calculateStatistics(string $eventId): array
     {
         $event = $this->eventRepository->findByUuid($eventId)
-            ?? $this->eventRepository->find($eventId);
+            ?? $this->eventRepository->findByUuid($eventId);
 
         if (!$event) {
             throw new EventNotFoundException($eventId);

@@ -71,7 +71,7 @@ final readonly class PublishEventHandler
 
     private function loadEvent(string $eventId): Event
     {
-        $event = $this->eventRepository->find(Uuid::fromString($eventId));
+        $event = $this->eventRepository->findByUuid($eventId);
 
         if (!$event) {
             $this->logger->error('Event not found', [

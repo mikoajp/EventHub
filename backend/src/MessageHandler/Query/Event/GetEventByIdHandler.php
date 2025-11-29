@@ -22,8 +22,7 @@ final readonly class GetEventByIdHandler
     {
         return $this->cache->get(
             'event.' . $query->eventId,
-            fn() => $this->eventRepository->findByUuid($query->eventId) 
-                ?? $this->eventRepository->find($query->eventId),
+            fn() => $this->eventRepository->findByUuid($query->eventId),
             self::CACHE_TTL
         );
     }

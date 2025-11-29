@@ -20,7 +20,7 @@ final readonly class GetEventStatisticsHandler
 
     public function __invoke(GetEventStatisticsQuery $query): array
     {
-        $event = $this->eventRepository->find(Uuid::fromString($query->eventId));
+        $event = $this->eventRepository->findByUuid($query->eventId);
         
         if (!$event) {
             throw new \App\Exception\Event\EventNotFoundException($query->eventId);

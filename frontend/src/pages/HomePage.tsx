@@ -58,9 +58,7 @@ export const HomePage: React.FC = () => {
   const { data: eventsResponse, isLoading, error} = useEvents(basicFilters);
   const { data: filterOptionsFromAPI, isLoading: isLoadingFilterOptions } = useFilterOptions();
 
-  const allEvents = Array.isArray(eventsResponse)
-      ? eventsResponse
-      : eventsResponse?.events || [];
+  const allEvents = eventsResponse?.events ?? [];
 
   const events = useMemo(() => {
     if (!allEvents || allEvents.length === 0) return [];

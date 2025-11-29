@@ -72,8 +72,7 @@
         "sort-packages": true,
         "preferred-install": { "*": "source" },
         "platform": {
-            "php": "8.2.29",
-            "ext-amqp": "1.0.0"
+            "php": "8.2.29"
         }
     },
     "autoload": {

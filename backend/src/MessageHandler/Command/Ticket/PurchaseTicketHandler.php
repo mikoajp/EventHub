@@ -63,7 +63,7 @@ final readonly class PurchaseTicketHandler
         $this->entityManager->beginTransaction();
         
         try {
-            $event = $this->eventRepository->find(Uuid::fromString($command->eventId));
+            $event = $this->eventRepository->findByUuid($command->eventId);
             $user = $this->userRepository->find(Uuid::fromString($command->userId));
 
             if (!$event) {

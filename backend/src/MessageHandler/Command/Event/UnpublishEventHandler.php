@@ -31,7 +31,7 @@ final readonly class UnpublishEventHandler
             'user_id' => $command->userId
         ]);
 
-        $event = $this->eventRepository->find(Uuid::fromString($command->eventId));
+        $event = $this->eventRepository->findByUuid($command->eventId);
         if (!$event) {
             throw new \App\Exception\Event\EventNotFoundException($command->eventId);
         }

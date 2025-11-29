@@ -74,7 +74,7 @@ export const TicketPurchaseModal: React.FC<TicketPurchaseModalProps> = ({
   const availabilityQuery = useTicketAvailability(event.id, selectedTicketType, quantity);
 
   const selectedType = useMemo(() =>
-          event.ticketTypes.find(tt => tt.id === selectedTicketType),
+          event.ticketTypes?.find(tt => tt.id === selectedTicketType),
       [event.ticketTypes, selectedTicketType]
   );
 
@@ -85,7 +85,7 @@ export const TicketPurchaseModal: React.FC<TicketPurchaseModalProps> = ({
   const isAvailable = isLocallyAvailable && isApiAvailable;
 
   const availableTicketTypes = useMemo(() =>
-          event.ticketTypes.filter(tt => getTicketQuantity(tt) > 0),
+          event.ticketTypes?.filter(tt => getTicketQuantity(tt) > 0) || [],
       [event.ticketTypes]
   );
 

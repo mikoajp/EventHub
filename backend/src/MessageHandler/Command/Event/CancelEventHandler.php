@@ -31,7 +31,7 @@ final readonly class CancelEventHandler
             'event_id' => $command->eventId
         ]);
 
-        $event = $this->eventRepository->find(Uuid::fromString($command->eventId));
+        $event = $this->eventRepository->findByUuid($command->eventId);
         if (!$event) {
             throw new \App\Exception\Event\EventNotFoundException($command->eventId);
         }

@@ -1,4 +1,5 @@
-FROM php:8.3-apache
+# syntax=docker/dockerfile:1.6
+FROM php:8.3-apache AS base
 
 RUN apt-get update && apt-get install -y \
     git \
@@ -32,12 +33,17 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         mbstring \
         gd \
         opcache \
-        bcmath
+        bcmath \
+	sockets
 
 RUN pecl install redis amqp \
     && docker-php-ext-enable redis amqp
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Composer in a separate stage to leverage cache
+FROM composer:2 AS composer
+
+FROM base AS build
+COPY --from=composer /usr/bin/composer /usr/bin/composer
 
 RUN { \
     echo 'opcache.enable=1'; \
@@ -70,6 +76,9 @@ RUN echo '<Directory /var/www/html/public>\n\
     Options -Indexes +FollowSymLinks\n\
     AllowOverride All\n\
     Require all granted\n\
+    \n\
+    # Symfony FallbackResource - wszystko przez index.php\n\
+    FallbackResource /index.php\n\
     \n\
     # Security headers\n\
     Header always set X-Content-Type-Options nosniff\n\
@@ -114,8 +123,10 @@ WORKDIR /var/www/html
 
 COPY composer.json composer.lock* ./
 
-RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+# Use BuildKit cache mounts for Composer
+RUN --mount=type=cache,target=/root/.composer/cache composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
+# Copy source late to maximize layer cache
 COPY . /var/www/html/
 
 RUN composer dump-autoload --optimize --classmap-authoritative
@@ -160,5 +171,10 @@ EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
     CMD curl -f http://localhost/health.php | grep -q '"status":"ok"' || exit 1
+
+FROM base AS runtime
+
+# Copy built app from build stage
+COPY --from=build /var/www/html /var/www/html
 
 CMD ["apache2-foreground"]

@@ -22,7 +22,7 @@ export interface Event {
   organizer: User;
   createdAt: string;
   updatedAt?: string;
-  ticketTypes: TicketType[];
+  ticketTypes?: TicketType[];
   ticketsSold: number;
   availableTickets: number;
 }

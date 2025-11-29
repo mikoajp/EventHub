@@ -31,18 +31,30 @@ class EventRepository extends ServiceEntityRepository
      */
     public function findByUuid($id, $lockMode = null, $lockVersion = null): ?Event
     {
+        $uuid = null;
+        
         if ($id instanceof Uuid) {
-            return parent::find($id, $lockMode, $lockVersion);
-        }
-
-        if (is_string($id)) {
+            $uuid = $id;
+        } elseif (is_string($id)) {
             try {
                 $uuid = Uuid::fromString($id);
-                return parent::find($uuid, $lockMode, $lockVersion);
             } catch (\InvalidArgumentException) {
                 return null;
             }
         }
+        
+        if (!$uuid) {
+            return null;
+        }
+
+        // Load event with ticketTypes and organizer to avoid lazy loading issues
+        return $this->createQueryBuilder('e')
+            ->leftJoin('e.organizer', 'o')->addSelect('PARTIAL o.{id,email}')
+            ->leftJoin('e.ticketTypes', 'tt')->addSelect('tt')
+            ->where('e.id = :id')
+            ->setParameter('id', $uuid, 'uuid')
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /**

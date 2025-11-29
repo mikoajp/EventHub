@@ -18,7 +18,7 @@ final readonly class NotifyEventPublishedHandler
 
     public function __invoke(EventPublishedEvent $event): void
     {
-        $eventEntity = $this->eventRepository->find(Uuid::fromString($event->eventId));
+        $eventEntity = $this->eventRepository->findByUuid($event->eventId);
         
         if (!$eventEntity) {
             return;

@@ -116,7 +116,7 @@ export const AdvancedEventFilters: React.FC<AdvancedEventFiltersProps> = ({
                   <MultiSelect
                       label="Venues"
                       placeholder="Select venues"
-                      data={filterOptions?.venues.map(venue => ({ value: venue, label: venue })) || []}
+                      data={filterOptions?.venues?.map(venue => ({ value: venue, label: venue })) || []}
                       value={filters.venue || []}
                       onChange={(value) => onFiltersChange({ venue: value })}
                       leftSection={<IconMapPin size={16} />}

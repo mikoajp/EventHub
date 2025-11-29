@@ -82,7 +82,7 @@ export const EventCard: React.FC<EventCardProps> = ({
           <Progress value={soldPercentage} size="sm" />
         </div>
 
-        {event.ticketTypes.length > 0 && (
+        {Array.isArray(event.ticketTypes) && event.ticketTypes.length > 0 && (
           <Group gap="xs">
             <IconTicket size={16} />
             <Text size="sm">

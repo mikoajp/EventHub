@@ -37,7 +37,7 @@ final readonly class ReserveTicketHandler
             'user_id' => $command->userId
         ]);
 
-        $event = $this->eventRepository->findByUuid($command->eventId) ?? $this->eventRepository->find($command->eventId);
+        $event = $this->eventRepository->findByUuid($command->eventId);
         if (!$event) {
             throw new \App\Exception\Event\EventNotFoundException($command->eventId);
         }

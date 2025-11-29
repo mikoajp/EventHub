@@ -27,7 +27,7 @@ final class EventStateProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): array|object|null
     {
         if ($operation instanceof Get) {
-            $event = $this->repository->find($uriVariables['id'] ?? null);
+            $event = $this->repository->findByUuid($uriVariables['id'] ?? null);
 
             if (!$event) {
                 return null;
