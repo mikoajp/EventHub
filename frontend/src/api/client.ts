@@ -67,7 +67,11 @@ export class ApiClient {
               { withCredentials: true }
             );
 
-            const { token, refresh_token } = response.data;
+            const token = response.data.token || response.data.payload?.token;
+            const refresh_token = response.data.refresh_token || response.data.payload?.refresh_token;
+            if (!token || !refresh_token) {
+              throw new Error('Refresh failed');
+            }
 
             // Store new tokens
             localStorage.setItem('auth_token', token);

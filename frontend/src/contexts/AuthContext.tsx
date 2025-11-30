@@ -65,18 +65,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('auth_token');
       localStorage.removeItem('refresh_token');
 
-      const response = await apiClient.post<{ token: string; refresh_token: string; user?: User }>('/auth/login', {
+      const response = await apiClient.post<{ payload?: any; token?: string; refresh_token?: string; user?: User }>('/auth/login', {
         email,
         password,
       });
 
-      if (!response?.token || !response?.refresh_token) {
+      const token = response.token || response.payload?.token;
+      const refresh = response.refresh_token || response.payload?.refresh_token;
+
+      if (!token || !refresh) {
         throw new Error('Invalid credentials');
       }
 
       // Store both access token and refresh token
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('refresh_token', response.refresh_token);
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('refresh_token', refresh);
 
       await fetchCurrentUser();
 
