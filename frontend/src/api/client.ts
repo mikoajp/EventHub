@@ -62,7 +62,7 @@ export class ApiClient {
 
             // Call refresh endpoint
             const response = await axios.post(
-                `${import.meta.env.VITE_API_URL || 'https://eventuiapp.com/api'}/token/refresh`,
+                `${import.meta.env.VITE_API_URL || 'https://eventuiapp.com/api'}/auth/refresh`,
               { refresh_token: refreshToken }
             );
 
