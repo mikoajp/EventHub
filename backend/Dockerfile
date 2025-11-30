@@ -34,10 +34,10 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         gd \
         opcache \
         bcmath \
-	sockets
+    sockets
 
-RUN pecl install redis amqp \
-    && docker-php-ext-enable redis amqp
+RUN pecl install redis \
+    && docker-php-ext-enable redis
 
 # Composer in a separate stage to leverage cache
 FROM composer:2 AS composer
@@ -166,6 +166,23 @@ foreach ($required as $ext) {\n\
 \n\
 echo json_encode($health, JSON_PRETTY_PRINT);\n\
 ?>' > /var/www/html/public/health.php
+
+RUN cat > /var/www/html/public/.htaccess <<EOF
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+<IfModule !mod_rewrite.c>
+    FallbackResource /index.php
+</IfModule>
+EOF
 
 EXPOSE 80
 
