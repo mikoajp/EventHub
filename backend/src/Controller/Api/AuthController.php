@@ -7,10 +7,10 @@ use App\Application\Service\UserApplicationService;
 use App\DTO\UserRegistrationDTO;
 use App\Exception\User\UserNotAuthenticatedException;
 use App\Infrastructure\Validation\RequestValidatorInterface;
-use App\Presenter\UserPresenter;
 use App\Application\Service\AuthService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;\nuse Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;\nuse App\Repository\UserRepository;\nuse Symfony\Component\HttpFoundation\Cookie;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
@@ -18,8 +18,9 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 #[Route('/api/auth')]
 class AuthController extends AbstractController
 {
+    private const REFRESH_COOKIE_LIFETIME = 604800; // 7 days
+
     public function __construct(
-        private UserApplicationService $userApplicationService,
         private RequestValidatorInterface $requestValidator,
         private AuthService $authService
     ) {}
@@ -27,11 +28,10 @@ class AuthController extends AbstractController
     #[Route('/login', name: 'api_login', methods: ['POST'])]
     public function login(Request $request): JsonResponse
     {
-        $data = json_decode($request->getContent(), true) ?? [];
+        $data = $request->toArray();
         $result = $this->authService->login($data);
         $response = $this->json($result['payload']);
-        $cookie = Cookie::create('refresh_token', $result['refresh'], time() + 60*60*24*7, '/', null, false, true, false, 'Strict');
-        $response->headers->setCookie($cookie);
+        $response->headers->setCookie($this->createRefreshTokenCookie($result['refresh']));
         return $response;
     }
 
@@ -46,10 +46,12 @@ class AuthController extends AbstractController
     {
         // Extract refresh token from HttpOnly cookie
         $refreshToken = $request->cookies->get('refresh_token');
+        if (!$refreshToken) {
+            return $this->json(['message' => 'Missing refresh token'], 401);
+        }
         $result = $this->authService->refresh((string)$refreshToken);
         $response = $this->json($result['payload']);
-        $cookie = Cookie::create('refresh_token', $result['refresh'], time() + 60*60*24*7, '/', null, false, true, false, 'Strict');
-        $response->headers->setCookie($cookie);
+        $response->headers->setCookie($this->createRefreshTokenCookie($result['refresh']));
         return $response;
     }
 
@@ -57,10 +59,9 @@ class AuthController extends AbstractController
     public function logout(Request $request): JsonResponse
     {
         $token = $request->cookies->get('refresh_token');
-        $payload = $this->authService->logout($token);
+        $payload = $token ? $this->authService->logout($token) : ['message' => 'Logged out'];
         $response = $this->json($payload);
-        $cookie = Cookie::create('refresh_token', '', time() - 3600, '/', null, false, true, false, 'Strict');
-        $response->headers->setCookie($cookie);
+        $response->headers->clearCookie('refresh_token', '/', null, true, true, 'Strict');
         return $response;
     }
 
@@ -77,8 +78,22 @@ class AuthController extends AbstractController
         );
         $result = $this->authService->register($registrationDTO);
         $response = $this->json($result['payload'], JsonResponse::HTTP_CREATED);
-        $cookie = Cookie::create('refresh_token', $result['refresh'], time() + 60*60*24*7, '/', null, false, true, false, 'Strict');
-        $response->headers->setCookie($cookie);
+        $response->headers->setCookie($this->createRefreshTokenCookie($result['refresh']));
         return $response;
+    }
+
+    private function createRefreshTokenCookie(string $token): Cookie
+    {
+        return Cookie::create(
+            'refresh_token',
+            $token,
+            time() + self::REFRESH_COOKIE_LIFETIME,
+            '/',
+            null,
+            true,
+            true,
+            false,
+            Cookie::SAMESITE_STRICT
+        );
     }
 }
