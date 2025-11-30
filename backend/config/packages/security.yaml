@@ -17,13 +17,13 @@ security:
             pattern: ^/api/auth/login
             stateless: true
             json_login:
-                check_path: /api/auth/login
+                check_path: api_login
                 username_path: email
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
-        api_token_refresh:
-            pattern: ^/api/token/refresh
+        api_refresh:
+            pattern: ^/api/auth/refresh
             stateless: true
 
         admin:
@@ -45,7 +45,7 @@ security:
         # Public authentication endpoints
         - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
-        - { path: ^/api/token/refresh, roles: PUBLIC_ACCESS }
+        - { path: ^/api/auth/refresh, roles: PUBLIC_ACCESS }
         
         # Public health and docs endpoints
         - { path: ^/api/health, roles: PUBLIC_ACCESS }
