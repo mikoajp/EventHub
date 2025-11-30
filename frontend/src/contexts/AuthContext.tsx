@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      const userData = await apiClient.get<User>('/api/auth/me');
+      const userData = await apiClient.get<User>('/auth/me');
       setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.post<{ token: string; refresh_token: string; user?: User }>('/api/auth/login', {
+      const response = await apiClient.post<{ token: string; refresh_token: string; user?: User }>('/auth/login', {
         email,
         password,
       });
