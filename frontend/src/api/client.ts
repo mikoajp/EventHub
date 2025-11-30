@@ -36,7 +36,15 @@ export class ApiClient {
 
     // Response interceptor - handle token refresh
     this.client.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        if (typeof response.data === 'string') {
+          const match = response.data.match(/\{[\s\S]*\}$/);
+          if (match) {
+            try { response.data = JSON.parse(match[0]); } catch { /* ignore parse error */ }
+          }
+        }
+        return response;
+      },
       async (error: AxiosError) => {
         const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
