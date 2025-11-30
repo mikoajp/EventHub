@@ -12,6 +12,7 @@ use Gesdinet\JWTRefreshTokenBundle\Model\AbstractRefreshToken;
 class RefreshToken extends AbstractRefreshToken implements RefreshTokenInterface
 {
     #[ORM\Id]
+    #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
-    protected $id;
+    protected $id; // Auto-increment ID to satisfy Doctrine
 }
