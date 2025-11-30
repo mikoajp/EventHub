@@ -27,11 +27,12 @@ class RefreshTokenRepository extends ServiceEntityRepository implements RefreshT
      * Find all invalid (expired) refresh tokens.
      * @return RefreshToken[]
      */
-    public function findInvalid(): array
+    public function findInvalid($datetime = null): array
     {
+        $cutoff = $datetime instanceof \DateTimeInterface ? \DateTimeImmutable::createFromMutable($datetime) : new \DateTimeImmutable();
         return $this->createQueryBuilder('t')
-            ->where('t.valid < :now')
-            ->setParameter('now', new \DateTimeImmutable())
+            ->where('t.valid < :cutoff')
+            ->setParameter('cutoff', $cutoff)
             ->getQuery()
             ->getResult();
     }
