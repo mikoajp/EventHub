@@ -11,8 +11,8 @@ final class UserNotAuthenticatedException extends ApplicationException
 {
     protected string $errorCode = 'USER_NOT_AUTHENTICATED';
 
-    public function __construct()
+    public function __construct(string $message = 'User must be authenticated to perform this action')
     {
-        parent::__construct('User must be authenticated to perform this action');
+        parent::__construct($message);
     }
 }

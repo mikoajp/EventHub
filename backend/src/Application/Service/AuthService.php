@@ -8,6 +8,7 @@ use App\Exception\User\UserNotAuthenticatedException;
 use App\Presenter\UserPresenter;
 use App\Repository\UserRepository;
 use App\Service\RefreshTokenService;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AuthService
@@ -18,6 +19,7 @@ class AuthService
         private readonly RefreshTokenService $refreshTokenService,
         private readonly UserApplicationService $userApplicationService,
         private readonly UserPresenter $userPresenter,
+        private readonly JWTTokenManagerInterface $jwtManager,
     ) {}
 
     /**
@@ -30,12 +32,21 @@ class AuthService
         $password = $credentials['password'] ?? '';
         $user = $this->userRepository->findByEmail($email);
         if (!$user || !$this->passwordHasher->isPasswordValid($user, $password)) {
-            throw new UserNotAuthenticatedException();
+            throw new UserNotAuthenticatedException('Invalid credentials');
         }
+        
+        // Generate JWT access token
+        $accessToken = $this->jwtManager->create($user);
+        
+        // Generate refresh token
         $refreshEntity = $this->refreshTokenService->createToken($user);
-        $payload = $this->userPresenter->presentLoginResponse(
-            $this->userApplicationService->formatLoginResponse($user)
-        );
+        
+        // Prepare response with token
+        $loginData = $this->userApplicationService->formatLoginResponse($user);
+        $loginData['token'] = $accessToken;
+        
+        $payload = $this->userPresenter->presentLoginResponse($loginData);
+        
         return [
             'payload' => $payload + ['refresh_token' => $refreshEntity->getRefreshToken()],
             'refresh' => $refreshEntity->getRefreshToken(),
@@ -48,11 +59,19 @@ class AuthService
     public function register(UserRegistrationDTO $dto): array
     {
         $user = $this->userApplicationService->registerUser($dto);
+        
+        // Generate JWT access token
+        $accessToken = $this->jwtManager->create($user);
+        
+        // Generate refresh token
         $refreshEntity = $this->refreshTokenService->createToken($user);
+        
         $payload = $this->userPresenter->presentRegistrationResponse(
             $this->userApplicationService->formatRegistrationResponse($user)
         );
+        $payload['token'] = $accessToken;
         $payload['refresh_token'] = $refreshEntity->getRefreshToken();
+        
         return [
             'payload' => $payload,
             'refresh' => $refreshEntity->getRefreshToken(),

@@ -13,18 +13,10 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
 
-        api_login:
-            pattern: ^/api/auth/login
+        api_auth:
+            pattern: ^/api/auth/(login|register|refresh|logout)$
             stateless: true
-            json_login:
-                check_path: api_login
-                username_path: email
-                success_handler: lexik_jwt_authentication.handler.authentication_success
-                failure_handler: lexik_jwt_authentication.handler.authentication_failure
-
-        api_refresh:
-            pattern: ^/api/auth/refresh
-            stateless: true
+            security: false
 
         admin:
             pattern: ^/admin
