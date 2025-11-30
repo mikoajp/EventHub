@@ -3,12 +3,16 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 
 export class ApiClient {
   private client: AxiosInstance;
+  private baseURL: string;
   private isRefreshing = false;
   private refreshSubscribers: ((token: string) => void)[] = [];
 
   constructor(baseURL: string = import.meta.env.VITE_API_URL || 'https://eventuiapp.com/api') {
+    const normalizedBase = baseURL.endsWith('/api') ? baseURL : `${baseURL.replace(/\/$/, '')}/api`;
+    this.baseURL = normalizedBase;
     this.client = axios.create({
-      baseURL,
+      baseURL: normalizedBase,
+      withCredentials: true,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -37,7 +41,9 @@ export class ApiClient {
         const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
         // If error is 401 and we haven't retried yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        const reqUrl = (originalRequest.url || '').toString();
+        const isAuthRoute = /\/auth\/(login|register)/.test(reqUrl);
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
           if (this.isRefreshing) {
             // If already refreshing, wait for new token
             return new Promise((resolve) => {
@@ -54,16 +60,11 @@ export class ApiClient {
           this.isRefreshing = true;
 
           try {
-            const refreshToken = localStorage.getItem('refresh_token');
-            
-            if (!refreshToken) {
-              throw new Error('No refresh token available');
-            }
-
-            // Call refresh endpoint
+            // Call refresh endpoint using HttpOnly cookie
             const response = await axios.post(
-                `${import.meta.env.VITE_API_URL || 'https://eventuiapp.com/api'}/auth/refresh`,
-              { refresh_token: refreshToken }
+              `${this.baseURL}/auth/refresh`,
+              null,
+              { withCredentials: true }
             );
 
             const { token, refresh_token } = response.data;
