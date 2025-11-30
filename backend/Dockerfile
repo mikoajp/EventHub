@@ -12,7 +12,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-configure intl \
     && docker-php-ext-install -j$(nproc) pdo pdo_pgsql pgsql zip intl xml mbstring gd opcache bcmath sockets
 
-RUN pecl install redis && docker-php-ext-enable redis # removed amqp ext to avoid compat warning
+# POPRAWIONA LINIA - usunięty komentarz z nazwy rozszerzenia
+RUN pecl install redis amqp && docker-php-ext-enable redis amqp
 
 FROM composer:2 AS composer
 
@@ -36,6 +37,9 @@ RUN { \
     echo 'post_max_size=100M'; \
     echo 'max_execution_time=300'; \
     echo 'date.timezone=Europe/Warsaw'; \
+    echo 'display_errors=Off'; \
+    echo 'display_startup_errors=Off'; \
+    echo 'log_errors=On'; \
     } > /usr/local/etc/php/conf.d/custom.ini
 
 # Enable Apache modules

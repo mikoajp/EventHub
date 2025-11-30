@@ -28,20 +28,11 @@ class AuthController extends AbstractController
     #[Route('/login', name: 'api_login', methods: ['POST'])]
     public function login(Request $request): JsonResponse
     {
-        try {
-            $data = $request->toArray();
-            $result = $this->authService->login($data);
-            $response = $this->json($result['payload']);
-            $response->headers->setCookie($this->createRefreshTokenCookie($result['refresh']));
-            return $response;
-        } catch (UserNotAuthenticatedException $e) {
-            return $this->json([
-                'error' => [
-                    'message' => 'Invalid credentials',
-                    'type' => 'UserNotAuthenticated'
-                ]
-            ], 401);
-        }
+        $data = $request->toArray();
+        $result = $this->authService->login($data);
+        $response = $this->json($result['payload']);
+        $response->headers->setCookie($this->createRefreshTokenCookie($result['refresh']));
+        return $response;
     }
 
     #[Route('/me', name: 'api_me', methods: ['GET'])]

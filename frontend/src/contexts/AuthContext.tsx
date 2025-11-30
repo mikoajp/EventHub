@@ -36,7 +36,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      const userData = await apiClient.get<User>('/auth/me');
+      const raw = await apiClient.get<any>('/auth/me');
+      if (raw && (raw as any).error) {
+        throw new Error('Unauthenticated');
+      }
+      const userData = raw as User;
       setUser(userData);
       setIsAuthenticated(true);
     } catch (error) {
@@ -65,13 +69,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('auth_token');
       localStorage.removeItem('refresh_token');
 
-      const response = await apiClient.post<{ payload?: any; token?: string; refresh_token?: string; user?: User }>('/auth/login', {
-        email,
-        password,
-      });
+      const response = await apiClient.post<{ token?: string; refresh_token?: string; user?: User; error?: any }>('/auth/login', { email, password });
 
-      const token = response.token || response.payload?.token;
-      const refresh = response.refresh_token || response.payload?.refresh_token;
+      if (response.error) {
+        throw new Error(response.error?.message || 'Invalid credentials');
+      }
+
+      const token = response.token;
+      const refresh = response.refresh_token;
 
       if (!token || !refresh) {
         throw new Error('Invalid credentials');
@@ -81,7 +86,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('auth_token', token);
       localStorage.setItem('refresh_token', refresh);
 
-      await fetchCurrentUser();
+      if (response.user) {
+        setUser(response.user as User);
+        setIsAuthenticated(true);
+      } else {
+        await fetchCurrentUser();
+      }
 
     } catch (error) {
       setUser(null);

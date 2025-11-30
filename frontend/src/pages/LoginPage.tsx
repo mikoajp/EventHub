@@ -42,10 +42,11 @@ export const LoginPage: React.FC = () => {
     try {
       await login(values.email, values.password);
       navigate('/', { replace: true });
-    } catch (error) {
+    } catch (error: any) {
+      const isAuthError = error?.message === 'Invalid credentials' || /Unauthenticated/i.test(error?.message || '');
       form.setErrors({
-        email: 'Invalid email or password',
-        password: 'Invalid email or password',
+        email: isAuthError ? 'Invalid email or password' : 'Login failed',
+        password: isAuthError ? 'Invalid email or password' : 'Login failed',
       });
     } finally {
       setIsSubmitting(false);

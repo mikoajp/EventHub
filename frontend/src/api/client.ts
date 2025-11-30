@@ -38,6 +38,7 @@ export class ApiClient {
     this.client.interceptors.response.use(
       (response) => {
         if (typeof response.data === 'string') {
+          // Strip leading HTML warnings before JSON
           const match = response.data.match(/\{[\s\S]*\}$/);
           if (match) {
             try { response.data = JSON.parse(match[0]); } catch { /* ignore parse error */ }
