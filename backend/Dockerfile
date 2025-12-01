@@ -69,12 +69,16 @@ COPY --from=builder --chown=www-data:www-data /var/www/html /var/www/html
 
 ENV SERVER_NAME=:80
 
-HEALTHCHECK --interval=20s --timeout=5s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=20s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -f http://localhost/health.php || exit 1
 
 EXPOSE 80 443
 
-RUN echo ':80 {\n\
+RUN echo '{\n\
+    order php_server before file_server\n\
+}\n\
+\n\
+:80 {\n\
     root * /var/www/html/public\n\
     encode gzip\n\
     php_server\n\
