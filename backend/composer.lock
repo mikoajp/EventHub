@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b8a20874f052f50bc1fd96a703b2c339",
+    "content-hash": "79a276346b8040c107cbdade522a3294",
     "packages": [
         {
             "name": "api-platform/core",
@@ -12455,8 +12455,7 @@
     },
     "platform-dev": {},
     "platform-overrides": {
-        "php": "8.2.29",
-        "ext-amqp": "1.0.0"
+        "php": "8.2.29"
     },
     "plugin-api-version": "2.6.0"
 }
