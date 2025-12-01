@@ -73,7 +73,7 @@ export const ProfilePage: React.FC = () => {
     },
   });
 
-  const handleUpdateProfile = async (values: UpdateProfileFormValues) => {
+  const handleUpdateProfile = async (_values: UpdateProfileFormValues) => {
     setIsUpdatingProfile(true);
     try {
       // TODO: Implement API call to update profile
@@ -95,7 +95,7 @@ export const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleChangePassword = async (values: ChangePasswordFormValues) => {
+  const handleChangePassword = async (_values: ChangePasswordFormValues) => {
     setIsChangingPassword(true);
     try {
       // TODO: Implement API call to change password
