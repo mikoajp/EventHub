@@ -5,6 +5,7 @@ import { apiClient } from '../api/client';
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -111,9 +112,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAuthenticated(false);
   };
 
+  const register = async (email: string, password: string, firstName: string, lastName: string) => {
+    setIsLoading(true);
+    try {
+      const response = await apiClient.post<{ token?: string; refresh_token?: string; user?: User; error?: any }>('/auth/register', {
+        email,
+        password,
+        firstName,
+        lastName,
+      });
+
+      if (response.error) {
+        throw new Error(response.error?.message || 'Registration failed');
+      }
+
+      const token = response.token;
+      const refresh = response.refresh_token;
+
+      if (!token || !refresh) {
+        throw new Error('Registration failed');
+      }
+
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('refresh_token', refresh);
+
+      if (response.user) {
+        setUser(response.user as User);
+        setIsAuthenticated(true);
+      } else {
+        await fetchCurrentUser();
+      }
+    } catch (error) {
+      setUser(null);
+      setIsAuthenticated(false);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const value = {
     user,
     login,
+    register,
     logout,
     isLoading,
     isAuthenticated,

@@ -20,6 +20,7 @@ import { CreateEventPage } from './pages/CreateEventPage';
 import { MyTicketsPage } from './pages/MyTicketsPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { AuthProvider } from './contexts/AuthContext';
 import { RealTimeProvider } from './contexts/RealTimeContext';
 
@@ -88,6 +89,16 @@ export const App: React.FC = () => {
                         element={
                           <ProtectedRoute requireRole="ROLE_ORGANIZER">
                             <DashboardPage />
+                          </ProtectedRoute>
+                        } 
+                      />
+
+                      {/* User profile route */}
+                      <Route 
+                        path="profile" 
+                        element={
+                          <ProtectedRoute>
+                            <ProfilePage />
                           </ProtectedRoute>
                         } 
                       />
