@@ -26,5 +26,6 @@ dist-ssr
 # Env files and caches
 .env
 .env.*
+!.env.production
 .eslintcache
 coverage
