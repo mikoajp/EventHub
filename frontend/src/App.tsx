@@ -12,6 +12,7 @@ import '@mantine/notifications/styles.css';
 import '@mantine/dates/styles.css';
 
 import { Layout } from './components/Layout';
+import { PublicLayout } from './components/PublicLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
 import { EventsPage } from './pages/EventsPage';
@@ -54,21 +55,24 @@ export const App: React.FC = () => {
               <RealTimeProvider>
                 <Router>
                   <Routes>
-                    {/* Public routes */}
+                    {/* Public login page */}
                     <Route path="/login" element={<LoginPage />} />
                     
-                    {/* Protected routes */}
+                    {/* Public routes with PublicLayout */}
+                    <Route element={<PublicLayout />}>
+                      <Route index element={<HomePage />} />
+                      <Route path="events" element={<EventsPage />} />
+                      <Route path="events/:id" element={<EventDetailsPage />} />
+                    </Route>
+                    
+                    {/* Protected routes with Layout */}
                     <Route 
-                      path="/" 
                       element={
                         <ProtectedRoute>
                           <Layout />
                         </ProtectedRoute>
                       }
                     >
-                      <Route index element={<HomePage />} />
-                      <Route path="events" element={<EventsPage />} />
-                      <Route path="events/:id" element={<EventDetailsPage />} />
                       <Route path="my-tickets" element={<MyTicketsPage />} />
                       
                       {/* Organizer-only routes */}
