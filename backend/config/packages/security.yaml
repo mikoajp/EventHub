@@ -34,6 +34,12 @@ security:
             provider: app_user_provider
 
     access_control:
+        # Public home page and assets
+        - { path: ^/$, roles: PUBLIC_ACCESS }
+        - { path: ^/public, roles: PUBLIC_ACCESS }
+        - { path: ^/bundles, roles: PUBLIC_ACCESS }
+        - { path: ^/assets, roles: PUBLIC_ACCESS }
+        
         # Public authentication endpoints
         - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }

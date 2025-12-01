@@ -26,6 +26,7 @@ final class UserPresenter implements UserPresenterInterface
                 'id' => $data['user']['id'] ?? null,
                 'email' => $data['user']['email'] ?? null,
                 'createdAt' => $data['user']['createdAt'] ?? null,
+                'roles' => $data['user']['roles'] ?? [],
             ],
         ];
     }
@@ -38,6 +39,7 @@ final class UserPresenter implements UserPresenterInterface
             'fullName' => $data['fullName'] ?? null,
             'createdAt' => $data['createdAt'] ?? null,
             'phone' => $data['phone'] ?? null,
+            'roles' => $data['roles'] ?? [],
         ];
     }
 
