@@ -1,12 +1,11 @@
 # syntax=docker/dockerfile:1.7
 
-FROM dunglas/frankenphp:latest-php8.3 AS base
+FROM php:8.3-apache AS base
 
 RUN apt-get update && apt-get install -y \
     git unzip curl wget \
     libpq-dev librabbitmq-dev libzip-dev libicu-dev libxml2-dev \
     libpng-dev libjpeg-dev libfreetype6-dev libonig-dev \
-    autoconf pkg-config build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -15,7 +14,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         pdo pdo_pgsql pgsql zip intl xml mbstring gd \
         opcache bcmath sockets
 
-RUN install-php-extensions redis amqp
+RUN pecl install redis amqp && docker-php-ext-enable redis amqp
 
 RUN { \
     echo 'opcache.enable=1'; \
@@ -36,6 +35,16 @@ RUN { \
     echo 'display_errors=Off'; \
     echo 'log_errors=On'; \
     } > /usr/local/etc/php/conf.d/custom.ini
+
+RUN a2enmod rewrite headers expires deflate
+
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+RUN printf '<Directory /var/www/html/public>\nOptions -Indexes +FollowSymLinks\nAllowOverride All\nRequire all granted\nFallbackResource /index.php\n</Directory>\n' > /etc/apache2/conf-available/symfony.conf \
+    && a2enconf symfony
 
 FROM composer:2 AS composer-stage
 
@@ -67,22 +76,9 @@ WORKDIR /var/www/html
 
 COPY --from=builder --chown=www-data:www-data /var/www/html /var/www/html
 
-ENV SERVER_NAME=:80
-
 HEALTHCHECK --interval=20s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -f http://localhost/health.php || exit 1
 
-EXPOSE 80 443
+EXPOSE 80
 
-RUN echo '{\n\
-    order php_server before file_server\n\
-}\n\
-\n\
-:80 {\n\
-    root * /var/www/html/public\n\
-    encode gzip\n\
-    php_server\n\
-    file_server\n\
-}\n' > /etc/caddy/Caddyfile
-
-ENTRYPOINT ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+CMD ["apache2-foreground"]
