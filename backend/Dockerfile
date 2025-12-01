@@ -5,7 +5,8 @@ FROM dunglas/frankenphp:latest-php8.3 AS base
 RUN apt-get update && apt-get install -y \
     git unzip curl wget \
     libpq-dev librabbitmq-dev libzip-dev libicu-dev libxml2-dev \
-    libpng-dev libjpeg-dev libfreetype6-dev \
+    libpng-dev libjpeg-dev libfreetype6-dev libonig-dev \
+    autoconf pkg-config build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -67,7 +68,6 @@ WORKDIR /var/www/html
 COPY --from=builder --chown=www-data:www-data /var/www/html /var/www/html
 
 ENV SERVER_NAME=:80
-ENV FRANKENPHP_CONFIG="worker ./public/index.php"
 
 HEALTHCHECK --interval=20s --timeout=5s --start-period=15s --retries=3 \
     CMD curl -f http://localhost/health.php || exit 1
