@@ -11,9 +11,10 @@ export class ApiClient {
     const normalizedBase = baseURL.endsWith('/api') ? baseURL : `${baseURL.replace(/\/$/, '')}/api`;
     this.baseURL = normalizedBase;
     
-    // Only use withCredentials for same-origin requests or when API is same domain
+    // Use withCredentials for same-origin/same-domain requests (includes same domain different path)
+    // This allows cookies to be sent with requests
     const isSameDomain = typeof window !== 'undefined' && 
-      normalizedBase.startsWith(window.location.origin);
+      new URL(normalizedBase).origin === window.location.origin;
     
     this.client = axios.create({
       baseURL: normalizedBase,
@@ -80,7 +81,7 @@ export class ApiClient {
           try {
             // Call refresh endpoint - use withCredentials only for same-domain
             const isSameDomain = typeof window !== 'undefined' && 
-              this.baseURL.startsWith(window.location.origin);
+              new URL(this.baseURL).origin === window.location.origin;
             
             const response = await axios.post(
               `${this.baseURL}/auth/refresh`,
