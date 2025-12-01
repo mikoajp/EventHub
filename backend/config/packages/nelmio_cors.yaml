@@ -2,6 +2,7 @@ nelmio_cors:
     defaults:
         origin_regex: true
         allow_origin: ['*']
+        allow_credentials: false
         allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
         allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
         expose_headers: ['Link']
@@ -9,11 +10,13 @@ nelmio_cors:
     paths:
         '^/api/':
             allow_origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://eventuiapp.com']
+            allow_credentials: true
             allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
             allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
             max_age: 3600
         '^/':
             origin_regex: true
             allow_origin: ['*']
+            allow_credentials: false
             allow_headers: ['*']
             allow_methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']

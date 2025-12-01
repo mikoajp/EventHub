@@ -10,9 +10,14 @@ export class ApiClient {
   constructor(baseURL: string = import.meta.env.VITE_API_URL || 'http://localhost:8001/api') {
     const normalizedBase = baseURL.endsWith('/api') ? baseURL : `${baseURL.replace(/\/$/, '')}/api`;
     this.baseURL = normalizedBase;
+    
+    // Only use withCredentials for same-origin requests or when API is same domain
+    const isSameDomain = typeof window !== 'undefined' && 
+      normalizedBase.startsWith(window.location.origin);
+    
     this.client = axios.create({
       baseURL: normalizedBase,
-      withCredentials: true,
+      withCredentials: isSameDomain,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -73,11 +78,14 @@ export class ApiClient {
           this.isRefreshing = true;
 
           try {
-            // Call refresh endpoint using HttpOnly cookie
+            // Call refresh endpoint - use withCredentials only for same-domain
+            const isSameDomain = typeof window !== 'undefined' && 
+              this.baseURL.startsWith(window.location.origin);
+            
             const response = await axios.post(
               `${this.baseURL}/auth/refresh`,
               null,
-              { withCredentials: true }
+              { withCredentials: isSameDomain }
             );
 
             const token = response.data.token || response.data.payload?.token;
