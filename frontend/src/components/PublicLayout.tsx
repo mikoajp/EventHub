@@ -33,7 +33,7 @@ export const PublicLayout: React.FC = () => {
             <UnstyledButton onClick={() => navigate('/')}>
               <Group gap="xs">
                 <Text size="xl" fw={700} c="blue">
-                  EventHub - Twoje wydarzenia! 🔥 BETA
+                  EventHub v2.0 - Twoje wydarzenia! 🔥
                 </Text>
               </Group>
             </UnstyledButton>
