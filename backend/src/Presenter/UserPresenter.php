@@ -46,9 +46,13 @@ final class UserPresenter implements UserPresenterInterface
     public function presentRegistrationResponse(array $data): array
     {
         return [
-            'id' => $data['id'] ?? null,
-            'email' => $data['email'] ?? null,
-            'status' => $data['status'] ?? 'registered',
+            'token' => $data['token'] ?? null,
+            'user' => [
+                'id' => $data['user']['id'] ?? null,
+                'email' => $data['user']['email'] ?? null,
+                'createdAt' => $data['user']['createdAt'] ?? null,
+                'roles' => $data['user']['roles'] ?? [],
+            ],
         ];
     }
 }
