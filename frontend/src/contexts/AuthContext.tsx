@@ -30,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = localStorage.getItem('auth_token');
       const refreshToken = localStorage.getItem('refresh_token');
       
+      // Don't make API call if no tokens exist
       if (!token && !refreshToken) {
         setUser(null);
         setIsAuthenticated(false);

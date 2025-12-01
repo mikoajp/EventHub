@@ -51,8 +51,12 @@ export class ApiClient {
 
         // If error is 401 and we haven't retried yet
         const reqUrl = (originalRequest.url || '').toString();
-        const isAuthRoute = /\/auth\/(login|register)/.test(reqUrl);
-        if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
+        const isAuthRoute = /\/auth\/(login|register|me)/.test(reqUrl);
+        
+        // Only try to refresh if we have a refresh token and it's not an auth route
+        const hasRefreshToken = !!localStorage.getItem('refresh_token');
+        
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute && hasRefreshToken) {
           if (this.isRefreshing) {
             // If already refreshing, wait for new token
             return new Promise((resolve) => {
@@ -98,10 +102,10 @@ export class ApiClient {
             // Retry original request
             return this.client(originalRequest);
           } catch (refreshError) {
-            // Refresh failed - logout user
+            // Refresh failed - clear tokens but DON'T redirect
+            // Let the component handle the redirect if needed
             localStorage.removeItem('auth_token');
             localStorage.removeItem('refresh_token');
-            window.location.href = '/login';
             return Promise.reject(refreshError);
           } finally {
             this.isRefreshing = false;
