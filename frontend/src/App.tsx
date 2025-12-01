@@ -12,7 +12,6 @@ import '@mantine/notifications/styles.css';
 import '@mantine/dates/styles.css';
 
 import { Layout } from './components/Layout';
-import { PublicLayout } from './components/PublicLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
 import { EventsPage } from './pages/EventsPage';
@@ -55,25 +54,25 @@ export const App: React.FC = () => {
               <RealTimeProvider>
                 <Router>
                   <Routes>
-                    {/* Public login page */}
+                    {/* Public login page without layout */}
                     <Route path="/login" element={<LoginPage />} />
                     
-                    {/* Public routes with PublicLayout */}
-                    <Route element={<PublicLayout />}>
+                    {/* All routes use the unified Layout */}
+                    <Route element={<Layout />}>
+                      {/* Public routes */}
                       <Route index element={<HomePage />} />
                       <Route path="events" element={<EventsPage />} />
                       <Route path="events/:id" element={<EventDetailsPage />} />
-                    </Route>
-                    
-                    {/* Protected routes with Layout */}
-                    <Route 
-                      element={
-                        <ProtectedRoute>
-                          <Layout />
-                        </ProtectedRoute>
-                      }
-                    >
-                      <Route path="my-tickets" element={<MyTicketsPage />} />
+                      
+                      {/* Protected routes */}
+                      <Route 
+                        path="my-tickets" 
+                        element={
+                          <ProtectedRoute>
+                            <MyTicketsPage />
+                          </ProtectedRoute>
+                        } 
+                      />
                       
                       {/* Organizer-only routes */}
                       <Route 
