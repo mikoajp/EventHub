@@ -53,7 +53,7 @@ security:
         # Public event browsing endpoints (read-only)
         - { path: ^/api/events$, roles: PUBLIC_ACCESS, methods: [GET] }
         - { path: ^/api/events/[^/]+$, roles: PUBLIC_ACCESS, methods: [GET] }
-        - { path: ^/api/events/filter-options, roles: PUBLIC_ACCESS, methods: [GET] }
+        - { path: ^/api/events/filters/options, roles: PUBLIC_ACCESS, methods: [GET] }
         
         # Public ticket availability checking
         - { path: ^/api/tickets/availability, roles: PUBLIC_ACCESS, methods: [GET] }

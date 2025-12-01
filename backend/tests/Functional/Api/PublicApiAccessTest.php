@@ -36,7 +36,7 @@ class PublicApiAccessTest extends BaseWebTestCase
     {
         $client = static::createClient();
         
-        $client->request('GET', '/api/events/filter-options');
+        $client->request('GET', '/api/events/filters/options');
         
         $this->assertResponseIsSuccessful();
         $this->assertResponseStatusCodeSame(200);

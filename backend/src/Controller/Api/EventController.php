@@ -87,7 +87,7 @@ class EventController extends AbstractController
         ]);
     }
 
-    #[Route('/filter-options', name: 'api_events_filter_options', methods: ['GET'])]
+    #[Route('/filters/options', name: 'api_events_filter_options', methods: ['GET'])]
     public function getFilterOptions(): JsonResponse
     {
         $envelope = $this->queryBus->dispatch(new GetFilterOptionsQuery());

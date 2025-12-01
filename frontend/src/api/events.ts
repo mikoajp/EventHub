@@ -44,5 +44,5 @@ export const eventsApi = {
     }),
 
   getFilterOptions: (): Promise<FilterOptions> =>
-    apiClient.get('/events/filter-options'),
+    apiClient.get('/events/filters/options'),
 };
