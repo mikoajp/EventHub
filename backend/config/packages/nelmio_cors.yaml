@@ -8,7 +8,7 @@ nelmio_cors:
         max_age: 3600
     paths:
         '^/api/':
-            allow_origin: ['http://localhost:5173', 'http://127.0.0.1:5173']
+            allow_origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://eventuiapp.com']
             allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
             allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
             max_age: 3600

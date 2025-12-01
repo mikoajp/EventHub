@@ -7,7 +7,7 @@ export class ApiClient {
   private isRefreshing = false;
   private refreshSubscribers: ((token: string) => void)[] = [];
 
-  constructor(baseURL: string = import.meta.env.VITE_API_URL || 'https://eventuiapp.com/api') {
+  constructor(baseURL: string = import.meta.env.VITE_API_URL || 'http://localhost:8001/api') {
     const normalizedBase = baseURL.endsWith('/api') ? baseURL : `${baseURL.replace(/\/$/, '')}/api`;
     this.baseURL = normalizedBase;
     this.client = axios.create({
@@ -143,4 +143,4 @@ export class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient();
+export const apiClient = new ApiClient(import.meta.env.VITE_API_URL);
