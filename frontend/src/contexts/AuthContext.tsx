@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { User } from '../types';
 import { apiClient } from '../api/client';
-import { tokenManager } from '../utils/tokenManager';
 
 interface AuthContextType {
   user: User | null;
@@ -26,43 +25,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const fetchUserAttempts = useRef(0);
-
-  // Schedule automatic token refresh before expiration
-  const scheduleTokenRefresh = useCallback(() => {
-    // Clear any existing timeout
-    if (refreshTimeoutRef.current) {
-      clearTimeout(refreshTimeoutRef.current);
-    }
-
-    const timeUntilExpiration = tokenManager.getTimeUntilExpiration();
-    if (!timeUntilExpiration) return;
-
-    // Refresh 5 minutes before expiration (or halfway through if token expires sooner)
-    const refreshTime = Math.max(timeUntilExpiration - 300, timeUntilExpiration / 2);
-    
-    if (refreshTime > 0) {
-      refreshTimeoutRef.current = setTimeout(async () => {
-        try {
-          const response = await apiClient.post<{ token?: string; refresh_token?: string }>('/auth/refresh', null);
-          
-          if (response.token) {
-            localStorage.setItem('auth_token', response.token);
-            if (response.refresh_token) {
-              localStorage.setItem('refresh_token', response.refresh_token);
-            }
-            scheduleTokenRefresh(); // Schedule next refresh
-          } else {
-            console.warn('Token refresh returned no access token');
-          }
-        } catch (error) {
-          console.error('Auto token refresh failed:', error);
-          // Let the user continue, interceptor will handle 401 on next request
-        }
-      }, refreshTime * 1000);
-    }
-  }, []);
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -75,35 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Check if token is expired and we have a refresh token
-      if (tokenManager.isAccessTokenExpired() && tokenManager.getRefreshToken()) {
-        try {
-          // Try to refresh the token before fetching user
-          const response = await apiClient.post<{ token?: string; refresh_token?: string }>('/auth/refresh', null);
-          
-          if (response.token && response.refresh_token) {
-            localStorage.setItem('auth_token', response.token);
-            localStorage.setItem('refresh_token', response.refresh_token);
-          }
-        } catch (refreshError: any) {
-          // Only clear tokens if it's an authentication error (401)
-          // Don't clear on network errors (timeout, 500, etc.)
-          if (refreshError?.response?.status === 401) {
-            console.warn('Refresh token invalid or expired, logging out');
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('refresh_token');
-            setUser(null);
-            setIsAuthenticated(false);
-          } else {
-            console.error('Refresh failed with network error:', refreshError);
-            // Keep tokens, let user try again
-            setUser(null);
-            setIsAuthenticated(false);
-          }
-          return;
-        }
-      }
-
       const raw = await apiClient.get<any>('/auth/me');
       if (raw && (raw as any).error) {
         throw new Error('Unauthenticated');
@@ -111,42 +44,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userData = raw as User;
       setUser(userData);
       setIsAuthenticated(true);
-      
-      // Schedule automatic token refresh
-      scheduleTokenRefresh();
-    } catch (error: any) {
-      // Only clear tokens if it's an authentication error (401)
-      // Don't clear on network errors, CORS errors, timeouts, etc.
-      const isAuthError = error?.response?.status === 401;
-      
-      if (isAuthError) {
-        console.warn('Authentication failed, clearing tokens');
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('refresh_token');
-        setUser(null);
-        setIsAuthenticated(false);
-      } else {
-        // Network error - retry once after delay if this is first attempt
-        console.error('Failed to fetch user (keeping tokens):', error?.message || error);
-        
-        if (fetchUserAttempts.current === 0 && localStorage.getItem('auth_token')) {
-          fetchUserAttempts.current++;
-          console.log('Retrying fetchCurrentUser in 2 seconds...');
-          setTimeout(() => {
-            fetchCurrentUser();
-          }, 2000);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      }
+    } catch (error) {
+      // If refresh token exists, the interceptor will try to refresh
+      // If that fails, it will clear tokens and redirect
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('refresh_token');
+      setUser(null);
+      setIsAuthenticated(false);
     }
-  }, [scheduleTokenRefresh]);
+  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
       setIsLoading(true);
-      fetchUserAttempts.current = 0; // Reset attempt counter
       await fetchCurrentUser();
       setIsLoading(false);
     };
@@ -182,8 +92,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.user) {
         setUser(response.user as User);
         setIsAuthenticated(true);
-        // Schedule automatic token refresh after login
-        scheduleTokenRefresh();
       } else {
         await fetchCurrentUser();
       }
@@ -198,11 +106,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
-    // Clear refresh timeout
-    if (refreshTimeoutRef.current) {
-      clearTimeout(refreshTimeoutRef.current);
-    }
-    
     // Remove both tokens
     localStorage.removeItem('auth_token');
     localStorage.removeItem('refresh_token');
@@ -241,8 +144,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.user) {
         setUser(response.user as User);
         setIsAuthenticated(true);
-        // Schedule automatic token refresh after registration
-        scheduleTokenRefresh();
       } else {
         await fetchCurrentUser();
       }

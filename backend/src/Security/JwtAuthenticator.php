@@ -5,7 +5,6 @@ namespace App\Security;
 use App\Repository\UserRepository;
 use Lexik\Bundle\JWTAuthenticationBundle\TokenExtractor\TokenExtractorInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,8 +25,7 @@ class JwtAuthenticator extends AbstractAuthenticator implements AuthenticationEn
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly TokenExtractorInterface $tokenExtractor,
-        private readonly JWTEncoderInterface $jwtEncoder,
-        private readonly LoggerInterface $logger
+        private readonly JWTEncoderInterface $jwtEncoder
     ) {}
 
     public function supports(Request $request): ?bool
@@ -69,12 +67,6 @@ class JwtAuthenticator extends AbstractAuthenticator implements AuthenticationEn
                 })
             );
         } catch (\Exception $e) {
-            $this->logger->error('JWT Authentication failed', [
-                'error' => $e->getMessage(),
-                'token_preview' => substr($token, 0, 50) . '...',
-                'exception_class' => get_class($e),
-                'trace' => $e->getTraceAsString()
-            ]);
             throw new CustomUserMessageAuthenticationException('Invalid JWT token: ' . $e->getMessage());
         }
     }
