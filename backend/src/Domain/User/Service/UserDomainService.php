@@ -20,8 +20,14 @@ final readonly class UserDomainService
         $user->setEmail($registrationDTO->email)
             ->setFirstName($registrationDTO->firstName)
             ->setLastName($registrationDTO->lastName)
-            ->setPhone($registrationDTO->phone)
-            ->setRoles([\App\Enum\UserRole::USER->value]);
+            ->setPhone($registrationDTO->phone);
+
+        // Set roles based on registration preferences
+        $roles = [\App\Enum\UserRole::USER->value];
+        if ($registrationDTO->wantToBeOrganizer) {
+            $roles[] = \App\Enum\UserRole::ORGANIZER->value;
+        }
+        $user->setRoles($roles);
 
         $hashedPassword = $this->passwordHasher->hashPassword($user, $registrationDTO->password);
         $user->setPassword($hashedPassword);

@@ -124,24 +124,46 @@ export const MyTicketsPage: React.FC = () => {
   }
 
   if (error) {
+    const errorMessage = (error as any)?.response?.status === 401 
+      ? 'Please log in to view your tickets.' 
+      : 'Error loading tickets. Please try again.';
+    
     return (
       <Container>
-        <Text c="red">Error loading tickets. Please try again.</Text>
+        <Center h={400}>
+          <Stack align="center" gap="md">
+            <IconTicket size={48} color="gray" />
+            <Text c="red" size="lg" fw={500}>{errorMessage}</Text>
+            {(error as any)?.response?.status === 401 && (
+              <Button onClick={() => window.location.href = '/login'}>
+                Go to Login
+              </Button>
+            )}
+            {(error as any)?.response?.status !== 401 && (
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            )}
+          </Stack>
+        </Center>
       </Container>
     );
   }
 
-  const upcomingTickets = tickets?.filter(
+  // Ensure tickets is an array (handle null/undefined)
+  const ticketsList = Array.isArray(tickets) ? tickets : [];
+
+  const upcomingTickets = ticketsList.filter(
     ticket => new Date(ticket.event.eventDate) > new Date() && ticket.status === 'purchased'
-  ) || [];
+  );
 
-  const pastTickets = tickets?.filter(
+  const pastTickets = ticketsList.filter(
     ticket => new Date(ticket.event.eventDate) <= new Date() && ticket.status === 'purchased'
-  ) || [];
+  );
 
-  const otherTickets = tickets?.filter(
+  const otherTickets = ticketsList.filter(
     ticket => ticket.status !== 'purchased'
-  ) || [];
+  );
 
   return (
     <Container size="xl">
@@ -151,7 +173,7 @@ export const MyTicketsPage: React.FC = () => {
           <Text c="dimmed">Manage your event tickets and downloads</Text>
         </div>
 
-        {tickets?.length === 0 ? (
+        {ticketsList.length === 0 ? (
           <Center h={300}>
             <Stack align="center" gap="md">
               <IconTicket size={48} color="gray" />

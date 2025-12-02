@@ -89,8 +89,21 @@ class AuthService
         if (!$rotated) {
             throw new UserNotAuthenticatedException();
         }
+        
+        // Get user and generate new access token
+        $user = $this->userRepository->findByEmail($rotated->getUsername());
+        if (!$user) {
+            throw new UserNotAuthenticatedException();
+        }
+        
+        $accessToken = $this->jwtManager->create($user);
+        
         return [
-            'payload' => ['message' => 'Token refreshed', 'refresh_token' => $rotated->getRefreshToken()],
+            'payload' => [
+                'token' => $accessToken,
+                'refresh_token' => $rotated->getRefreshToken(),
+                'message' => 'Token refreshed'
+            ],
             'refresh' => $rotated->getRefreshToken(),
         ];
     }

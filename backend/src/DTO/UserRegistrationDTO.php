@@ -25,12 +25,22 @@ final readonly class UserRegistrationDTO
     #[Assert\Length(min: 7, max: 30)]
     public ?string $phone;
 
-    public function __construct(string $email, string $password, string $firstName, string $lastName, ?string $phone = null)
+    public bool $wantToBeOrganizer;
+
+    public function __construct(
+        string $email, 
+        string $password, 
+        string $firstName, 
+        string $lastName, 
+        ?string $phone = null,
+        bool $wantToBeOrganizer = false
+    )
     {
         $this->email = $email;
         $this->password = $password;
         $this->firstName = $firstName;
         $this->lastName = $lastName;
         $this->phone = $phone;
+        $this->wantToBeOrganizer = $wantToBeOrganizer;
     }
 }

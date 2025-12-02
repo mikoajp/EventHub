@@ -74,22 +74,24 @@ export class ApiClient {
           this.isRefreshing = true;
 
           try {
-            // Call refresh endpoint
+            // Call refresh endpoint - uses HttpOnly cookie automatically via withCredentials
             const response = await axios.post(
               `${this.baseURL}/auth/refresh`,
               null,
               { withCredentials: true }
             );
 
-            const token = response.data.token || response.data.payload?.token;
-            const refresh_token = response.data.refresh_token || response.data.payload?.refresh_token;
-            if (!token || !refresh_token) {
-              throw new Error('Refresh failed');
+            const token = response.data.token;
+            const refresh_token = response.data.refresh_token;
+            if (!token) {
+              throw new Error('Refresh failed - no token in response');
             }
 
             // Store new tokens
             localStorage.setItem('auth_token', token);
-            localStorage.setItem('refresh_token', refresh_token);
+            if (refresh_token) {
+              localStorage.setItem('refresh_token', refresh_token);
+            }
 
             // Update authorization header
             if (originalRequest.headers) {

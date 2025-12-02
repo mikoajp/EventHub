@@ -74,7 +74,8 @@ class AuthController extends AbstractController
             $data['password'] ?? '',
             $data['firstName'] ?? '',
             $data['lastName'] ?? '',
-            $data['phone'] ?? null
+            $data['phone'] ?? null,
+            $data['wantToBeOrganizer'] ?? false
         );
         $result = $this->authService->register($registrationDTO);
         $response = $this->json($result['payload'], JsonResponse::HTTP_CREATED);
@@ -84,16 +85,23 @@ class AuthController extends AbstractController
 
     private function createRefreshTokenCookie(string $token): Cookie
     {
+        // Use secure flag only in production (HTTPS)
+        $isSecure = ($_ENV['APP_ENV'] ?? 'dev') === 'prod';
+        
+        // Use Lax instead of Strict for cross-origin in development
+        // Strict can block cookies between localhost:5173 and localhost:8001
+        $sameSite = $isSecure ? Cookie::SAMESITE_STRICT : Cookie::SAMESITE_LAX;
+        
         return Cookie::create(
             'refresh_token',
             $token,
             time() + self::REFRESH_COOKIE_LIFETIME,
             '/',
             null,
-            true,
-            true,
-            false,
-            Cookie::SAMESITE_STRICT
+            $isSecure, // secure only on HTTPS
+            true,      // httpOnly
+            false,     // raw
+            $sameSite  // Lax in dev, Strict in prod
         );
     }
 }

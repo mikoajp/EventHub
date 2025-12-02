@@ -48,10 +48,20 @@ export const useCreateEvent = () => {
       });
     },
     onError: (error: any) => {
+      const status = error.response?.status;
+      let message = error.response?.data?.message || 'Failed to create event';
+      
+      if (status === 401) {
+        message = 'You must be logged in as an organizer to create events. Please log in or register as an organizer.';
+      } else if (status === 403) {
+        message = 'You need organizer permissions to create events. Please contact support or register as an organizer.';
+      }
+      
       notifications.show({
-        title: 'Error',
-        message: error.response?.data?.message || 'Failed to create event',
+        title: status === 401 || status === 403 ? 'Permission Denied' : 'Error',
+        message,
         color: 'red',
+        autoClose: 8000, // Keep longer for auth errors
       });
     },
   });

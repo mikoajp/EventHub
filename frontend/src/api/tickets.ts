@@ -5,7 +5,7 @@ export const ticketsApi = {
   purchase: (data: PurchaseTicketData): Promise<{ ticketIds: string[] }> =>
     apiClient.post('/tickets/purchase', data),
 
-  getMyTickets: (): Promise<{ 'hydra:member': Ticket[] }> =>
+  getMyTickets: (): Promise<{ tickets: Ticket[] }> =>
     apiClient.get('/tickets/my'),
 
   getById: (id: string): Promise<Ticket> =>

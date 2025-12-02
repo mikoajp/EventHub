@@ -7,7 +7,8 @@ export const useMyTickets = () => {
   return useQuery({
     queryKey: ['tickets', 'my'],
     queryFn: ticketsApi.getMyTickets,
-    select: (data) => data['hydra:member'],
+    select: (data) => data.tickets || [],
+    retry: 1, // Retry once on failure
   });
 };
 
