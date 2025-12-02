@@ -5,7 +5,7 @@ nelmio_cors:
         allow_credentials: false
         allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
         allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
-        expose_headers: ['Link']
+        expose_headers: ['Link', 'Authorization']
         max_age: 3600
     paths:
         '^/api/':
@@ -13,6 +13,7 @@ nelmio_cors:
             allow_credentials: true
             allow_headers: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
             allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
+            expose_headers: ['Link', 'Authorization', 'X-Total-Count']
             max_age: 3600
         '^/':
             origin_regex: true
