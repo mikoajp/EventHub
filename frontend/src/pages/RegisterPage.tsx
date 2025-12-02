@@ -11,9 +11,11 @@ import {
   Stack,
   Alert,
   Group,
+  Checkbox,
+  Divider,
 } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { IconInfoCircle, IconUserPlus } from '@tabler/icons-react';
+import { IconInfoCircle, IconUserPlus, IconCalendarEvent } from '@tabler/icons-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface RegisterFormValues {
@@ -22,6 +24,7 @@ interface RegisterFormValues {
   confirmPassword: string;
   firstName: string;
   lastName: string;
+  wantToBeOrganizer: boolean;
 }
 
 export const RegisterPage: React.FC = () => {
@@ -37,6 +40,7 @@ export const RegisterPage: React.FC = () => {
       confirmPassword: '',
       firstName: '',
       lastName: '',
+      wantToBeOrganizer: false,
     },
     validate: {
       email: (val) => (/^\S+@\S+$/.test(val) ? null : 'Invalid email'),
@@ -53,7 +57,13 @@ export const RegisterPage: React.FC = () => {
     setError(null);
     setIsSubmitting(true);
     try {
-      await register(values.email, values.password, values.firstName, values.lastName);
+      await register(
+        values.email,
+        values.password,
+        values.firstName,
+        values.lastName,
+        values.wantToBeOrganizer
+      );
       navigate('/', { replace: true });
     } catch (error: any) {
       const errorMessage = error?.message || 'Registration failed';
@@ -89,7 +99,7 @@ export const RegisterPage: React.FC = () => {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            EventHub
+            🎫 EventHub
           </Title>
 
           <Paper 
@@ -184,6 +194,25 @@ export const RegisterPage: React.FC = () => {
                     size="md"
                     autoComplete="new-password"
                     {...form.getInputProps('confirmPassword')}
+                  />
+
+                  <Divider label="Account Type" labelPosition="center" />
+
+                  <Checkbox
+                    label={
+                      <div>
+                        <Group gap="xs" wrap="nowrap">
+                          <IconCalendarEvent size={18} style={{ color: '#4b6cb7', marginTop: 2 }} />
+                          <div>
+                            <Text size="sm" fw={500}>I want to organize events</Text>
+                            <Text size="xs" c="dimmed">
+                              Enable event creation and management features
+                            </Text>
+                          </div>
+                        </Group>
+                      </div>
+                    }
+                    {...form.getInputProps('wantToBeOrganizer', { type: 'checkbox' })}
                   />
 
                   <Button

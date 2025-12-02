@@ -5,7 +5,7 @@ import { apiClient } from '../api/client';
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
+  register: (email: string, password: string, firstName: string, lastName: string, wantToBeOrganizer?: boolean) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   isAuthenticated: boolean;
@@ -112,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsAuthenticated(false);
   };
 
-  const register = async (email: string, password: string, firstName: string, lastName: string) => {
+  const register = async (email: string, password: string, firstName: string, lastName: string, wantToBeOrganizer: boolean = false) => {
     setIsLoading(true);
     try {
       const response = await apiClient.post<{ token?: string; refresh_token?: string; user?: User; error?: any }>('/auth/register', {
@@ -120,6 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         firstName,
         lastName,
+        wantToBeOrganizer,
       });
 
       if (response.error) {
