@@ -33,11 +33,23 @@ final readonly class GetUserTicketsHandler
             $tickets = $this->ticketRepository->findBy(['user' => $user]);
             
             return array_map(function($ticket) {
+                $event = $ticket->getEvent();
+                if (!$event) {
+                    return [
+                        'id' => $ticket->getId()->toString(),
+                        'event_name' => 'Event Deleted',
+                        'event_date' => null,
+                        'ticket_type' => $ticket->getTicketType()?->getName() ?? 'Unknown',
+                        'price' => $ticket->getPrice(),
+                        'status' => $ticket->getStatus(),
+                        'purchase_date' => $ticket->getPurchasedAt()?->format('c')
+                    ];
+                }
                 return [
                     'id' => $ticket->getId()->toString(),
-                    'event_name' => $ticket->getEvent()->getName(),
-                    'event_date' => $ticket->getEvent()->getEventDate()->format('c'),
-                    'ticket_type' => $ticket->getTicketType()->getName(),
+                    'event_name' => $event->getName(),
+                    'event_date' => $event->getEventDate()?->format('c'),
+                    'ticket_type' => $ticket->getTicketType()?->getName() ?? 'Unknown',
                     'price' => $ticket->getPrice(),
                     'status' => $ticket->getStatus(),
                     'purchase_date' => $ticket->getPurchasedAt()?->format('c')

@@ -84,16 +84,31 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
 
     public function validateAndCreateEventDTO(Request $request): EventDTO
     {
-        $data = $this->validateRequest($request, [
-            'required' => ['name', 'description', 'eventDate', 'venue', 'maxTickets'],
-            'types' => [
-                'name' => 'string',
-                'description' => 'string',
-                'eventDate' => 'string',
-                'venue' => 'string',
-                'maxTickets' => 'integer'
-            ]
-        ]);
+        $data = $this->extractJsonData($request);
+
+        $required = ['name', 'description', 'eventDate', 'venue', 'maxTickets'];
+        $missingFields = array_diff($required, array_keys(array_filter($data)));
+        if (!empty($missingFields)) {
+            throw new InvalidRequestDataException(
+                sprintf('Missing required fields: %s', implode(', ', $missingFields))
+            );
+        }
+
+        if (!is_string($data['name']) || empty(trim($data['name']))) {
+            throw new InvalidRequestDataException('Field "name" must be a non-empty string');
+        }
+        if (!is_string($data['description']) || empty(trim($data['description']))) {
+            throw new InvalidRequestDataException('Field "description" must be a non-empty string');
+        }
+        if (!is_string($data['eventDate']) || empty(trim($data['eventDate']))) {
+            throw new InvalidRequestDataException('Field "eventDate" must be a non-empty string');
+        }
+        if (!is_string($data['venue']) || empty(trim($data['venue']))) {
+            throw new InvalidRequestDataException('Field "venue" must be a non-empty string');
+        }
+        if (!is_int($data['maxTickets']) && !(is_string($data['maxTickets']) && ctype_digit($data['maxTickets']))) {
+            throw new InvalidRequestDataException('Field "maxTickets" must be an integer');
+        }
 
         try {
             $eventDate = new \DateTimeImmutable($data['eventDate']);

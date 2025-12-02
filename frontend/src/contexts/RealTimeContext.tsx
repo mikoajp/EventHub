@@ -28,7 +28,7 @@ export const RealTimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    const mercureUrl = import.meta.env.VITE_MERCURE_URL || 'http://localhost:3000/.well-known/mercure';
+    const mercureUrl = import.meta.env.VITE_MERCURE_URL || 'http://localhost:3001/.well-known/mercure';
     
     // Subscribe to multiple topics
     const topics = [

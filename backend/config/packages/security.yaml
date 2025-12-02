@@ -17,6 +17,13 @@ security:
             pattern: ^/api/auth/(login|register|refresh|logout)$
             stateless: true
             security: false
+        
+        api_auth_me:
+            pattern: ^/api/auth/me$
+            stateless: true
+            provider: app_user_provider
+            custom_authenticator: App\Security\JwtAuthenticator
+            entry_point: App\Security\JwtAuthenticator
 
         admin:
             pattern: ^/admin

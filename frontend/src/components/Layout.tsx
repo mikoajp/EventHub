@@ -58,16 +58,14 @@ export const Layout: React.FC = () => {
               EventHub
             </Text>
 
-            {isAuthenticated && (
-              <Indicator
-                color={isConnected ? 'green' : 'red'}
-                size={8}
-                position="middle-end"
-                title={isConnected ? 'Connected to real-time updates' : 'Disconnected from real-time updates'}
-              >
-                {isConnected ? <IconWifi size={16} /> : <IconWifiOff size={16} />}
-              </Indicator>
-            )}
+            <Indicator
+              color={isConnected ? 'green' : 'red'}
+              size={8}
+              position="middle-end"
+              title={isConnected ? 'Connected to real-time updates' : 'Disconnected from real-time updates'}
+            >
+              {isConnected ? <IconWifi size={16} /> : <IconWifiOff size={16} />}
+            </Indicator>
           </Group>
 
           <Group>
@@ -114,7 +112,7 @@ export const Layout: React.FC = () => {
                     <UnstyledButton>
                       <Group gap="xs">
                         <Avatar size="sm" />
-                        <Text size="sm">{user?.fullName || user?.firstName || 'User'}</Text>
+                        <Text size="sm">{user?.firstName || 'User'}</Text>
                         {isAdmin && (
                           <Text size="xs" c="blue" fw={500}>(Admin)</Text>
                         )}
