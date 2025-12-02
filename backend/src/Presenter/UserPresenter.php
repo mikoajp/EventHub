@@ -22,10 +22,12 @@ final class UserPresenter implements UserPresenterInterface
     {
         return [
             'token' => $data['token'] ?? null,
+            'refresh_token' => $data['refresh_token'] ?? null,
             'user' => [
                 'id' => $data['user']['id'] ?? null,
                 'email' => $data['user']['email'] ?? null,
                 'firstName' => $data['user']['firstName'] ?? null,
+                'lastName' => $data['user']['lastName'] ?? null,
                 'createdAt' => $data['user']['createdAt'] ?? null,
                 'roles' => $data['user']['roles'] ?? [],
             ],
@@ -50,10 +52,12 @@ final class UserPresenter implements UserPresenterInterface
     {
         return [
             'token' => $data['token'] ?? null,
+            'refresh_token' => $data['refresh_token'] ?? null,
             'user' => [
                 'id' => $data['user']['id'] ?? null,
                 'email' => $data['user']['email'] ?? null,
                 'firstName' => $data['user']['firstName'] ?? null,
+                'lastName' => $data['user']['lastName'] ?? null,
                 'createdAt' => $data['user']['createdAt'] ?? null,
                 'roles' => $data['user']['roles'] ?? [],
             ],

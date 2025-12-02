@@ -66,14 +66,13 @@ class AuthService
         // Generate refresh token
         $refreshEntity = $this->refreshTokenService->createToken($user);
         
-        $payload = $this->userPresenter->presentRegistrationResponse(
-            $this->userApplicationService->formatRegistrationResponse($user)
-        );
-        $payload['token'] = $accessToken;
-        $payload['refresh_token'] = $refreshEntity->getRefreshToken();
+        $registrationData = $this->userApplicationService->formatLoginResponse($user);
+        $registrationData['token'] = $accessToken;
+        
+        $payload = $this->userPresenter->presentRegistrationResponse($registrationData);
         
         return [
-            'payload' => $payload,
+            'payload' => $payload + ['refresh_token' => $refreshEntity->getRefreshToken()],
             'refresh' => $refreshEntity->getRefreshToken(),
         ];
     }
