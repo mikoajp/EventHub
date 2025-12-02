@@ -86,7 +86,7 @@ export const LoginPage: React.FC = () => {
     setError(null);
     setIsSubmitting(true);
     try {
-      await register(values.email, values.password, values.firstName, values.lastName);
+      await register(values.email, values.password, values.firstName, values.lastName, false);
       navigate('/', { replace: true });
     } catch (error: any) {
       const errorMessage = error?.message || 'Registration failed';

@@ -29,10 +29,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchCurrentUser = useCallback(async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const refreshToken = localStorage.getItem('refresh_token');
       
-      // Don't make API call if no tokens exist
-      if (!token && !refreshToken) {
+      // Don't make API call if no token exists
+      if (!token) {
         setUser(null);
         setIsAuthenticated(false);
         return;

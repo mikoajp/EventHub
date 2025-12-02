@@ -23,7 +23,6 @@ security:
             stateless: true
             provider: app_user_provider
             custom_authenticator: App\Security\JwtAuthenticator
-            entry_point: App\Security\JwtAuthenticator
 
         admin:
             pattern: ^/admin

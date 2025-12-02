@@ -126,6 +126,11 @@ final readonly class SymfonyRequestValidator implements RequestValidatorInterfac
             (int)$data['maxTickets']
         );
 
+        // Handle ticketTypes if provided
+        if (isset($data['ticketTypes']) && is_array($data['ticketTypes'])) {
+            $eventDTO->ticketTypes = $data['ticketTypes'];
+        }
+
         $validationErrors = $this->validateDTO($eventDTO);
         if (!empty($validationErrors)) {
             throw new \App\Exception\Validation\ValidationException($validationErrors);
