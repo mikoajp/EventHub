@@ -80,13 +80,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = response.token;
       const refresh = response.refresh_token;
 
-      if (!token || !refresh) {
+      if (!token) {
         throw new Error('Invalid credentials');
       }
 
-      // Store both access token and refresh token
+      // Store access token (refresh token is stored as httpOnly cookie by backend)
       localStorage.setItem('auth_token', token);
-      localStorage.setItem('refresh_token', refresh);
+      if (refresh) {
+        localStorage.setItem('refresh_token', refresh);
+      }
 
       if (response.user) {
         setUser(response.user as User);
@@ -130,12 +132,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = response.token;
       const refresh = response.refresh_token;
 
-      if (!token || !refresh) {
+      if (!token) {
         throw new Error('Registration failed');
       }
 
+      // Store access token (refresh token is stored as httpOnly cookie by backend)
       localStorage.setItem('auth_token', token);
-      localStorage.setItem('refresh_token', refresh);
+      if (refresh) {
+        localStorage.setItem('refresh_token', refresh);
+      }
 
       if (response.user) {
         setUser(response.user as User);
