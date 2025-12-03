@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4b6cb7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#182848;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle with gradient -->
+  <circle cx="50" cy="50" r="48" fill="url(#grad)" />
+  
+  <!-- Ticket icon outline -->
+  <path d="M 25 35 L 75 35 L 75 40 A 5 5 0 0 1 70 45 A 5 5 0 0 1 75 50 L 75 55 A 5 5 0 0 1 70 60 A 5 5 0 0 1 75 65 L 75 70 L 25 70 L 25 65 A 5 5 0 0 0 30 60 A 5 5 0 0 0 25 55 L 25 50 A 5 5 0 0 0 30 45 A 5 5 0 0 0 25 40 L 25 35 Z" 
+        fill="none" stroke="white" stroke-width="2" opacity="0.3"/>
+  
+  <!-- EH Text -->
+  <text x="50" y="60" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white" text-anchor="middle">EH</text>
+  
+  <!-- Small ticket accent -->
+  <rect x="40" y="32" width="2" height="8" fill="white" opacity="0.5" rx="1"/>
+  <rect x="48" y="32" width="2" height="8" fill="white" opacity="0.5" rx="1"/>
+  <rect x="56" y="32" width="2" height="8" fill="white" opacity="0.5" rx="1"/>
+</svg>
