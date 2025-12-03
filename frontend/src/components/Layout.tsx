@@ -126,7 +126,7 @@ export const Layout: React.FC = () => {
                   <Menu.Dropdown>
                     <Menu.Label>Account</Menu.Label>
                     <Menu.Item
-                      leftSection={<IconUser size={14} />}
+                      leftSection={<span style={{ fontSize: '14px' }}>🎫</span>}
                       onClick={() => navigate('/profile')}
                     >
                       Profile
