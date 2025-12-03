@@ -47,7 +47,11 @@ RUN printf '<Directory /var/www/html/public>\nOptions -Indexes +FollowSymLinks\n
     && a2enconf symfony
 
 # Enable Authorization header pass-through for JWT authentication
-RUN printf '<IfModule mod_rewrite.c>\\nRewriteEngine On\\nRewriteCond %%{HTTP:Authorization} ^(.*)\\nRewriteRule .* - [e=HTTP_AUTHORIZATION:%%1]\\n</IfModule>\\n' > /etc/apache2/conf-available/auth-header.conf \
+RUN printf '<IfModule mod_rewrite.c>\n\
+RewriteEngine On\n\
+RewriteCond %%{HTTP:Authorization} ^(.*)\n\
+RewriteRule .* - [e=HTTP_AUTHORIZATION:%%1]\n\
+</IfModule>\n' > /etc/apache2/conf-available/auth-header.conf \
     && a2enconf auth-header
 
 FROM composer:2 AS composer-stage
