@@ -17,6 +17,7 @@ import {
   IconPlus,
   IconDashboard,
   IconLogout,
+  IconUser,
   IconWifi,
   IconWifiOff,
   IconLogin,
@@ -125,7 +126,7 @@ export const Layout: React.FC = () => {
                   <Menu.Dropdown>
                     <Menu.Label>Account</Menu.Label>
                     <Menu.Item
-                      leftSection={<span style={{ fontSize: '14px' }}>🎫</span>}
+                      leftSection={<IconUser size={14} />}
                       onClick={() => navigate('/profile')}
                     >
                       Profile

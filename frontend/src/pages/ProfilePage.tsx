@@ -23,6 +23,7 @@ import {
   IconLock,
   IconCheck,
   IconAlertCircle,
+  IconUser,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 
@@ -205,7 +206,7 @@ export const ProfilePage: React.FC = () => {
         <Paper withBorder radius="lg" p="lg">
           <Tabs defaultValue="profile">
             <Tabs.List>
-              <Tabs.Tab value="profile" leftSection={<span style={{ fontSize: '16px' }}>🎫</span>}>
+              <Tabs.Tab value="profile" leftSection={<IconUser size={16} />}>
                 Edit Profile
               </Tabs.Tab>
               <Tabs.Tab value="password" leftSection={<IconLock size={16} />}>
