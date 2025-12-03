@@ -171,7 +171,7 @@ export const ProfilePage: React.FC = () => {
         <Grid>
           <Grid.Col span={{ base: 12, sm: 4 }}>
             <Paper withBorder p="lg" radius="lg" ta="center">
-              <Text size="3rem" mb="sm">🎫</Text>
+              <Avatar size="lg" radius="lg" color="blue" mb="sm" mx="auto" />
               <Text c="dimmed" size="sm">
                 Account Status
               </Text>
@@ -191,7 +191,7 @@ export const ProfilePage: React.FC = () => {
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 4 }}>
             <Paper withBorder p="lg" radius="lg" ta="center">
-              <Text size="3rem" mb="sm">🎫</Text>
+              <Avatar size="lg" radius="lg" color="blue" mb="sm" mx="auto" />
               <Text c="dimmed" size="sm">
                 Member Since
               </Text>
