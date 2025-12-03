@@ -124,25 +124,40 @@ export const MyTicketsPage: React.FC = () => {
   }
 
   if (error) {
-    const errorMessage = (error as any)?.response?.status === 401 
-      ? 'Please log in to view your tickets.' 
-      : 'Error loading tickets. Please try again.';
+    const status = (error as any)?.response?.status;
+    let errorMessage = 'Error loading tickets. Please try again.';
+    let showBrowseEvents = false;
+    
+    if (status === 401) {
+      errorMessage = 'Please log in to view your tickets.';
+    } else if (status === 404) {
+      // Endpoint not found - might be during deployment or no tickets
+      errorMessage = 'Unable to load tickets. Please try again in a moment.';
+      showBrowseEvents = true;
+    }
     
     return (
       <Container>
         <Center h={400}>
           <Stack align="center" gap="md">
             <IconTicket size={48} color="gray" />
-            <Text c="red" size="lg" fw={500}>{errorMessage}</Text>
-            {(error as any)?.response?.status === 401 && (
+            <Text c="dimmed" size="lg" fw={500}>{errorMessage}</Text>
+            {status === 401 && (
               <Button onClick={() => window.location.href = '/login'}>
                 Go to Login
               </Button>
             )}
-            {(error as any)?.response?.status !== 401 && (
-              <Button onClick={() => window.location.reload()}>
-                Try Again
-              </Button>
+            {status !== 401 && (
+              <Group>
+                <Button variant="light" onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+                {showBrowseEvents && (
+                  <Button onClick={() => window.location.href = '/'}>
+                    Browse Events
+                  </Button>
+                )}
+              </Group>
             )}
           </Stack>
         </Center>
