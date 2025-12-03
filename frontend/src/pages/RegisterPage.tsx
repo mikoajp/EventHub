@@ -44,7 +44,7 @@ export const RegisterPage: React.FC = () => {
     },
     validate: {
       email: (val) => (/^\S+@\S+$/.test(val) ? null : 'Invalid email'),
-      password: (val) => (val.length < 6 ? 'Password must be at least 6 characters' : null),
+      password: (val) => (val.length < 8 ? 'Password must be at least 8 characters' : null),
       confirmPassword: (val, values) =>
         val !== values.password ? 'Passwords do not match' : null,
       firstName: (val) => (val.trim().length < 2 ? 'First name must be at least 2 characters' : null),
