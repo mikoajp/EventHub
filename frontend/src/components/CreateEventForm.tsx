@@ -11,7 +11,7 @@ import {
   Divider,
   Title,
   rem,
-  Paper, Grid,
+  Grid,
 } from '@mantine/core';
 import { DateTimePicker } from '@mantine/dates';
 import { useForm } from '@mantine/form';
