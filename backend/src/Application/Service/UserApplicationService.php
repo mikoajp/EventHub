@@ -8,6 +8,7 @@ use App\DTO\UserRegistrationDTO;
 use App\Exception\Validation\ValidationException;
 use App\Infrastructure\Cache\CacheInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 
 final readonly class UserApplicationService
 {
@@ -31,7 +32,14 @@ final readonly class UserApplicationService
             throw new ValidationException($violations);
         }
 
-        $user = $this->userDomainService->createUser($registrationDTO);
+        try {
+            $user = $this->userDomainService->createUser($registrationDTO);
+        } catch (UniqueConstraintViolationException $e) {
+            // Handle duplicate email error
+            throw new ValidationException([
+                'email' => 'An account with this email already exists.'
+            ]);
+        }
         
         // Invalidate cache
         $this->invalidateUserCache($user);
