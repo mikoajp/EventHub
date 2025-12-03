@@ -84,7 +84,7 @@ class TicketController extends AbstractController
         return $this->json($this->ticketPresenter->presentPurchase(['ticket_ids' => $ticketIds]), Response::HTTP_CREATED);
     }
 
-    #[Route('/my', name: 'api_tickets_my', methods: ['GET'])]
+    #[Route('/user/current', name: 'api_tickets_my', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     public function my(#[CurrentUser] User $user): JsonResponse
     {

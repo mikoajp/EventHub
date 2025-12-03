@@ -6,7 +6,7 @@ export const ticketsApi = {
     apiClient.post('/tickets/purchase', data),
 
   getMyTickets: (): Promise<{ tickets: Ticket[] }> =>
-    apiClient.get('/tickets/my'),
+    apiClient.get('/tickets/user/current'),
 
   getById: (id: string): Promise<Ticket> =>
     apiClient.get(`/tickets/${id}`),
