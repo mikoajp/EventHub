@@ -108,11 +108,11 @@ export class ApiClient {
             // Only clear tokens if refresh failed with 401 (authentication error)
             // Don't clear on network errors (timeout, 500, CORS, etc.)
             if (refreshError?.response?.status === 401) {
-              console.warn('Refresh token invalid, clearing tokens');
+              console.warn('[API] Refresh token invalid (401), clearing tokens', new Error().stack);
               localStorage.removeItem('auth_token');
               localStorage.removeItem('refresh_token');
             } else {
-              console.error('Token refresh failed with network error:', refreshError?.message || refreshError);
+              console.error('[API] Token refresh failed with network error, KEEPING tokens:', refreshError?.message || refreshError);
               // Keep tokens - might be temporary network issue
             }
             return Promise.reject(refreshError);

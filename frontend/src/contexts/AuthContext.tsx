@@ -89,13 +89,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Only clear tokens if it's an authentication error (401)
           // Don't clear on network errors (timeout, 500, etc.)
           if (refreshError?.response?.status === 401) {
-            console.warn('Refresh token invalid or expired, logging out');
+            console.warn('[AUTH] Refresh token invalid (401), clearing tokens', new Error().stack);
             localStorage.removeItem('auth_token');
             localStorage.removeItem('refresh_token');
             setUser(null);
             setIsAuthenticated(false);
           } else {
-            console.error('Refresh failed with network error:', refreshError);
+            console.error('[AUTH] Refresh failed with network error, KEEPING tokens:', refreshError);
             // Keep tokens, let user try again
             setUser(null);
             setIsAuthenticated(false);
@@ -120,14 +120,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isAuthError = error?.response?.status === 401;
       
       if (isAuthError) {
-        console.warn('Authentication failed, clearing tokens');
+        console.warn('[AUTH] /auth/me returned 401, clearing tokens', new Error().stack);
         localStorage.removeItem('auth_token');
         localStorage.removeItem('refresh_token');
         setUser(null);
         setIsAuthenticated(false);
       } else {
         // Network error - retry once after delay if this is first attempt
-        console.error('Failed to fetch user (keeping tokens):', error?.message || error);
+        console.error('[AUTH] Failed to fetch user (KEEPING tokens):', error?.message || error, error?.response?.status);
         
         if (fetchUserAttempts.current === 0 && localStorage.getItem('auth_token')) {
           fetchUserAttempts.current++;
@@ -198,6 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    console.log('[AUTH] Logout called', new Error().stack);
     // Clear refresh timeout
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current);
