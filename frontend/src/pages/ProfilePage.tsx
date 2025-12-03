@@ -139,7 +139,7 @@ export const ProfilePage: React.FC = () => {
                 radius={80}
                 color="blue"
               >
-                {initials}
+                🎫
               </Avatar>
               <div>
                 <Title order={2}>
