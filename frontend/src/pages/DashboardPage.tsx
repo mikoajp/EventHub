@@ -79,7 +79,10 @@ export const DashboardPage: React.FC = () => {
   const [selectedEventId, setSelectedEventId] = useState<string>('');
   const [publishingEventId, setPublishingEventId] = useState<string | null>(null);
 
-  const { data: eventsResponse, isLoading: eventsLoading } = useEvents();
+  // Get all events (including drafts) for the dashboard
+  const { data: eventsResponse, isLoading: eventsLoading } = useEvents({ 
+    status: ['draft', 'published', 'cancelled', 'completed'] 
+  });
   const publishEventMutation = usePublishEvent();
   const { data: statistics, isLoading: statsLoading } = useEventStatistics(
       selectedEventId,
