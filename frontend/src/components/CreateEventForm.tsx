@@ -73,11 +73,6 @@ export const CreateEventForm: React.FC<CreateEventFormProps> = ({ onSuccess }) =
   };
 
   return (
-      <Paper withBorder p="lg" radius="lg" shadow="sm">
-        <Title order={2} mb="xl" style={{ fontSize: rem(28) }}>
-          Create New Event
-        </Title>
-
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack gap="xl">
             {/* Basic Information Section */}
@@ -232,6 +227,5 @@ export const CreateEventForm: React.FC<CreateEventFormProps> = ({ onSuccess }) =
             </Group>
           </Stack>
         </form>
-      </Paper>
   );
 };
