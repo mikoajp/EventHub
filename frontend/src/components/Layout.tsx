@@ -17,7 +17,6 @@ import {
   IconPlus,
   IconDashboard,
   IconLogout,
-  IconUser,
   IconWifi,
   IconWifiOff,
   IconLogin,

@@ -20,7 +20,6 @@ import {
 import { useForm } from '@mantine/form';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  IconUser,
   IconLock,
   IconCheck,
   IconAlertCircle,
@@ -122,7 +121,6 @@ export const ProfilePage: React.FC = () => {
     return null;
   }
 
-  const initials = `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase();
   const roles = user.roles || [];
   const hasOrganizerRole = roles.includes('ROLE_ORGANIZER');
   const hasAdminRole = roles.includes('ROLE_ADMIN');
