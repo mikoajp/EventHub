@@ -71,7 +71,12 @@ export const RegisterPage: React.FC = () => {
       // Handle different error types
       let errorMessage = 'Registration failed. Please try again.';
       
-      if (error?.response?.data?.error) {
+      // Check for database/backend error messages
+      const fullErrorMessage = JSON.stringify(error?.response?.data || error?.message || '').toLowerCase();
+      
+      if (fullErrorMessage.includes('duplicate') || fullErrorMessage.includes('already exists') || fullErrorMessage.includes('unique constraint')) {
+        errorMessage = 'An account with this email already exists. Please use a different email or try logging in.';
+      } else if (error?.response?.data?.error) {
         const backendError = error.response.data.error;
         
         // Handle validation errors
@@ -84,9 +89,7 @@ export const RegisterPage: React.FC = () => {
           errorMessage = backendError.message || backendError;
         }
       } else if (error?.message) {
-        if (error.message.includes('already exists') || error.message.includes('duplicate')) {
-          errorMessage = 'An account with this email already exists';
-        } else if (error.message.includes('Network')) {
+        if (error.message.includes('Network')) {
           errorMessage = 'Network error. Please check your connection.';
         } else {
           errorMessage = error.message;
