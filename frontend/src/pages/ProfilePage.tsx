@@ -138,9 +138,7 @@ export const ProfilePage: React.FC = () => {
                 size={80}
                 radius={80}
                 color="blue"
-              >
-                🎫
-              </Avatar>
+              />
               <div>
                 <Title order={2}>
                   {user.firstName} {user.lastName}

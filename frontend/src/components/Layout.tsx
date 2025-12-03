@@ -111,7 +111,7 @@ export const Layout: React.FC = () => {
                   <Menu.Target>
                     <UnstyledButton>
                       <Group gap="xs">
-                        <Avatar size="sm">🎫</Avatar>
+                        <Avatar size="sm" />
                         <Text size="sm">{user?.firstName || 'User'}</Text>
                         {isAdmin && (
                           <Text size="xs" c="blue" fw={500}>(Admin)</Text>
