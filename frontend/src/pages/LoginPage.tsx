@@ -75,7 +75,24 @@ export const LoginPage: React.FC = () => {
       await login(values.email, values.password);
       navigate('/', { replace: true });
     } catch (error: any) {
-      const errorMessage = error?.message === 'Invalid credentials' ? 'Invalid email or password' : 'Login failed';
+      console.error('Login error:', error);
+      
+      // Handle different error types
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (error?.response?.data?.error) {
+        const backendError = error.response.data.error;
+        errorMessage = backendError.message || backendError;
+      } else if (error?.message) {
+        if (error.message.includes('Invalid credentials') || error.message.includes('401')) {
+          errorMessage = 'Invalid email or password';
+        } else if (error.message.includes('Network')) {
+          errorMessage = 'Network error. Please check your connection.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -89,7 +106,33 @@ export const LoginPage: React.FC = () => {
       await register(values.email, values.password, values.firstName, values.lastName, false);
       navigate('/', { replace: true });
     } catch (error: any) {
-      const errorMessage = error?.message || 'Registration failed';
+      console.error('Registration error:', error);
+      
+      // Handle different error types
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error?.response?.data?.error) {
+        const backendError = error.response.data.error;
+        
+        // Handle validation errors
+        if (backendError.violations) {
+          const violations = Object.entries(backendError.violations)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join(', ');
+          errorMessage = violations;
+        } else {
+          errorMessage = backendError.message || backendError;
+        }
+      } else if (error?.message) {
+        if (error.message.includes('already exists') || error.message.includes('duplicate')) {
+          errorMessage = 'An account with this email already exists';
+        } else if (error.message.includes('Network')) {
+          errorMessage = 'Network error. Please check your connection.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);

@@ -66,7 +66,33 @@ export const RegisterPage: React.FC = () => {
       );
       navigate('/', { replace: true });
     } catch (error: any) {
-      const errorMessage = error?.message || 'Registration failed';
+      console.error('Registration error:', error);
+      
+      // Handle different error types
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error?.response?.data?.error) {
+        const backendError = error.response.data.error;
+        
+        // Handle validation errors
+        if (backendError.violations) {
+          const violations = Object.entries(backendError.violations)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join(', ');
+          errorMessage = violations;
+        } else {
+          errorMessage = backendError.message || backendError;
+        }
+      } else if (error?.message) {
+        if (error.message.includes('already exists') || error.message.includes('duplicate')) {
+          errorMessage = 'An account with this email already exists';
+        } else if (error.message.includes('Network')) {
+          errorMessage = 'Network error. Please check your connection.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       setError(errorMessage);
     } finally {
       setIsSubmitting(false);
