@@ -27,6 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const fetchUserAttempts = useRef(0);
 
   // Schedule automatic token refresh before expiration
   const scheduleTokenRefresh = useCallback(() => {
@@ -84,12 +85,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem('auth_token', response.token);
             localStorage.setItem('refresh_token', response.refresh_token);
           }
-        } catch (refreshError) {
-          // Refresh failed, clear tokens
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('refresh_token');
-          setUser(null);
-          setIsAuthenticated(false);
+        } catch (refreshError: any) {
+          // Only clear tokens if it's an authentication error (401)
+          // Don't clear on network errors (timeout, 500, etc.)
+          if (refreshError?.response?.status === 401) {
+            console.warn('Refresh token invalid or expired, logging out');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('refresh_token');
+            setUser(null);
+            setIsAuthenticated(false);
+          } else {
+            console.error('Refresh failed with network error:', refreshError);
+            // Keep tokens, let user try again
+            setUser(null);
+            setIsAuthenticated(false);
+          }
           return;
         }
       }
@@ -104,19 +114,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Schedule automatic token refresh
       scheduleTokenRefresh();
-    } catch (error) {
-      // If refresh token exists, the interceptor will try to refresh
-      // If that fails, it will clear tokens and redirect
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('refresh_token');
-      setUser(null);
-      setIsAuthenticated(false);
+    } catch (error: any) {
+      // Only clear tokens if it's an authentication error (401)
+      // Don't clear on network errors, CORS errors, timeouts, etc.
+      const isAuthError = error?.response?.status === 401;
+      
+      if (isAuthError) {
+        console.warn('Authentication failed, clearing tokens');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        setUser(null);
+        setIsAuthenticated(false);
+      } else {
+        // Network error - retry once after delay if this is first attempt
+        console.error('Failed to fetch user (keeping tokens):', error?.message || error);
+        
+        if (fetchUserAttempts.current === 0 && localStorage.getItem('auth_token')) {
+          fetchUserAttempts.current++;
+          console.log('Retrying fetchCurrentUser in 2 seconds...');
+          setTimeout(() => {
+            fetchCurrentUser();
+          }, 2000);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      }
     }
   }, [scheduleTokenRefresh]);
 
   useEffect(() => {
     const initAuth = async () => {
       setIsLoading(true);
+      fetchUserAttempts.current = 0; // Reset attempt counter
       await fetchCurrentUser();
       setIsLoading(false);
     };
