@@ -32,31 +32,15 @@ class JwtAuthenticator extends AbstractAuthenticator implements AuthenticationEn
 
     public function supports(Request $request): ?bool
     {
-        $hasHeader = $request->headers->has(self::HEADER_AUTH);
-        $authHeader = $request->headers->get(self::HEADER_AUTH);
-        $hasPrefix = $authHeader ? str_starts_with($authHeader, self::TOKEN_PREFIX) : false;
-        
-        error_log(sprintf(
-            '[JWT] supports() called - URI: %s, Has Auth Header: %s, Auth Header: %s, Has Prefix: %s',
-            $request->getRequestUri(),
-            $hasHeader ? 'YES' : 'NO',
-            $authHeader ? substr($authHeader, 0, 50) . '...' : 'NULL',
-            $hasPrefix ? 'YES' : 'NO'
-        ));
-        
-        return $hasHeader && $hasPrefix;
+        return $request->headers->has(self::HEADER_AUTH) &&
+               str_starts_with($request->headers->get(self::HEADER_AUTH), self::TOKEN_PREFIX);
     }
 
     public function authenticate(Request $request): Passport
     {
-        error_log('[JWT] authenticate() called for URI: ' . $request->getRequestUri());
-        
         $token = $this->tokenExtractor->extract($request);
         
-        error_log('[JWT] Token extracted: ' . ($token ? substr($token, 0, 50) . '...' : 'NULL'));
-        
         if (!is_string($token) || $token === '') {
-            error_log('[JWT] No token found or empty token');
             throw new CustomUserMessageAuthenticationException('No JWT token found');
         }
         
