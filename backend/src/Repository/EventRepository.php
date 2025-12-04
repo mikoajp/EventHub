@@ -305,7 +305,8 @@ class EventRepository extends ServiceEntityRepository
         
         $qb = $this->createQueryBuilder('e')
             ->leftJoin('e.organizer', 'o')->addSelect('PARTIAL o.{id,email}')
-            ->leftJoin('e.ticketTypes', 'tt')->addSelect('tt');
+            ->leftJoin('e.ticketTypes', 'tt')->addSelect('tt')
+            ->distinct();
 
         // Apply filters
         if (!empty($filters['search'])) {
