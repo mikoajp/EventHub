@@ -35,6 +35,8 @@ final readonly class GetEventsWithFiltersHandler
             $cacheKey,
             function() use ($query) {
                 error_log('[GetEventsHandler] Cache MISS - fetching from DB');
+                error_log('[GetEventsHandler] Query filters: ' . json_encode($query->filters));
+                error_log('[GetEventsHandler] Calling Repository...');
                 $events = $this->eventRepository->findEventsWithFilters(
                     $query->filters,
                     $query->sorting,
