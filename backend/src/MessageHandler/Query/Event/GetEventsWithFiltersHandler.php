@@ -29,7 +29,7 @@ final readonly class GetEventsWithFiltersHandler
         
         // Debug logging
         error_log('[GetEventsHandler] Cache key: ' . $cacheKey);
-        error_log('[GetEventsHandler] Filters status: ' . json_encode($query->filters->status));
+        error_log('[GetEventsHandler] Filters status: ' . json_encode(is_array($query->filters) ? ($query->filters['status'] ?? null) : $query->filters->status));
 
         $result = $this->cache->get(
             $cacheKey,
