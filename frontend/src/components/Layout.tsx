@@ -66,6 +66,16 @@ export const Layout: React.FC = () => {
             >
               {isConnected ? <IconWifi size={16} /> : <IconWifiOff size={16} />}
             </Indicator>
+
+            {!isAuthenticated && (
+              <Button
+                variant="filled"
+                leftSection={<IconLogin size={16} />}
+                onClick={() => navigate('/login')}
+              >
+                Sign In
+              </Button>
+            )}
           </Group>
 
           <Group>
@@ -141,15 +151,7 @@ export const Layout: React.FC = () => {
                   </Menu.Dropdown>
                 </Menu>
               </>
-            ) : (
-              <Button
-                variant="filled"
-                leftSection={<IconLogin size={16} />}
-                onClick={() => navigate('/login')}
-              >
-                Login
-              </Button>
-            )}
+            ) : null}
           </Group>
         </Group>
       </AppShell.Header>
