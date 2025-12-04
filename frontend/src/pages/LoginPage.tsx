@@ -180,7 +180,7 @@ export const LoginPage: React.FC = () => {
             }}
           >
             <Tabs value={activeTab} onChange={setActiveTab} defaultValue="login">
-              <Tabs.List grow mb="lg">
+              <Tabs.List mb="lg">
                 <Tabs.Tab value="login" leftSection={<IconLogin size={16} />}>
                   Sign In
                 </Tabs.Tab>
