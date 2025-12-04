@@ -26,10 +26,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\HasLifecycleCallbacks]
 #[ApiResource(
     operations: [
-        new GetCollection(
-            security: "is_granted('PUBLIC_ACCESS')",
-            provider: EventStateProvider::class
-        ),
+        // GetCollection disabled - use custom EventController::list instead
         new Get(
             security: "is_granted('PUBLIC_ACCESS')",
             provider: EventStateProvider::class
