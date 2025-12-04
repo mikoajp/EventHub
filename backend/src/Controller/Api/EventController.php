@@ -47,9 +47,16 @@ class EventController extends AbstractController
     #[Route('', name: 'api_events_list', methods: ['GET'])]
     public function list(Request $request): JsonResponse
     {
+        $statusParam = $request->query->all('status');
+        $statusToUse = !empty($statusParam) ? $statusParam : ['published'];
+        
+        // Debug logging
+        error_log('[EventController] Raw status param: ' . json_encode($statusParam));
+        error_log('[EventController] Status to use: ' . json_encode($statusToUse));
+        
         $filtersDTO = new EventFiltersDTO(
             search: $request->query->get('search'),
-            status: !empty($request->query->all('status')) ? $request->query->all('status') : ['published'],
+            status: $statusToUse,
             venue: $request->query->all('venue') ?: [],
             organizer_id: $request->query->get('organizer_id'),
             date_from: $request->query->get('date_from'),
@@ -62,6 +69,8 @@ class EventController extends AbstractController
             page: max(1, $request->query->getInt('page', 1)),
             limit: min(100, max(1, $request->query->getInt('limit', 20)))
         );
+        
+        error_log('[EventController] FiltersDTO status: ' . json_encode($filtersDTO->status));
 
         $violations = $this->requestValidator->validate($filtersDTO);
         if (count($violations) > 0) {
