@@ -26,16 +26,28 @@ final readonly class GetEventsWithFiltersHandler
             $query->page, 
             $query->limit
         ]));
+        
+        // Debug logging
+        error_log('[GetEventsHandler] Cache key: ' . $cacheKey);
+        error_log('[GetEventsHandler] Filters status: ' . json_encode($query->filters->status));
 
-        return $this->cache->get(
+        $result = $this->cache->get(
             $cacheKey,
-            fn() => $this->eventRepository->findEventsWithFilters(
-                $query->filters,
-                $query->sorting,
-                $query->page,
-                $query->limit
-            ),
+            function() use ($query) {
+                error_log('[GetEventsHandler] Cache MISS - fetching from DB');
+                $events = $this->eventRepository->findEventsWithFilters(
+                    $query->filters,
+                    $query->sorting,
+                    $query->page,
+                    $query->limit
+                );
+                error_log('[GetEventsHandler] DB returned ' . count($events) . ' events');
+                return $events;
+            },
             self::CACHE_TTL
         );
+        
+        error_log('[GetEventsHandler] Returning ' . count($result) . ' events');
+        return $result;
     }
 }
