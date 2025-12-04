@@ -10,7 +10,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler]
 final readonly class GetEventsWithFiltersHandler
 {
-    private const CACHE_TTL = 300; // 5 minutes
+    private const CACHE_TTL = 0; // Cache disabled for debugging
 
     public function __construct(
         private EventRepository $eventRepository,
