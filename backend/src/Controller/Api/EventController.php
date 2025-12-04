@@ -49,7 +49,7 @@ class EventController extends AbstractController
     {
         $filtersDTO = new EventFiltersDTO(
             search: $request->query->get('search'),
-            status: $request->query->all('status') ?: ['published'],
+            status: !empty($request->query->all('status')) ? $request->query->all('status') : ['published'],
             venue: $request->query->all('venue') ?: [],
             organizer_id: $request->query->get('organizer_id'),
             date_from: $request->query->get('date_from'),
