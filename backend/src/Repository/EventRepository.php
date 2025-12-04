@@ -382,8 +382,12 @@ class EventRepository extends ServiceEntityRepository
                 $qb->orderBy('e.createdAt', $sortDirection);
                 break;
             case 'price':
-                $qb->orderBy('MIN(tt.price)', $sortDirection)
-                    ->groupBy('e.id');
+                // Sort by minimum ticket price using subquery to avoid GROUP BY issues
+                $qb->orderBy('(
+                    SELECT MIN(tt2.price) 
+                    FROM App\Entity\TicketType tt2 
+                    WHERE tt2.event = e
+                )', $sortDirection);
                 break;
             case 'popularity':
                 $qb->orderBy('(
