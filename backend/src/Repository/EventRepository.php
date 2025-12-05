@@ -402,9 +402,72 @@ class EventRepository extends ServiceEntityRepository
             $qb->addOrderBy('e.eventDate', 'ASC');
         }
 
-        // Calculate total count
-        $countQb = clone $qb;
-        $countQb->select('COUNT(DISTINCT e.id)');
+        // Calculate total count - use a fresh query builder to avoid GROUP BY issues
+        $countQb = $this->createQueryBuilder('e')
+            ->select('COUNT(DISTINCT e.id)')
+            ->leftJoin('e.organizer', 'o')
+            ->leftJoin('e.ticketTypes', 'tt');
+        
+        // Reapply only the WHERE conditions from the main query (without grouping)
+        if (!empty($filters['search'])) {
+            $countQb->andWhere('e.name LIKE :search OR e.description LIKE :search OR e.venue LIKE :search')
+                ->setParameter('search', '%' . $filters['search'] . '%');
+        }
+
+        if (!empty($filters['status'])) {
+            if (is_array($filters['status'])) {
+                $countQb->andWhere('e.status IN (:statuses)')
+                    ->setParameter('statuses', $filters['status']);
+            } else {
+                $countQb->andWhere('e.status = :status')
+                    ->setParameter('status', $filters['status']);
+            }
+        }
+
+        if (!empty($filters['venue'])) {
+            if (is_array($filters['venue'])) {
+                $countQb->andWhere('e.venue IN (:venues)')
+                    ->setParameter('venues', $filters['venue']);
+            } else {
+                $countQb->andWhere('e.venue LIKE :venue')
+                    ->setParameter('venue', '%' . $filters['venue'] . '%');
+            }
+        }
+
+        if (!empty($filters['organizer_id'])) {
+            $countQb->andWhere('e.organizer = :organizer')
+                ->setParameter('organizer', $filters['organizer_id']);
+        }
+
+        if (!empty($filters['date_from'])) {
+            $countQb->andWhere('e.eventDate >= :dateFrom')
+                ->setParameter('dateFrom', new \DateTime($filters['date_from']));
+        }
+
+        if (!empty($filters['date_to'])) {
+            $countQb->andWhere('e.eventDate <= :dateTo')
+                ->setParameter('dateTo', new \DateTime($filters['date_to']));
+        }
+
+        if (!empty($filters['price_min'])) {
+            $countQb->andWhere('tt.price >= :priceMin')
+                ->setParameter('priceMin', $filters['price_min'] * 100);
+        }
+
+        if (!empty($filters['price_max'])) {
+            $countQb->andWhere('tt.price <= :priceMax')
+                ->setParameter('priceMax', $filters['price_max'] * 100);
+        }
+
+        if (isset($filters['has_available_tickets']) && $filters['has_available_tickets']) {
+            $countQb->andWhere('e.maxTickets > (
+                SELECT COUNT(t.id) 
+                FROM App\Entity\Ticket t 
+                WHERE t.event = e AND t.status IN (:purchasedStatuses)
+            )')
+                ->setParameter('purchasedStatuses', ['purchased', 'reserved']);
+        }
+        
         $totalCount = $countQb->getQuery()->getSingleScalarResult();
 
         // Apply pagination
