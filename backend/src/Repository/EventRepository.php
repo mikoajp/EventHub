@@ -403,9 +403,9 @@ class EventRepository extends ServiceEntityRepository
         }
 
         // Calculate total count - use a fresh query builder to avoid GROUP BY issues
+        // Note: We don't select organizer fields to avoid DISTINCT issues with JSON columns
         $countQb = $this->createQueryBuilder('e')
             ->select('COUNT(DISTINCT e.id)')
-            ->leftJoin('e.organizer', 'o')
             ->leftJoin('e.ticketTypes', 'tt');
         
         // Reapply only the WHERE conditions from the main query (without grouping)
@@ -435,6 +435,10 @@ class EventRepository extends ServiceEntityRepository
         }
 
         if (!empty($filters['organizer_id'])) {
+            // Join organizer only when needed for filtering
+            if (!$countQb->getDQLPart('join')['e'] ?? false) {
+                $countQb->leftJoin('e.organizer', 'o');
+            }
             $countQb->andWhere('e.organizer = :organizer')
                 ->setParameter('organizer', $filters['organizer_id']);
         }
