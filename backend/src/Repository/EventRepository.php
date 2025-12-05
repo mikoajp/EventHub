@@ -48,8 +48,9 @@ class EventRepository extends ServiceEntityRepository
         }
 
         // Load event with ticketTypes and organizer to avoid lazy loading issues
+        // Use full organizer object for single event queries to ensure voter comparisons work
         return $this->createQueryBuilder('e')
-            ->leftJoin('e.organizer', 'o')->addSelect('PARTIAL o.{id,email}')
+            ->leftJoin('e.organizer', 'o')->addSelect('o')
             ->leftJoin('e.ticketTypes', 'tt')->addSelect('tt')
             ->where('e.id = :id')
             ->setParameter('id', $uuid, 'uuid')
