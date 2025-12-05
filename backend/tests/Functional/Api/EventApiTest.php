@@ -154,4 +154,30 @@ final class EventApiTest extends BaseWebTestCase
         
         return $event;
     }
+
+    public function testGetEventsWithSortingByDateAndFilters(): void
+    {
+        // Arrange - Create a user and published event
+        $user = $this->createUser();
+        $this->persistAndFlush($user);
+
+        $event = $this->createEvent($user, 'Test Event', Event::STATUS_PUBLISHED);
+        $this->persistAndFlush($event);
+
+        // Act - This was causing a 500 error before the fix
+        $response = $this->jsonRequest('GET', '/api/events', [
+            'status' => ['published'],
+            'has_available_tickets' => false,
+            'sort_by' => 'date',
+            'sort_direction' => 'asc',
+            'page' => 1,
+            'limit' => 100
+        ]);
+
+        // Assert
+        $data = $this->assertJsonResponse($response, Response::HTTP_OK);
+        $this->assertArrayHasKey('events', $data);
+        $this->assertArrayHasKey('pagination', $data);
+        $this->assertIsArray($data['events']);
+    }
 }

@@ -299,10 +299,6 @@ class EventRepository extends ServiceEntityRepository
      */
     public function findEventsWithFilters(array $filters = [], array $sorting = [], int $page = 1, int $limit = 20): array
     {
-        // Debug logging
-        error_log('[EventRepository] Received filters: ' . json_encode($filters));
-        error_log('[EventRepository] Status filter: ' . json_encode($filters['status'] ?? 'NOT SET'));
-        
         $qb = $this->createQueryBuilder('e')
             ->leftJoin('e.organizer', 'o')->addSelect('o')
             ->leftJoin('e.ticketTypes', 'tt')
@@ -369,7 +365,7 @@ class EventRepository extends ServiceEntityRepository
         }
 
         // Apply sorting
-        $sortField = $sorting['field'] ?? 'eventDate';
+        $sortField = $sorting['by'] ?? $sorting['field'] ?? 'eventDate';
         $sortDirection = strtoupper($sorting['direction'] ?? 'ASC');
 
         switch ($sortField) {
