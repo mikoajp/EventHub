@@ -32,6 +32,12 @@ class ExceptionListener implements EventSubscriberInterface
     public function onKernelException(ExceptionEvent $event): void
     {
         $e = $event->getThrowable();
+        
+        // Temporary debug logging
+        error_log('[EXCEPTION] Type: ' . get_class($e));
+        error_log('[EXCEPTION] Message: ' . $e->getMessage());
+        error_log('[EXCEPTION] File: ' . $e->getFile() . ':' . $e->getLine());
+        
         $status = Response::HTTP_INTERNAL_SERVER_ERROR;
         $payload = [
             'error' => [
