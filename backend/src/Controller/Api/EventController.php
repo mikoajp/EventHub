@@ -164,7 +164,7 @@ class EventController extends AbstractController
 
         $this->denyAccessUnlessGranted(EventVoter::PUBLISH, $event);
 
-        if ($event->getStatus() !== Event::STATUS_DRAFT) {
+        if (!$event->isDraft()) {
             throw new EventNotPublishableException($id, 'Only draft events can be published');
         }
 
