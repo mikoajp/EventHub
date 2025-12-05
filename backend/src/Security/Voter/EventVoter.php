@@ -202,7 +202,8 @@ class EventVoter extends Voter
 
     private function isOrganizer(Event $event, User $user): bool
     {
-        return $event->getOrganizer() === $user;
+        // Compare by ID to handle Doctrine proxy objects and partial selects
+        return $event->getOrganizer()->getId()->equals($user->getId());
     }
 
     private function isAdmin(User $user): bool
