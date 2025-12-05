@@ -300,7 +300,7 @@ class EventRepository extends ServiceEntityRepository
     public function findEventsWithFilters(array $filters = [], array $sorting = [], int $page = 1, int $limit = 20): array
     {
         $qb = $this->createQueryBuilder('e')
-            ->leftJoin('e.organizer', 'o')->addSelect('o')
+            ->leftJoin('e.organizer', 'o')->addSelect('PARTIAL o.{id,email}')
             ->leftJoin('e.ticketTypes', 'tt')
             ->groupBy('e.id, o.id');
 
