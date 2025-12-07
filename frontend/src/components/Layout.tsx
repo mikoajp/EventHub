@@ -24,6 +24,8 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useRealTime } from '../contexts/RealTimeContext';
 
+import { Footer } from './Footer';
+
 export const Layout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,119 +44,125 @@ export const Layout: React.FC = () => {
   const hasOrganizerPrivileges = isAdmin || isOrganizer;
 
   return (
-    <AppShell header={{ height: 60 }} padding="md">
+    <AppShell header={{ height: 60 }} padding="0">
       <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <Text
-              size="xl"
-              fw={700}
-              variant="gradient"
-              gradient={{ from: 'blue', to: 'cyan' }}
-              style={{ cursor: 'pointer' }}
-              onClick={() => navigate('/')}
-            >
-              EventHub
-            </Text>
-
-            <Indicator
-              color={isConnected ? 'green' : 'red'}
-              size={8}
-              position="middle-end"
-              title={isConnected ? 'Connected to real-time updates' : 'Disconnected from real-time updates'}
-            >
-              {isConnected ? <IconWifi size={16} /> : <IconWifiOff size={16} />}
-            </Indicator>
-          </Group>
-
-          <Group>
-            <Button
-              variant={isActive('/') || isActive('/events') ? 'filled' : 'light'}
-              leftSection={<IconCalendar size={16} />}
-              onClick={() => navigate('/')}
-            >
-              Events
-            </Button>
-
-            {isAuthenticated ? (
-              <>
-                <Button
-                  variant={isActive('/my-tickets') ? 'filled' : 'light'}
-                  leftSection={<IconTicket size={16} />}
-                  onClick={() => navigate('/my-tickets')}
-                >
-                  My Tickets
-                </Button>
-
-                {hasOrganizerPrivileges && (
-                  <>
-                    <Button
-                      variant={isActive('/create-event') ? 'filled' : 'light'}
-                      leftSection={<IconPlus size={16} />}
-                      onClick={() => navigate('/create-event')}
-                    >
-                      Create Event
-                    </Button>
-
-                    <Button
-                      variant={isActive('/dashboard') ? 'filled' : 'light'}
-                      leftSection={<IconDashboard size={16} />}
-                      onClick={() => navigate('/dashboard')}
-                    >
-                      Dashboard
-                    </Button>
-                  </>
-                )}
-
-                <Menu shadow="md" width={200}>
-                  <Menu.Target>
-                    <UnstyledButton>
-                      <Group gap="xs">
-                        <Avatar size="sm" />
-                        <Text size="sm">{user?.firstName || 'User'}</Text>
-                        {isAdmin && (
-                          <Text size="xs" c="blue" fw={500}>(Admin)</Text>
-                        )}
-                        {isOrganizer && !isAdmin && (
-                          <Text size="xs" c="dimmed">(Organizer)</Text>
-                        )}
-                      </Group>
-                    </UnstyledButton>
-                  </Menu.Target>
-
-                  <Menu.Dropdown>
-                    <Menu.Label>Account</Menu.Label>
-                    <Menu.Item
-                      leftSection={<IconUser size={14} />}
-                      onClick={() => navigate('/profile')}
-                    >
-                      Profile
-                    </Menu.Item>
-                    <Menu.Divider />
-                    <Menu.Item
-                      leftSection={<IconLogout size={14} />}
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
-              </>
-            ) : (
-              <Button
-                variant="filled"
-                leftSection={<IconLogin size={16} />}
-                onClick={() => navigate('/login')}
+        <Container size="xl" h="100%">
+          <Group h="100%" px="md" justify="space-between">
+            <Group>
+              <Text
+                size="xl"
+                fw={700}
+                variant="gradient"
+                gradient={{ from: 'blue', to: 'violet' }}
+                style={{ cursor: 'pointer' }}
+                onClick={() => navigate('/')}
               >
-                Login
+                EventHub
+              </Text>
+
+              <Indicator
+                color={isConnected ? 'green' : 'red'}
+                size={8}
+                position="middle-end"
+                title={isConnected ? 'Connected to real-time updates' : 'Disconnected from real-time updates'}
+              >
+                {isConnected ? <IconWifi size={16} /> : <IconWifiOff size={16} />}
+              </Indicator>
+            </Group>
+
+            <Group>
+              <Button
+                variant={isActive('/') || isActive('/events') ? 'filled' : 'subtle'}
+                leftSection={<IconCalendar size={16} />}
+                onClick={() => navigate('/')}
+              >
+                Events
               </Button>
-            )}
+
+              {isAuthenticated ? (
+                <>
+                  <Button
+                    variant={isActive('/my-tickets') ? 'filled' : 'subtle'}
+                    leftSection={<IconTicket size={16} />}
+                    onClick={() => navigate('/my-tickets')}
+                  >
+                    My Tickets
+                  </Button>
+
+                  {hasOrganizerPrivileges && (
+                    <>
+                      <Button
+                        variant={isActive('/create-event') ? 'filled' : 'subtle'}
+                        leftSection={<IconPlus size={16} />}
+                        onClick={() => navigate('/create-event')}
+                      >
+                        Create Event
+                      </Button>
+
+                      <Button
+                        variant={isActive('/dashboard') ? 'filled' : 'subtle'}
+                        leftSection={<IconDashboard size={16} />}
+                        onClick={() => navigate('/dashboard')}
+                      >
+                        Dashboard
+                      </Button>
+                    </>
+                  )}
+
+                  <Menu shadow="md" width={200}>
+                    <Menu.Target>
+                      <UnstyledButton>
+                        <Group gap="xs">
+                          <Avatar size="sm" radius="xl" color="blue" />
+                          <div style={{ flex: 1 }}>
+                            <Text size="sm" fw={500}>{user?.firstName || 'User'}</Text>
+                            {isAdmin && (
+                              <Text size="xs" c="blue" fw={500} style={{ lineHeight: 1 }}>(Admin)</Text>
+                            )}
+                          </div>
+                        </Group>
+                      </UnstyledButton>
+                    </Menu.Target>
+
+                    <Menu.Dropdown>
+                      <Menu.Label>Account</Menu.Label>
+                      <Menu.Item
+                        leftSection={<IconUser size={14} />}
+                        onClick={() => navigate('/profile')}
+                      >
+                        Profile
+                      </Menu.Item>
+                      <Menu.Divider />
+                      <Menu.Item
+                        leftSection={<IconLogout size={14} />}
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
+                </>
+              ) : (
+                <Button
+                  variant="filled"
+                  leftSection={<IconLogin size={16} />}
+                  onClick={() => navigate('/login')}
+                >
+                  Login
+                </Button>
+              )}
+            </Group>
           </Group>
-        </Group>
+        </Container>
       </AppShell.Header>
 
       <AppShell.Main>
-        <Outlet />
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 60px)' }}>
+          <div style={{ flex: 1 }}>
+            <Outlet />
+          </div>
+          <Footer />
+        </div>
       </AppShell.Main>
     </AppShell>
   );

@@ -15,6 +15,8 @@ import {
   Alert,
   Card,
   Badge,
+  Image,
+  AspectRatio,
 } from '@mantine/core';
 import {
   IconGridDots,
@@ -53,23 +55,31 @@ const EventListItem: React.FC<{
     ? Math.min(...event.ticketTypes.map(tt => tt.price))
     : 0;
 
+  // Placeholder image function
+  const getEventImage = (id: string) => {
+    const images = [
+      'https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=600&q=80',
+    ];
+    const index = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % images.length;
+    return images[index];
+  };
+
   return (
       <Card withBorder padding="md" radius="md">
-        <Group gap="md" align="flex-start">
-          {/* Event Image Placeholder */}
-          <div
-              style={{
-                width: 120,
-                height: 80,
-                backgroundColor: '#f1f3f4',
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-          >
-            <IconCalendar size={32} color="#9ca3af" />
+        <Group gap="md" align="flex-start" wrap="nowrap">
+          {/* Event Image */}
+          <div style={{ width: 160, flexShrink: 0 }}>
+            <AspectRatio ratio={4 / 3}>
+              <Image
+                src={getEventImage(event.id)}
+                alt={event.name}
+                radius="sm"
+                fallbackSrc="https://placehold.co/600x400?text=Event"
+              />
+            </AspectRatio>
           </div>
 
           {/* Event Details */}

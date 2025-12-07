@@ -108,18 +108,21 @@ export const LoginPage: React.FC = () => {
       minHeight: '100vh',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      backgroundColor: '#1a1b1e',
+      backgroundImage: 'linear-gradient(250deg, #062343 0%, #1a1b1e 70%)',
+      backgroundSize: 'cover',
     }}>
       <Container size="xs" w="100%" maw={460} px="sm">
         <Stack align="center" gap="xl">
           <Title
             order={1}
             ta="center"
-            fw={800}
+            fw={900}
             style={{
-              background: 'linear-gradient(to right, #4b6cb7, #182848)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
+              color: 'white',
+              fontSize: '3rem',
+              letterSpacing: '-1px',
+              textShadow: '0 2px 10px rgba(0,0,0,0.3)',
             }}
           >
             EventHub
@@ -127,13 +130,14 @@ export const LoginPage: React.FC = () => {
 
           <Paper 
             withBorder 
-            shadow="lg" 
+            shadow="xl" 
             p={32} 
             radius="lg" 
             w="100%"
             style={{
-              border: '1px solid #e0e0e0',
-              backgroundColor: 'rgba(255, 255, 255, 0.98)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
             }}
           >
             <Tabs value={activeTab} onChange={setActiveTab} defaultValue="login">
