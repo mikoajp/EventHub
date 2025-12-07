@@ -1,14 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import {
   Container,
-  Title,
   SimpleGrid,
   Group,
   Stack,
   Text,
   Loader,
   Center,
-  rem,
   Badge,
   Paper,
   Divider,

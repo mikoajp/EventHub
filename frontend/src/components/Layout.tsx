@@ -9,7 +9,6 @@ import {
   Avatar,
   UnstyledButton,
   Indicator,
-  Container,
 } from '@mantine/core';
 import {
   IconCalendar,
