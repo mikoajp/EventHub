@@ -40,8 +40,19 @@ const queryClient = new QueryClient({
 });
 
 const theme = createTheme({
-  primaryColor: 'blue',
+  primaryColor: 'violet',
+  defaultRadius: 'md',
   fontFamily: 'Inter, sans-serif',
+  headings: {
+    fontFamily: 'Inter, sans-serif',
+  },
+  components: {
+    Button: {
+      defaultProps: {
+        fw: 600,
+      },
+    },
+  },
 });
 
 export const App: React.FC = () => {

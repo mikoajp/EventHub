@@ -155,9 +155,7 @@ export const Layout: React.FC = () => {
       </AppShell.Header>
 
       <AppShell.Main>
-        <Container size="xl">
-          <Outlet />
-        </Container>
+        <Outlet />
       </AppShell.Main>
     </AppShell>
   );

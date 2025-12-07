@@ -18,6 +18,7 @@ import { TicketPurchaseModal } from '../components/TicketPurchaseModal';
 import { AdvancedEventFilters } from '../components/AdvancedEventFilters';
 import { useEvents, useFilterOptions } from '../hooks/useEvents';
 import { EventCard } from '../components/EventCard';
+import { Hero } from '../components/Hero';
 import type { Event, EventFilters, FilterOptions } from '../types';
 
 export const HomePage: React.FC = () => {
@@ -242,71 +243,66 @@ export const HomePage: React.FC = () => {
   }
 
   return (
-      <Container size="xl" py="xl">
-        <Stack gap="xl">
-          <Box>
-            <Title order={1} fw={800} style={{ fontSize: rem(42) }} mb="sm">
-              Discover Events
-            </Title>
-            <Text c="dimmed" size="lg">
-              Find and book tickets for amazing events near you
-            </Text>
-          </Box>
-
-          {/* Advanced Filters Component */}
-          <AdvancedEventFilters
-              filters={filters}
-              filterOptions={filterOptions}
-              onFiltersChange={handleFiltersChange}
-              onReset={handleResetFilters}
-              loading={isLoading || isLoadingFilterOptions}
-          />
-
-          <Divider my="sm" />
-
-          {events.length === 0 ? (
-              <Center py="xl">
-                <Stack align="center" gap="xs">
-                  <Text size="xl" fw={500} c="dimmed">No events found</Text>
-                  <Text c="dimmed">Try adjusting your search or filters</Text>
-                </Stack>
-              </Center>
-          ) : (
-              <>
-                <Group justify="space-between">
-                  <Text c="dimmed">
-                    Showing <Badge variant="light" color="blue" radius="sm">{events.length}</Badge> events
-                  </Text>
-                </Group>
-
-                <SimpleGrid
-                    cols={{ base: 1, sm: 2, lg: 3 }}
-                    spacing="xl"
-                    verticalSpacing="xl"
-                >
-                  {events.map((event: Event) => (
-                      <EventCard
-                          key={event.id}
-                          event={event}
-                          onViewDetails={handleViewDetails}
-                          onPurchaseTicket={handlePurchaseTicket}
-                      />
-                  ))}
-                </SimpleGrid>
-              </>
-          )}
-        </Stack>
-
-        {selectedEvent && (
-            <TicketPurchaseModal
-                isOpen={isPurchaseModalOpen}
-                onClose={() => {
-                  setIsPurchaseModalOpen(false);
-                  setSelectedEvent(null);
-                }}
-                event={selectedEvent}
+      <Box>
+        <Hero />
+        
+        <Container size="xl" pb="xl" id="events-section">
+          <Stack gap="xl">
+            {/* Advanced Filters Component */}
+            <AdvancedEventFilters
+                filters={filters}
+                filterOptions={filterOptions}
+                onFiltersChange={handleFiltersChange}
+                onReset={handleResetFilters}
+                loading={isLoading || isLoadingFilterOptions}
             />
-        )}
-      </Container>
+
+            <Divider my="sm" />
+
+            {events.length === 0 ? (
+                <Center py="xl">
+                  <Stack align="center" gap="xs">
+                    <Text size="xl" fw={500} c="dimmed">No events found</Text>
+                    <Text c="dimmed">Try adjusting your search or filters</Text>
+                  </Stack>
+                </Center>
+            ) : (
+                <>
+                  <Group justify="space-between">
+                    <Text c="dimmed">
+                      Showing <Badge variant="light" color="blue" radius="sm">{events.length}</Badge> events
+                    </Text>
+                  </Group>
+
+                  <SimpleGrid
+                      cols={{ base: 1, sm: 2, lg: 3 }}
+                      spacing="xl"
+                      verticalSpacing="xl"
+                  >
+                    {events.map((event: Event) => (
+                        <EventCard
+                            key={event.id}
+                            event={event}
+                            onViewDetails={handleViewDetails}
+                            onPurchaseTicket={handlePurchaseTicket}
+                        />
+                    ))}
+                  </SimpleGrid>
+                </>
+            )}
+          </Stack>
+
+          {selectedEvent && (
+              <TicketPurchaseModal
+                  isOpen={isPurchaseModalOpen}
+                  onClose={() => {
+                    setIsPurchaseModalOpen(false);
+                    setSelectedEvent(null);
+                  }}
+                  event={selectedEvent}
+              />
+          )}
+        </Container>
+      </Box>
   );
 };
