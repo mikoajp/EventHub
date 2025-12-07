@@ -6,7 +6,6 @@ import {
   Button,
   Group,
   Stack,
-  Progress,
   Image,
   AspectRatio,
   rem,
@@ -37,8 +36,6 @@ export const EventCard: React.FC<EventCardProps> = ({
       default: return 'blue';
     }
   };
-
-  const soldPercentage = (event.ticketsSold / event.maxTickets) * 100;
 
   // Placeholder image function (deterministic based on event ID or name length)
   const getEventImage = (id: string) => {
